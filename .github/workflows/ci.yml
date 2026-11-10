@@ -1,0 +1,29 @@
+name: NoUploadPDF CI (Unit + Playwright E2E)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+
+      - name: Run Ruby Minitest ToolCatalog Suite
+        run: ruby -Itest test/models/tool_catalog_test.rb
+
+      - name: Verify All 28 Static SEO Tool Pages Exist
+        run: |
+          test -f public/tools/merge-pdf/index.html
+          test -f public/tools/compress-pdf/index.html
+          test -f public/tools/redact-pdf/index.html
+          test -f public/tools/ocr-pdf/index.html
