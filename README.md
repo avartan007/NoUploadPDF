@@ -10,7 +10,9 @@ No signup · Processed in your browser · Works offline (PWA) · MIT licensed
 
 [Verify the privacy claim](#-dont-trust-us-verify-it) · [Report a bug](../../issues) · [Request a tool](../../issues/new)
 
-<img src="public/demo-preview.svg" alt="NoUploadPDF Studio — Live Page Preview, Target-Size Compression & Zero-Upload Network Log" width="760">
+<img src="assets/nouploadpdf-demo.gif" alt="NoUploadPDF Interactive Studio Demo" width="780">
+
+*8-second walkthrough: real-time live preview, WebRTC phone scanning & target-size compression with 0 network uploads.*
 
 </div>
 
@@ -99,8 +101,6 @@ Found a vulnerability? Please read [SECURITY.md](SECURITY.md) and report it priv
 - [x] Peer-to-peer (WebRTC `RTCDataChannel`) phone transfer for the hosted site + direct `<input type="file" capture>` fallback
 - [x] Shareable "pipeline recipes" (the steps, never the files)
 - [x] Multi-step Undo (`⌘Z`) and keyboard shortcuts overlay (`?`)
-- [ ] Hindi and Japanese UI
-
 Vote on features or suggest new ones in [Issues](../../issues).
 
 ## 🤝 Contributing

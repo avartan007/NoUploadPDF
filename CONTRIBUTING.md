@@ -21,4 +21,4 @@ Looking for your first contribution? Grab any of these well-scoped issues:
 2. **`[good first issue]` Add custom regex rule builder to the Auto-Redact Assistant**: Let users define and save custom regex patterns in `localStorage` alongside the built-in detectors.
 3. **`[good first issue]` Add custom page-size presets (`Legal`, `Tabloid`, `A3`, `Receipt`) to Tool #13 (Images to PDF)**.
 4. **`[good first issue]` Add keyboard shortcuts (`⌘S` to download output, `⌘Backspace` to shred session)**.
-5. **`[good first issue]` Add UI localization strings (i18n JSON dictionary) for Spanish, Hindi, German, and French**.
+5. **`[good first issue]` Add UI localization strings (i18n JSON dictionary) for Spanish, German, and French**.
