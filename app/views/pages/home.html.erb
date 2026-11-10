@@ -1,18 +1,28 @@
-  <!-- Ink-Bleed Theme Changer SVG Filter & Ripple Layer -->
+      <!-- Ink-Bleed Theme Changer SVG Filter & Fluid Ripple Layer -->
   <svg width="0" height="0" style="position:absolute; width:0; height:0; pointer-events:none;" aria-hidden="true">
     <defs>
-      <filter id="ink-bleed-filter" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
-        <feTurbulence id="inkBleedTurbulence" type="fractalNoise" baseFrequency="0.035" numOctaves="4" seed="7" result="noise" />
-        <feDisplacementMap id="inkBleedDisplacement" in="SourceGraphic" in2="noise" scale="54" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-        <feGaussianBlur in="displaced" stdDeviation="1.6" result="blurred" />
-        <feComponentTransfer in="blurred">
-          <feFuncA type="Linear" slope="1.8" intercept="-0.25" />
+      <!-- Soft liquid ink diffusion filter (gentle organic lobes, zero sharp cracks) -->
+      <filter id="ink-bleed-filter" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+        <feTurbulence id="inkBleedTurbulence" type="fractalNoise" baseFrequency="0.007 0.010" numOctaves="2" seed="7" result="noise" />
+        <feDisplacementMap id="inkBleedDisplacement" in="SourceGraphic" in2="noise" scale="22" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+        <feGaussianBlur in="displaced" stdDeviation="6" result="blurred" />
+        <feComponentTransfer in="blurred" result="liquidGoo">
+          <feFuncA type="linear" slope="2.4" intercept="-0.2" />
         </feComponentTransfer>
+      </filter>
+      <!-- Velvety capillary paper-bleed halo filter -->
+      <filter id="ink-halo-filter" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.005 0.008" numOctaves="2" seed="19" result="haloNoise" />
+        <feDisplacementMap in="SourceGraphic" in2="haloNoise" scale="32" xChannelSelector="R" yChannelSelector="G" result="haloDisp" />
+        <feGaussianBlur in="haloDisp" stdDeviation="12" result="haloBlur" />
       </filter>
     </defs>
   </svg>
   <svg class="ink-bleed-svg-overlay" id="inkBleedOverlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-    <circle id="inkBleedFallbackCircle" cx="90" cy="5" r="0" fill="#0B0D0C" filter="url(#ink-bleed-filter)" />
+    <!-- Soft outer capillary diffusion halo -->
+    <circle id="inkBleedHalo" cx="90" cy="5" r="0" fill="#00C853" opacity="0.32" filter="url(#ink-halo-filter)" />
+    <!-- Core fluid organic ink droplet -->
+    <circle id="inkBleedCircle" cx="90" cy="5" r="0" fill="#0B0D0C" filter="url(#ink-bleed-filter)" />
   </svg>
 
 <!-- Scroll-Linked Storytelling Top Progress Bar -->
@@ -3171,13 +3181,11 @@
       const endRadius = Math.hypot(
         Math.max(x, window.innerWidth - x),
         Math.max(y, window.innerHeight - y)
-      ) * 1.18;
+      ) * 1.15;
 
-      // Randomize turbulence seed so every ink bleed looks organic and unique
+      // Soft, organic random seed
       const turb = document.getElementById('inkBleedTurbulence');
-      const disp = document.getElementById('inkBleedDisplacement');
-      if (turb) turb.setAttribute('seed', String(Math.floor(Math.random() * 900) + 1));
-      if (disp) disp.setAttribute('scale', '62');
+      if (turb) turb.setAttribute('seed', String(Math.floor(Math.random() * 899) + 1));
 
       if (typeof playUiSound === 'function') playUiSound('tick');
 
@@ -3193,66 +3201,97 @@
         return;
       }
 
-      // 1. Primary path: Native View Transitions API with SVG #ink-bleed-filter
+      const DURATION = 1250; // Smooth, luxurious 1.25s fluid transition
+      const EASING = 'cubic-bezier(0.16, 1, 0.3, 1)'; // Velvety deceleration curve
+
+      const overlay = document.getElementById('inkBleedOverlay');
+      const circle = document.getElementById('inkBleedCircle') || document.getElementById('inkBleedFallbackCircle');
+      const halo = document.getElementById('inkBleedHalo');
+
+      const inkColor = next === 'dark' ? '#0B0D0C' : '#FAFAF8';
+      const haloColor = next === 'dark' ? '#2F855A' : '#CBD5E1';
+
+      if (overlay && circle) {
+        overlay.setAttribute('viewBox', '0 0 ' + window.innerWidth + ' ' + window.innerHeight);
+        circle.setAttribute('cx', String(x));
+        circle.setAttribute('cy', String(y));
+        circle.setAttribute('r', '0');
+        circle.setAttribute('fill', inkColor);
+
+        if (halo) {
+          halo.setAttribute('cx', String(x));
+          halo.setAttribute('cy', String(y));
+          halo.setAttribute('r', '0');
+          halo.setAttribute('fill', haloColor);
+        }
+      }
+
+      // 1. Primary path: Native View Transitions API with fluid wavefront
       if (typeof document.startViewTransition === 'function') {
-        root.classList.add('ink-bleed-transitioning');
+        if (overlay) overlay.classList.add('active');
+
+        // Animate organic SVG ink halo along the expanding wavefront
+        if (circle) {
+          circle.animate(
+            [{ r: '0px' }, { r: endRadius + 'px' }],
+            { duration: DURATION, easing: EASING, fill: 'forwards' }
+          );
+        }
+        if (halo) {
+          halo.animate(
+            [{ r: '0px', opacity: 0.38 }, { r: (endRadius * 1.06) + 'px', opacity: 0 }],
+            { duration: DURATION, easing: EASING, fill: 'forwards' }
+          );
+        }
+
         const transition = document.startViewTransition(() => {
           applyThemeChange();
         });
 
         transition.ready.then(() => {
-          const duration = 680;
           document.documentElement.animate(
             {
               clipPath: [
-                `circle(0px at ${x}px ${y}px)`,
-                `circle(${endRadius}px at ${x}px ${y}px)`
+                'circle(0px at ' + x + 'px ' + y + 'px)',
+                'circle(' + endRadius + 'px at ' + x + 'px ' + y + 'px)'
               ]
             },
             {
-              duration,
-              easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+              duration: DURATION,
+              easing: EASING,
               pseudoElement: '::view-transition-new(root)'
             }
           );
-
-          // Smoothly decay displacement scale to 0 so final text & borders settle razor-sharp
-          const start = performance.now();
-          const stepDecay = (now) => {
-            const t = Math.min(1, (now - start) / duration);
-            const scaleVal = Math.round(62 * (1 - t * t));
-            if (disp) disp.setAttribute('scale', String(scaleVal));
-            if (t < 1) requestAnimationFrame(stepDecay);
-          };
-          requestAnimationFrame(stepDecay);
         }).catch(() => {});
 
         transition.finished.finally(() => {
-          if (disp) disp.setAttribute('scale', '0');
-          root.classList.remove('ink-bleed-transitioning');
+          if (overlay) {
+            overlay.classList.remove('active');
+            if (circle) circle.setAttribute('r', '0');
+            if (halo) halo.setAttribute('r', '0');
+          }
         });
         return;
       }
 
-      // 2. Fallback path for browsers without View Transitions API: SVG Ink-Bleed Ripple
-      const overlay = document.getElementById('inkBleedOverlay');
-      const circle = document.getElementById('inkBleedFallbackCircle');
+      // 2. Fallback path for browsers without View Transitions API
       if (overlay && circle) {
-        overlay.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
-        circle.setAttribute('cx', String(x));
-        circle.setAttribute('cy', String(y));
-        circle.setAttribute('r', '0');
-        circle.setAttribute('fill', next === 'dark' ? '#0B0D0C' : '#FAFAF8');
         overlay.classList.add('active');
-
         const anim = circle.animate(
-          [{ r: '0px' }, { r: `${endRadius}px` }],
-          { duration: 620, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' }
+          [{ r: '0px' }, { r: endRadius + 'px' }],
+          { duration: DURATION, easing: EASING, fill: 'forwards' }
         );
-        setTimeout(applyThemeChange, 260);
+        if (halo) {
+          halo.animate(
+            [{ r: '0px', opacity: 0.4 }, { r: (endRadius * 1.06) + 'px', opacity: 0 }],
+            { duration: DURATION, easing: EASING, fill: 'forwards' }
+          );
+        }
+        setTimeout(applyThemeChange, Math.round(DURATION * 0.38));
         anim.onfinish = () => {
           overlay.classList.remove('active');
           circle.setAttribute('r', '0');
+          if (halo) halo.setAttribute('r', '0');
         };
       } else {
         applyThemeChange();

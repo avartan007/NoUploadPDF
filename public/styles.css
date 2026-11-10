@@ -2462,7 +2462,7 @@ p {
 
 
 /* =====================================================================
-   INK-BLEED THEME CHANGER (View Transitions API + SVG Turbulence Filter)
+   INK-BLEED THEME CHANGER (View Transitions API + Fluid SVG Ink Filter)
    ===================================================================== */
 ::view-transition-old(root),
 ::view-transition-new(root) {
@@ -2477,11 +2477,7 @@ p {
 
 ::view-transition-new(root) {
   z-index: 9999;
-}
-
-html.ink-bleed-transitioning::view-transition-new(root) {
-  filter: url(#ink-bleed-filter);
-  will-change: clip-path, filter;
+  will-change: clip-path;
 }
 
 .ink-bleed-svg-overlay {
@@ -2490,9 +2486,9 @@ html.ink-bleed-transitioning::view-transition-new(root) {
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 99998;
+  z-index: 99999;
   opacity: 0;
-  transition: opacity 180ms ease;
+  transition: opacity 240ms ease;
 }
 
 .ink-bleed-svg-overlay.active {
@@ -2502,14 +2498,14 @@ html.ink-bleed-transitioning::view-transition-new(root) {
 .theme-btn.ink-theme-btn {
   position: relative;
   overflow: hidden;
-  transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 150ms ease, background-color 150ms ease;
+  transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 150ms ease, background-color 150ms ease;
 }
 
 .theme-btn.ink-theme-btn:hover {
-  transform: scale(1.07) rotate(-8deg);
+  transform: scale(1.08) rotate(-8deg);
   border-color: var(--brand);
 }
 
 .theme-btn.ink-theme-btn:active {
-  transform: scale(0.93);
+  transform: scale(0.92);
 }
