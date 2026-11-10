@@ -2459,3 +2459,57 @@ p {
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .founder-grid { grid-template-columns: 1fr; }
 }
+
+
+/* =====================================================================
+   INK-BLEED THEME CHANGER (View Transitions API + SVG Turbulence Filter)
+   ===================================================================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+  display: block;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+html.ink-bleed-transitioning::view-transition-new(root) {
+  filter: url(#ink-bleed-filter);
+  will-change: clip-path, filter;
+}
+
+.ink-bleed-svg-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 99998;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.ink-bleed-svg-overlay.active {
+  opacity: 1;
+}
+
+.theme-btn.ink-theme-btn {
+  position: relative;
+  overflow: hidden;
+  transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 150ms ease, background-color 150ms ease;
+}
+
+.theme-btn.ink-theme-btn:hover {
+  transform: scale(1.07) rotate(-8deg);
+  border-color: var(--brand);
+}
+
+.theme-btn.ink-theme-btn:active {
+  transform: scale(0.93);
+}
