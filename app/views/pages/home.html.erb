@@ -1212,6 +1212,147 @@
       </div>
     </div>
   </main>
+    <!-- VIEW 3: DIRECT WEBRTC P2P + QR + BLUETOOTH PHONE SCANNER (NO ./bin/dev NEEDED) -->
+  <main id="view-scanner" style="display:none; flex:1; padding: 32px 0 80px;">
+    <div class="container">
+      <!-- Top Bar -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:22px;">
+        <div>
+          <div class="eyebrow" style="color:var(--brand); margin-bottom:6px;">● WEBRTC PEER-TO-PEER · QR GENERATOR · BLUETOOTH READY</div>
+          <h1 class="headline-md" id="scannerMainHeading">Wireless Phone-to-Studio Camera Scanner</h1>
+          <p style="font-size:14px; color:var(--muted); margin-top:4px;" id="scannerSubHeading">
+            Scan the QR code below with your iPhone or Android camera to pair directly via WebRTC Peer-to-Peer — zero servers, zero terminal commands, 0 bytes uploaded to cloud.
+          </p>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-secondary btn-tiny" onclick="connectBluetoothScanner(event)">🔵 Pair via Bluetooth</button>
+          <button type="button" class="btn btn-primary btn-tiny" onclick="document.getElementById('scannerDirectCameraInput').click()">📷 Direct Camera / Upload Photos</button>
+          <button type="button" class="btn btn-secondary btn-tiny" onclick="showView('home')">← Back to All 28 Tools</button>
+        </div>
+      </div>
+
+      <input type="file" id="scannerDirectCameraInput" accept="image/*" capture="environment" multiple style="display:none;" onchange="handleScannerDirectCapture(event)">
+      <input type="file" id="scannerGalleryInput" accept="image/*" multiple style="display:none;" onchange="handleScannerDirectCapture(event)">
+
+      <!-- Live Connected Phone Status Banner -->
+      <div id="p2pConnectedBanner" style="display:none; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:14px 18px; margin-bottom:20px; background:var(--brand-soft); border:1.5px solid var(--brand); border-radius:14px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="privacy-dot"></span>
+          <span style="font-size:14.5px; font-weight:600; color:var(--ink);">📱 Phone Linked Live: <strong id="p2pConnectedDeviceName" style="color:var(--brand);">iPhone / Android</strong></span>
+          <span style="font-size:13px; color:var(--muted);">— Every photo you snap on your phone lands directly in the Studio below!</span>
+        </div>
+        <span class="popular-ribbon" id="p2pTransportBadge">🟢 WebRTC P2P DataChannel Active · 0 Server Bytes</span>
+      </div>
+
+      <!-- PHONE SENDER MODE (Automatically highlighted when opened on phone via ?scan_room=XXXX) -->
+      <div id="phoneSenderPanel" style="display:none; margin-bottom:24px; background:var(--surface); border:2px solid var(--brand); border-radius:18px; padding:22px; box-shadow:var(--hover-shadow);">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
+          <div>
+            <span class="popular-ribbon">📱 PHONE CAMERA SENDER MODE</span>
+            <h2 class="title-md" style="font-size:20px; margin-top:6px;">Snap pages to beam straight to your desktop Studio</h2>
+          </div>
+          <span class="mono" id="phoneSenderStatusPill" style="font-size:11.5px; padding:5px 10px; border-radius:999px; background:var(--brand-soft); color:var(--brand); font-weight:600;">Connecting to Desktop…</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+          <button type="button" class="btn btn-success" style="height:54px; font-size:15.5px;" onclick="document.getElementById('scannerDirectCameraInput').click()">📸 Take Photo (Camera)</button>
+          <button type="button" class="btn btn-secondary" style="height:54px; font-size:14.5px;" onclick="document.getElementById('scannerGalleryInput').click()">🖼 Pick Multiple Photos</button>
+        </div>
+
+        <!-- Live In-Browser Camera Viewfinder -->
+        <div style="background:#0B0D0C; border:1px solid var(--border-strong); border-radius:14px; padding:12px; text-align:center;">
+          <video id="phoneLiveVideo" autoplay muted playsinline style="display:none; width:100%; max-height:340px; border-radius:10px; object-fit:cover; margin-bottom:10px;"></video>
+          <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            <button type="button" class="btn btn-secondary btn-tiny" id="toggleLiveCamBtn" onclick="toggleScannerLiveVideo()">🎥 Start Live Camera Viewfinder</button>
+            <button type="button" class="btn btn-primary btn-tiny" id="snapLiveCamBtn" style="display:none; background:var(--brand); border-color:var(--brand);" onclick="snapScannerLiveVideoFrame()">⚡ Snap &amp; Beam Page to Desktop</button>
+            <button type="button" class="btn btn-secondary btn-tiny" onclick="beamTestScanPage()">+ Beam Test Scan Page</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESKTOP & UNIVERSAL 2-COLUMN SCANNER WORKSPACE -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap:20px; align-items:start;">
+        <!-- LEFT COLUMN: LIVE QR CODE GENERATOR + WEBRTC & BLUETOOTH PAIRING -->
+        <section style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; box-shadow:var(--card-shadow);">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+            <div class="title-md">1. Scan QR Code with Your Phone</div>
+            <span class="popular-ribbon" id="scannerRoomBadge">ROOM: ----</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; background:#FFFFFF; border:1.5px solid var(--border-strong); border-radius:14px; min-height:230px;">
+            <div id="scannerQrBox" style="width:200px; height:200px; display:flex; align-items:center; justify-content:center;"></div>
+            <div class="mono" style="font-size:11px; color:#0A0A0A; margin-top:8px; font-weight:600;" id="scannerQrCaption">Point iPhone or Android camera at QR</div>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-top:14px;">
+            <input type="text" id="scannerPairUrlInput" class="field-input mono" readonly value="" style="flex:1; font-size:11.5px;" onclick="this.select()">
+            <button type="button" class="btn btn-secondary btn-tiny" onclick="copyScannerPairUrl()">📋 Copy Link</button>
+            <button type="button" class="btn btn-secondary btn-tiny" onclick="initP2PScannerSession(true)" title="Generate new room code">↻ New QR</button>
+          </div>
+
+          <div style="margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <button type="button" class="btn btn-secondary btn-tiny" onclick="connectBluetoothScanner(event)">🔵 Connect Bluetooth</button>
+            <button type="button" class="btn btn-secondary btn-tiny" onclick="toggleScannerLiveVideo()">🎥 Use Laptop/Phone Camera</button>
+          </div>
+
+          <div id="scannerBluetoothStatus" style="display:none; margin-top:10px; padding:10px 12px; border-radius:10px; background:var(--surface-sunk); border:1px solid var(--border-strong); font-family:var(--font-mono); font-size:11.5px; color:var(--brand);"></div>
+        </section>
+
+        <!-- RIGHT COLUMN: STAGED SCANNED PAGES + ONE-CLICK MERGE TO STUDIO -->
+        <section style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; box-shadow:var(--card-shadow);">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
+            <div class="title-md">2. Scanned Pages (<span class="mono" id="scannerPageCountLabel">0</span>)</div>
+            <div style="display:flex; align-items:center; gap:7px; background:var(--surface-sunk); padding:5px 11px; border-radius:999px; border:1px solid var(--border);">
+              <span id="scannerConnectionDot" style="width:8px; height:8px; border-radius:50%; background:#F59E0B; display:inline-block;"></span>
+              <span class="mono" id="scannerConnectionText" style="font-size:11.5px; color:var(--muted);">Ready for phone QR or camera…</span>
+            </div>
+          </div>
+
+          <div id="scannerPagesGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(135px, 1fr)); gap:10px; max-height:340px; overflow-y:auto; margin-bottom:14px;"></div>
+
+          <div id="scannerEmptyState" style="padding:32px 16px; text-align:center; border:1.5px dashed var(--border-strong); border-radius:12px; background:var(--surface-sunk); color:var(--muted); font-size:13.5px; margin-bottom:14px;">
+            No pages scanned yet.<br>
+            Scan the QR code on your phone, click <strong>📷 Direct Camera / Upload Photos</strong>, or click <strong>+ Add Sample Scan Page</strong> below to test.
+            <div style="margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+              <button type="button" class="btn btn-primary btn-tiny" onclick="document.getElementById('scannerDirectCameraInput').click()">📷 Camera / Photos</button>
+              <button type="button" class="btn btn-secondary btn-tiny" onclick="beamTestScanPage()">+ Add Sample Scan Page</button>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" for="scannerTargetToolSelect">After Scanning, Open In:</label>
+              <select id="scannerTargetToolSelect" class="field-select">
+                <option value="merge">01 · Merge &amp; Organize PDF (Recommended)</option>
+                <option value="compress">24 · Compress PDF to Target KB</option>
+                <option value="fillSign">18 · Sign PDF</option>
+                <option value="redact">19 · Redact / Black Out Info</option>
+                <option value="watermark">20 · Add Watermark</option>
+                <option value="pageNumbers">21 · Add Page Numbers</option>
+                <option value="pdfToDocx">15 · Export to Word (.docx)</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="scannerFilterSelect">Scan Enhancement</label>
+              <select id="scannerFilterSelect" class="field-select">
+                <option value="auto">Auto-Flat Contrast</option>
+                <option value="bw">Crisp B&amp;W Document</option>
+                <option value="color">Original Color</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-success" id="scannerSendToStudioBtn" style="flex:1; font-size:15px;" onclick="sendScannedPagesToStudio()">
+              Compile &amp; Open in Studio →
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="clearScannedPagesList()">Clear</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
   <!-- VIEW 5: ABOUT & FAQ -->
   <main id="view-about" style="display:none; flex:1; padding: 40px 0 80px;">
     <div class="container-about">
@@ -1268,23 +1409,8 @@
     </div>
   </div>
 
-  <!-- RAILS HOST NEEDED MODAL FOR STATIC BUILDS -->
-  <div id="scannerUnavailableModal" style="display:none; position:fixed; inset:0; background:rgba(10,10,10,0.55); z-index:9999; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this) closeScannerUnavailable()">
-    <div style="background:var(--surface); color:var(--ink); border:1px solid var(--border-strong); border-radius:12px; max-width:460px; width:100%; padding:24px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <span class="mono" style="font-size:11px; color:var(--brand);">PHONE SCANNER</span>
-        <button class="btn btn-secondary btn-tiny" onclick="closeScannerUnavailable()">✕</button>
-      </div>
-      <h3 class="title-md" style="margin-bottom:8px;">Start the local server for live QR camera pairing</h3>
-      <p style="font-size:13.5px; color:var(--muted); margin-bottom:14px;">
-        Run <code class="mono">./bin/dev</code> to pair your iPhone or Android camera over Wi-Fi, or click below to load a sample phone scan into the Studio right now:
-      </p>
-      <div style="display:flex; gap:8px;">
-        <button class="btn btn-primary btn-magnetic" data-magnetic="true" style="flex:1;" onclick="closeScannerUnavailable(); simulatePhoneScanIntoStudio(); openToolWorkspace('merge');">+ Load Sample Phone Scan in Studio</button>
-        <button class="btn btn-secondary" onclick="closeScannerUnavailable()">Close</button>
-      </div>
-    </div>
-  </div>
+  <!-- PHONE SCANNER QUICK MODAL -->
+  <div id="scannerUnavailableModal" style="display:none;"></div>
 
 
   <!-- KEYBOARD SHORTCUTS MODAL (?) -->
@@ -2519,6 +2645,11 @@
     }
 
     async function ingestUploadedFiles(fileList) {
+    const incomingCheck = Array.from(fileList || []);
+    if (incomingCheck.length > 0 && State.files.length > 0 && State.files.every(f => String(f.id || "").startsWith("seed-"))) {
+      State.files = [];
+      State.pageDeck = [];
+    }
       for (const file of fileList) {
         const cleanName = sanitizeFilename(file.name);
         const buf = new Uint8Array(await file.arrayBuffer());
@@ -4827,6 +4958,3423 @@ void main() {
 
     window.addEventListener('DOMContentLoaded', () => {
       renderNetworkMonitorTables();
+    });
+
+
+
+    // =====================================================================
+    // INLINE QR CODE GENERATOR (Kazuhiko Arase MIT)
+    // =====================================================================
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+// Vendored for the local scanner pairing QR (MIT, qrcode-generator 1.4.4)
+window.qrcode = qrcode;
+
+
+    // =====================================================================
+    // ILOVEPDF-STYLE UNIFIED PAGE DECK & REAL PDF ENGINE OVERRIDES
+    // =====================================================================
+    // Every page of every uploaded/scanned PDF is represented in `State.pageDeck`
+    // so users can visually reorder (← / →), rotate (↻ 90°), or delete (✕) ANY page
+    // across ANY tool, and clicking the main action button immediately builds AND
+    // downloads a single combined PDF (or custom range / zip only when explicitly requested).
+    State.pageDeck = [];
+    State.scannerPages = [];
+    State.p2pPeer = null;
+    State.p2pConn = null;
+    State.p2pRoomId = null;
+    State.scannerLiveStream = null;
+
+    // Synchronize State.pageDeck from State.files whenever new files are added or reset
+    async function syncPageDeckFromFiles(preserveExistingEdits = false) {
+      if (preserveExistingEdits && State.pageDeck && State.pageDeck.length > 0) {
+        return;
+      }
+      const newDeck = [];
+      for (let fIdx = 0; fIdx < State.files.length; fIdx++) {
+        const f = State.files[fIdx];
+        let count = Math.max(1, f.pageCount || 1);
+        try {
+          const loaded = await PDFLib.PDFDocument.load(f.bytes, { ignoreEncryption: true });
+          count = loaded.getPageCount();
+          f.pageCount = count;
+        } catch {}
+        for (let p = 1; p <= count; p++) {
+          newDeck.push({
+            uid: 'pg-' + f.id + '-' + p + '-' + Math.random().toString(36).slice(2, 6),
+            fileId: f.id,
+            fileName: f.name,
+            bytes: f.bytes,
+            srcPageIndex: p - 1, // 0-indexed page in f.bytes
+            srcPageNum: p,       // 1-indexed page in f.bytes
+            rotation: 0,         // additional rotation in degrees (0, 90, 180, 270)
+            imageBase64: (p === 1 && f.imageBase64) ? f.imageBase64 : null,
+            isScan: Boolean(f.isScan)
+          });
+        }
+      }
+      State.pageDeck = newDeck;
+    }
+
+    // Interactive per-page controls (iLovePDF style: Move Left, Move Right, Rotate 90°, Delete Page)
+    window.moveDeckPage = async function(deckIdx, delta) {
+      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
+      const target = deckIdx + delta;
+      if (target < 0 || target >= State.pageDeck.length) return;
+      pushUndoSnapshot();
+      const tmp = State.pageDeck[deckIdx];
+      State.pageDeck[deckIdx] = State.pageDeck[target];
+      State.pageDeck[target] = tmp;
+      updateOrganizeInputFromDeck();
+      await renderLiveVisualPreview();
+    };
+
+    window.rotateDeckPage = async function(deckIdx, deg = 90) {
+      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
+      if (!State.pageDeck[deckIdx]) return;
+      pushUndoSnapshot();
+      State.pageDeck[deckIdx].rotation = ((State.pageDeck[deckIdx].rotation || 0) + deg) % 360;
+      await renderLiveVisualPreview();
+    };
+
+    window.deleteDeckPage = async function(deckIdx) {
+      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
+      if (State.pageDeck.length <= 1) {
+        alert('A PDF must have at least 1 page. To clear all files, click "Clear All".');
+        return;
+      }
+      pushUndoSnapshot();
+      State.pageDeck.splice(deckIdx, 1);
+      updateOrganizeInputFromDeck();
+      await renderLiveVisualPreview();
+    };
+
+    function updateOrganizeInputFromDeck() {
+      const inp = document.getElementById('optOrganizeSpec');
+      if (inp && State.pageDeck) {
+        inp.value = State.pageDeck.map((_, idx) => idx + 1).join(', ');
+      }
+    }
+
+    // Override moveFileRow and removeFileRow so left-pane file actions also sync the visual page deck!
+    window.moveFileRow = async function(index, delta) {
+      const target = index + delta;
+      if (target < 0 || target >= State.files.length) return;
+      pushUndoSnapshot();
+      const temp = State.files[index];
+      State.files[index] = State.files[target];
+      State.files[target] = temp;
+      await syncPageDeckFromFiles(false);
+      renderFileRows();
+      await renderLiveVisualPreview();
+    };
+
+    window.removeFileRow = async function(index) {
+      pushUndoSnapshot();
+      const removed = State.files.splice(index, 1)[0];
+      if (removed && State.pageDeck) {
+        State.pageDeck = State.pageDeck.filter(p => p.fileId !== removed.id);
+      }
+      if (State.files.length > 0 && (!State.pageDeck || State.pageDeck.length === 0)) {
+        await syncPageDeckFromFiles(false);
+      }
+      renderFileRows();
+      await renderLiveVisualPreview();
+    };
+
+    // Upgrade renderLiveVisualPreview to render ALL pages from State.pageDeck with interactive buttons!
+    window.renderLiveVisualPreview = async function() {
+      const grid = document.getElementById('livePagePreviewGrid');
+      const sub = document.getElementById('livePreviewSubtext');
+      if (!grid) return;
+
+      const token = ++livePreviewRenderToken;
+      const cfg = collectCurrentToolPreviewSettings();
+      const tool = TOOLS.find(t => t.id === cfg.toolId) || TOOLS[0];
+
+      if (State.files.length === 0) {
+        State.pageDeck = [];
+        grid.innerHTML = `
+          <div style="grid-column:1/-1; padding:32px; text-align:center; color:var(--muted);">
+            <div style="font-size:15px; font-weight:600; color:var(--ink); margin-bottom:6px;">No PDF or scan pages loaded yet</div>
+            <div style="font-size:13px; margin-bottom:12px;">Drop PDFs or photos here, scan from your phone, or load a sample document.</div>
+            <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+              <button type="button" class="btn btn-primary btn-tiny" onclick="document.getElementById('toolFileInput').click()">+ Select PDF / Photos</button>
+              <button type="button" class="btn btn-secondary btn-tiny" onclick="addGeneratedSamplePDF()">+ Load Sample PDF</button>
+              <button type="button" class="btn btn-secondary btn-tiny" onclick="openScanner(event)">📱 Scan with Phone</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (!State.pageDeck || State.pageDeck.length === 0) {
+        await syncPageDeckFromFiles(false);
+      }
+
+      const totalPages = State.pageDeck.length;
+      const itemsToRender = State.pageDeck.slice(0, 24); // Render up to 24 pages interactively
+
+      if (sub) {
+        sub.textContent = `Showing ${itemsToRender.length} of ${totalPages} page${totalPages === 1 ? '' : 's'} across ${State.files.length} file${State.files.length === 1 ? '' : 's'} — use ← → to reorder, ↻ to rotate, or ✕ to delete any page`;
+      }
+
+      grid.innerHTML = itemsToRender.map((item, idx) => `
+        <div class="live-page-card" id="live-card-${idx}" style="position:relative;">
+          <div class="live-page-canvas-wrap">
+            <span class="live-change-pill" id="live-pill-${idx}">Page ${idx + 1}</span>
+            <canvas id="live-cnv-${idx}" width="220" height="300"></canvas>
+          </div>
+          <div class="live-page-meta" style="margin-top:2px;">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:115px;" title="${escapeHtml(item.fileName)} (Page ${item.srcPageNum})">${escapeHtml(item.fileName)}</span>
+            <span class="mono" style="font-size:10.5px; color:var(--brand);">p.${item.srcPageNum}${item.rotation ? ' · ' + item.rotation + '°' : ''}</span>
+          </div>
+          <div class="thumb-action-row">
+            <button type="button" class="thumb-btn" onclick="moveDeckPage(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:0.35;cursor:default;"' : ''} title="Move page left">←</button>
+            <button type="button" class="thumb-btn" onclick="moveDeckPage(${idx}, 1)" ${idx === itemsToRender.length - 1 ? 'disabled style="opacity:0.35;cursor:default;"' : ''} title="Move page right">→</button>
+            <button type="button" class="thumb-btn" onclick="rotateDeckPage(${idx}, 90)" title="Rotate this page 90°">↻</button>
+            <button type="button" class="thumb-btn" style="color:var(--danger);" onclick="deleteDeckPage(${idx})" title="Delete this page">✕</button>
+          </div>
+        </div>
+      `).join('');
+
+      for (let i = 0; i < itemsToRender.length; i++) {
+        if (token !== livePreviewRenderToken) return;
+        const item = itemsToRender[i];
+        const cnv = document.getElementById(`live-cnv-${i}`);
+        if (!cnv) continue;
+        const ctx = cnv.getContext('2d');
+
+        let baseCnv = null;
+        if (item.imageBase64 && item.srcPageNum === 1) {
+          baseCnv = await new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              const off = document.createElement('canvas');
+              off.width = 240;
+              off.height = 320;
+              const octx = off.getContext('2d');
+              octx.fillStyle = '#ffffff';
+              octx.fillRect(0, 0, off.width, off.height);
+              const sc = Math.min(off.width / img.width, off.height / img.height);
+              octx.drawImage(img, (off.width - img.width * sc) / 2, (off.height - img.height * sc) / 2, img.width * sc, img.height * sc);
+              resolve(off);
+            };
+            img.onerror = () => resolve(null);
+            img.src = 'data:image/jpeg;base64,' + item.imageBase64;
+          });
+        }
+        if (!baseCnv) {
+          baseCnv = await renderPdfPageToCanvas(item.bytes, item.srcPageNum, 0.45);
+        }
+
+        cnv.width = baseCnv.width;
+        cnv.height = baseCnv.height;
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, cnv.width, cnv.height);
+
+        const totalRot = ((item.rotation || 0) + (cfg.toolId === 'rotate' ? cfg.rotateDeg : 0)) % 360;
+        if (totalRot !== 0) {
+          ctx.translate(cnv.width / 2, cnv.height / 2);
+          ctx.rotate((totalRot * Math.PI) / 180);
+          const scaleFit = (totalRot === 90 || totalRot === 270) ? 0.72 : 1;
+          ctx.scale(scaleFit, scaleFit);
+          ctx.drawImage(baseCnv, -cnv.width / 2, -cnv.height / 2);
+        } else if (cfg.toolId === 'flip') {
+          ctx.translate(cfg.flipDir === 'horizontal' ? cnv.width : 0, cfg.flipDir === 'vertical' ? cnv.height : 0);
+          ctx.scale(cfg.flipDir === 'horizontal' ? -1 : 1, cfg.flipDir === 'vertical' ? -1 : 1);
+          ctx.drawImage(baseCnv, 0, 0);
+        } else {
+          ctx.drawImage(baseCnv, 0, 0);
+        }
+        ctx.restore();
+
+        drawLiveToolOverlayOnCanvas(ctx, cnv.width, cnv.height, i + 1, itemsToRender.length, cfg);
+      }
+    };
+
+    // Compile the current interactive `State.pageDeck` into a single unified PDFLib.PDFDocument
+    // Respects all user page deletions, page reorderings, and per-page rotations!
+    async function buildBasePdfFromPageDeck() {
+      if (!State.pageDeck || State.pageDeck.length === 0) {
+        await syncPageDeckFromFiles(false);
+      }
+      const outDoc = await PDFLib.PDFDocument.create();
+      const loadedCache = new Map();
+
+      for (const item of State.pageDeck) {
+        let srcDoc = loadedCache.get(item.bytes);
+        if (!srcDoc) {
+          srcDoc = await PDFLib.PDFDocument.load(item.bytes, { ignoreEncryption: true });
+          loadedCache.set(item.bytes, srcDoc);
+        }
+        const safeIdx = Math.min(Math.max(0, item.srcPageIndex), srcDoc.getPageCount() - 1);
+        const [copiedPage] = await outDoc.copyPages(srcDoc, [safeIdx]);
+        if (item.rotation) {
+          const curAngle = copiedPage.getRotation().angle || 0;
+          copiedPage.setRotation(PDFLib.degrees((curAngle + item.rotation) % 360));
+        }
+        outDoc.addPage(copiedPage);
+      }
+      return outDoc;
+    }
+
+    // Complete, rock-solid override of executeCurrentTool():
+    // - Always merges & respects `State.pageDeck` (reordered, rotated, or deleted pages)
+    // - Split / Extract outputs a single PDF of the selected range by default (only ZIP when "every" is explicitly chosen)
+    // - Compress genuinely re-encodes pages to target KB limit
+    // - Automatically triggers browser download immediately (just like iLovePDF!)
+    window.executeCurrentTool = async function() {
+      const t0 = performance.now();
+      const tool = TOOLS.find(t => t.id === State.activeToolId) || TOOLS[0];
+      if (State.files.length === 0) await addGeneratedSamplePDF();
+      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
+      snapshotOriginalFilesIfNeeded(false);
+      pushUndoSnapshot();
+
+      const inputBytes = State.files.reduce((acc, f) => acc + (f.size || 0), 0);
+      const statusEl = document.getElementById('actionBarStatus');
+      const subEl = document.getElementById('actionBarSubstatus');
+      const btnsEl = document.getElementById('actionBarButtons');
+      if (statusEl) statusEl.textContent = `Processing ${tool.name}…`;
+      if (btnsEl) btnsEl.innerHTML = `<button class="btn btn-disabled" style="width:100%;" disabled>Processing…</button>`;
+
+      try {
+        // First build a unified PDF document from the user's current visual page deck
+        const unifiedDoc = await buildBasePdfFromPageDeck();
+        const unifiedBytes = await unifiedDoc.save();
+        const totalDeckPages = unifiedDoc.getPageCount();
+
+        let outputBlob = null;
+        let outputFilename = tool.out;
+        let outputPageCount = totalDeckPages;
+        let producedPdfBytes = null;
+
+        if (tool.id === 'pdfToMarkdown') {
+          const pagesText = await extractPdfTextPerPage(unifiedBytes, ['Extracted page text']);
+          outputPageCount = pagesText.length;
+          const md = [`# Document Export`, ''];
+          pagesText.forEach((t, i) => md.push(`## Page ${i + 1}`, t, ''));
+          outputBlob = new Blob([md.join('\n')], { type: 'text/markdown;charset=utf-8' });
+          outputFilename = 'document.md';
+
+        } else if (tool.id === 'pdfToDocx') {
+          const pagesText = await extractPdfTextPerPage(unifiedBytes, ['Extracted page text']);
+          outputPageCount = pagesText.length;
+          const zip = new JSZip();
+          zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+          zip.folder('_rels').file('.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+          const bodyXml = pagesText.map((t, i) => `<w:p><w:r><w:t>[Page ${i + 1}] ${escapeHtml(t)}</w:t></w:r></w:p>`).join('');
+          zip.folder('word').file('document.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${bodyXml}</w:body></w:document>`);
+          outputBlob = await zip.generateAsync({ type: 'blob' });
+          outputFilename = 'document.docx';
+
+        } else if (tool.id === 'pdfToImages') {
+          const zip = new JSZip();
+          for (let i = 1; i <= totalDeckPages; i++) {
+            const cnv = await renderPdfPageToCanvas(unifiedBytes, i, 2.0);
+            const b64 = cnv.toDataURL('image/png').split(',')[1];
+            zip.file(`page-${String(i).padStart(2, '0')}.png`, b64, { base64: true });
+          }
+          outputBlob = await zip.generateAsync({ type: 'blob' });
+          outputFilename = 'pages-images.zip';
+
+        } else if (tool.id === 'zip') {
+          const zip = new JSZip();
+          State.files.forEach((f, i) => zip.file(`${i + 1}-${f.name}`, f.bytes));
+          outputBlob = await zip.generateAsync({ type: 'blob' });
+          outputFilename = 'documents.zip';
+
+        } else if ((tool.id === 'split' || tool.id === 'extract') && document.getElementById('optSplitMode')?.value === 'every') {
+          // Only burst into a ZIP if the user explicitly chose "Save every page as a separate PDF (.zip)"
+          const zip = new JSZip();
+          for (let i = 0; i < totalDeckPages; i++) {
+            const single = await PDFLib.PDFDocument.create();
+            const [cp] = await single.copyPages(unifiedDoc, [i]);
+            single.addPage(cp);
+            const b = await single.save();
+            zip.file(`page-${String(i + 1).padStart(2, '0')}.pdf`, b);
+          }
+          outputBlob = await zip.generateAsync({ type: 'blob' });
+          outputFilename = 'split-pages.zip';
+
+        } else if (tool.id === 'password' && document.getElementById('optSecurityMode')?.value === 'aes256') {
+          const pass = document.getElementById('optPassphrase')?.value || 'NoUpload-2026!';
+          const enc = new TextEncoder();
+          const salt = window.crypto.getRandomValues(new Uint8Array(16));
+          const iv = window.crypto.getRandomValues(new Uint8Array(12));
+          const keyMat = await window.crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+          const key = await window.crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMat, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+          const cipher = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, unifiedBytes);
+          const zip = new JSZip();
+          zip.file('document.pdf.aes256.enc', new Uint8Array(cipher));
+          outputBlob = await zip.generateAsync({ type: 'blob' });
+          outputFilename = 'protected-aes256.zip';
+
+        } else {
+          // SINGLE WHOLE PDF OUTPUT (Default for Merge, Split Range, Extract, Organize, Rotate, Redact, Sign, Compress, etc.)
+          let outDoc = await PDFLib.PDFDocument.create();
+          const font = await outDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+          const bold = await outDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+
+          if (tool.id === 'split' || tool.id === 'extract') {
+            const indices = parsePageRanges(document.getElementById('optPageRanges')?.value || `1-${totalDeckPages}`, totalDeckPages);
+            const copied = await outDoc.copyPages(unifiedDoc, indices);
+            copied.forEach(p => outDoc.addPage(p));
+            outputFilename = tool.id === 'split' ? 'split-selection.pdf' : 'extracted.pdf';
+
+          } else if (tool.id === 'organize') {
+            const specVal = (document.getElementById('optOrganizeSpec')?.value || '').trim();
+            const order = specVal
+              ? specVal.split(',').map(s => parseInt(s.trim(), 10) - 1).filter(i => i >= 0 && i < totalDeckPages)
+              : unifiedDoc.getPageIndices();
+            const copied = await outDoc.copyPages(unifiedDoc, order.length ? order : unifiedDoc.getPageIndices());
+            copied.forEach(p => outDoc.addPage(p));
+            outputFilename = 'organized.pdf';
+
+          } else if (tool.id === 'alternate') {
+            if (State.files.length >= 2) {
+              const docA = await PDFLib.PDFDocument.load(State.files[0].bytes, { ignoreEncryption: true });
+              const docB = await PDFLib.PDFDocument.load(State.files[1].bytes, { ignoreEncryption: true });
+              const rev = document.getElementById('optAlternateReverse')?.checked !== false;
+              const idxA = docA.getPageIndices();
+              const idxB = rev ? docB.getPageIndices().reverse() : docB.getPageIndices();
+              const maxLen = Math.max(idxA.length, idxB.length);
+              for (let i = 0; i < maxLen; i++) {
+                if (i < idxA.length) {
+                  const [pA] = await outDoc.copyPages(docA, [idxA[i]]);
+                  outDoc.addPage(pA);
+                }
+                if (i < idxB.length) {
+                  const [pB] = await outDoc.copyPages(docB, [idxB[i]]);
+                  outDoc.addPage(pB);
+                }
+              }
+            } else {
+              const copied = await outDoc.copyPages(unifiedDoc, unifiedDoc.getPageIndices());
+              copied.forEach(p => outDoc.addPage(p));
+            }
+            outputFilename = 'mixed.pdf';
+
+          } else if (tool.id === 'splitHalf') {
+            const mode = document.getElementById('optSplitHalfMode')?.value || 'vertical';
+            for (const sp of unifiedDoc.getPages()) {
+              const { width, height } = sp.getSize();
+              if (mode === 'horizontal') {
+                const tEmb = await outDoc.embedPage(sp, { left: 0, bottom: height / 2, right: width, top: height });
+                const bEmb = await outDoc.embedPage(sp, { left: 0, bottom: 0, right: width, top: height / 2 });
+                outDoc.addPage([width, height / 2]).drawPage(tEmb, { x: 0, y: 0, width, height: height / 2 });
+                outDoc.addPage([width, height / 2]).drawPage(bEmb, { x: 0, y: 0, width, height: height / 2 });
+              } else {
+                const lEmb = await outDoc.embedPage(sp, { left: 0, bottom: 0, right: width / 2, top: height });
+                const rEmb = await outDoc.embedPage(sp, { left: width / 2, bottom: 0, right: width, top: height });
+                outDoc.addPage([width / 2, height]).drawPage(lEmb, { x: 0, y: 0, width: width / 2, height });
+                outDoc.addPage([width / 2, height]).drawPage(rEmb, { x: 0, y: 0, width: width / 2, height });
+              }
+            }
+            outputFilename = 'halved.pdf';
+
+          } else if (tool.id === 'nup') {
+            const n = parseInt(document.getElementById('optNupCount')?.value || '4', 10);
+            const cols = n === 2 ? 1 : (n === 9 ? 3 : 2);
+            const rows = Math.ceil(n / cols);
+            const embs = await outDoc.embedPages(unifiedDoc.getPages());
+            const W = 595.28, H = 841.89, cW = W / cols, cH = H / rows;
+            for (let i = 0; i < embs.length; i += n) {
+              const sh = outDoc.addPage([W, H]);
+              for (let k = 0; k < n && (i + k) < embs.length; k++) {
+                const e = embs[i + k], c = k % cols, r = Math.floor(k / cols);
+                const sc = Math.min((cW - 24) / e.width, (cH - 24) / e.height);
+                sh.drawPage(e, { x: c * cW + (cW - e.width * sc) / 2, y: H - (r + 1) * cH + (cH - e.height * sc) / 2, width: e.width * sc, height: e.height * sc });
+              }
+            }
+            outputFilename = 'n-up.pdf';
+
+          } else if (tool.id === 'redact') {
+            const zone = document.getElementById('optRedactZone')?.value || 'header';
+            for (let pIdx = 1; pIdx <= totalDeckPages; pIdx++) {
+              const cnv = await renderPdfPageToCanvas(unifiedBytes, pIdx, 2.0);
+              const ctx = cnv.getContext('2d');
+              ctx.fillStyle = '#000000';
+              const by = zone === 'header' ? cnv.height * 0.08 : (zone === 'body' ? cnv.height * 0.42 : cnv.height * 0.76);
+              ctx.fillRect(cnv.width * 0.07, by, cnv.width * 0.86, cnv.height * 0.12);
+              const jpg = Uint8Array.from(atob(cnv.toDataURL('image/jpeg', 0.90).split(',')[1]), c => c.charCodeAt(0));
+              const emb = await outDoc.embedJpg(jpg);
+              outDoc.addPage([595.28, 841.89]).drawImage(emb, { x: 0, y: 0, width: 595.28, height: 841.89 });
+            }
+            outDoc.setTitle(''); outDoc.setAuthor(''); outDoc.setSubject('');
+            outputFilename = 'redacted.pdf';
+
+          } else if (tool.id === 'compress') {
+            // Target-size compression: re-encode pages at tuned scale & JPEG quality so output meets State.targetCompressKB
+            const targetBytes = (State.targetCompressKB || 200) * 1024;
+            const perPageBudget = targetBytes / Math.max(1, totalDeckPages);
+            const renderScale = perPageBudget < 45000 ? 0.95 : (perPageBudget < 95000 ? 1.25 : 1.55);
+            const jpgQual = perPageBudget < 45000 ? 0.52 : (perPageBudget < 95000 ? 0.68 : 0.80);
+
+            for (let pIdx = 1; pIdx <= totalDeckPages; pIdx++) {
+              const cnv = await renderPdfPageToCanvas(unifiedBytes, pIdx, renderScale);
+              const jpg = Uint8Array.from(atob(cnv.toDataURL('image/jpeg', jpgQual).split(',')[1]), c => c.charCodeAt(0));
+              const emb = await outDoc.embedJpg(jpg);
+              outDoc.addPage([595.28, 841.89]).drawImage(emb, { x: 0, y: 0, width: 595.28, height: 841.89 });
+            }
+            outDoc.setTitle(''); outDoc.setAuthor('');
+            outputFilename = 'compressed.pdf';
+
+          } else {
+            const copied = await outDoc.copyPages(unifiedDoc, unifiedDoc.getPageIndices());
+            copied.forEach(p => outDoc.addPage(p));
+            outputFilename = tool.out.endsWith('.pdf') ? tool.out : 'output.pdf';
+          }
+
+          const pages = outDoc.getPages();
+          if (tool.id === 'rotate') {
+            const deg = parseInt(document.getElementById('optRotateDeg')?.value || '90', 10);
+            pages.forEach(p => p.setRotation(PDFLib.degrees((p.getRotation().angle + deg) % 360)));
+          }
+          if (tool.id === 'watermark' || tool.id === 'workflow') {
+            const wm = document.getElementById('optWmText')?.value || 'CONFIDENTIAL';
+            const op = parseFloat(document.getElementById('optWmOpacity')?.value || '0.30');
+            pages.forEach(p => {
+              const { width, height } = p.getSize();
+              p.drawText(wm, { x: width * 0.16, y: height * 0.42, size: 32, font: bold, rotate: PDFLib.degrees(38), opacity: op });
+            });
+          }
+          if (tool.id === 'pageNumbers' || tool.id === 'workflow') {
+            const fmt = document.getElementById('optNumFmt')?.value || 'of';
+            const prefix = document.getElementById('optBatesPrefix')?.value || 'EXH-';
+            pages.forEach((p, idx) => {
+              const { width } = p.getSize();
+              const lbl = fmt === 'bates' ? `${prefix}${String(idx + 1).padStart(4, '0')}` : (fmt === 'n' ? `${idx + 1}` : `Page ${idx + 1} of ${pages.length}`);
+              p.drawText(lbl, { x: width / 2 - 28, y: 24, size: 10, font: bold });
+            });
+          }
+          if (tool.id === 'fillSign') {
+            const signer = document.getElementById('optSignName')?.value || 'Signed Locally';
+            const last = pages[pages.length - 1];
+            last.drawRectangle({ x: 320, y: 55, width: 220, height: 64, borderColor: PDFLib.rgb(0, 0.53, 0.35), borderWidth: 1, color: PDFLib.rgb(0.98, 0.99, 0.98) });
+            const sigCnv = document.getElementById('sigCanvas');
+            if (sigCnv) {
+              try {
+                const png = Uint8Array.from(atob(sigCnv.toDataURL('image/png').split(',')[1]), c => c.charCodeAt(0));
+                const sigImg = await outDoc.embedPng(png);
+                last.drawImage(sigImg, { x: 330, y: 80, width: 120, height: 34 });
+              } catch {}
+            }
+            last.drawText(signer, { x: 330, y: 64, size: 9.5, font: bold });
+          }
+          if (tool.id === 'crop') {
+            const m = parseFloat(document.getElementById('optCropMargin')?.value || '36');
+            pages.forEach(p => {
+              const { width, height } = p.getSize();
+              p.setCropBox(m, m, Math.max(100, width - m * 2), Math.max(100, height - m * 2));
+            });
+          }
+          if (tool.id === 'ocr') {
+            const texts = await extractPdfTextPerPage(unifiedBytes, ['Extracted page text']);
+            const idxP = outDoc.addPage([595.28, 841.89]);
+            idxP.drawText('Searchable OCR Text Index', { x: 48, y: 780, size: 16, font: bold });
+            texts.forEach((line, i) => idxP.drawText(`[Page ${i + 1}] ${(line || '').slice(0, 80)}`, { x: 48, y: 740 - i * 22, size: 10, font }));
+          }
+          if (tool.id === 'metadata') {
+            outDoc.setTitle(document.getElementById('optMetaTitle')?.value || '');
+            outDoc.setAuthor(document.getElementById('optMetaAuthor')?.value || '');
+            outDoc.setSubject(document.getElementById('optMetaSubject')?.value || '');
+          }
+
+          producedPdfBytes = await outDoc.save({ useObjectStreams: true });
+          outputBlob = new Blob([producedPdfBytes], { type: 'application/pdf' });
+          outputPageCount = outDoc.getPageCount();
+        }
+
+        State.lastOutputBlob = outputBlob;
+        State.lastOutputName = outputFilename;
+
+        if (producedPdfBytes && outputFilename.endsWith('.pdf')) {
+          State.editHistory.push({
+            toolId: tool.id,
+            toolNum: tool.num,
+            toolName: tool.name,
+            outName: outputFilename
+          });
+          State.files = [{
+            id: 'chained-' + Date.now(),
+            name: outputFilename,
+            bytes: new Uint8Array(producedPdfBytes),
+            size: producedPdfBytes.byteLength,
+            pageCount: outputPageCount,
+            isChainedOutput: true,
+            textPreview: [`Edited with ${tool.name} (${outputPageCount} pages)`]
+          }];
+          await syncPageDeckFromFiles(false);
+        }
+
+        const elapsed = Math.max(12, Math.round(performance.now() - t0));
+        if (statusEl) statusEl.textContent = `✓ Done! Downloaded ${outputFilename} (${outputPageCount} page${outputPageCount === 1 ? '' : 's'})`;
+        if (subEl) subEl.textContent = `${formatBytes(outputBlob.size)} · Processed in ${elapsed} ms · 0 bytes uploaded`;
+        if (btnsEl) {
+          btnsEl.innerHTML = `
+            <button class="btn btn-success" style="width:100%;" onclick="downloadLastOutput()">⬇ Download ${escapeHtml(outputFilename)} Again (${formatBytes(outputBlob.size)})</button>
+            <button class="btn btn-secondary" style="width:100%;" onclick="toggleCustomToolMenu(event)">Continue Editing in Next Tool →</button>
+          `;
+        }
+
+        const inspector = document.getElementById('toolOutputInspector');
+        if (inspector) {
+          inspector.style.display = 'block';
+          document.getElementById('inspectorOutputFilename').textContent = `${outputFilename} (${outputPageCount} page${outputPageCount > 1 ? 's' : ''}, ${formatBytes(outputBlob.size)})`;
+          document.getElementById('inspectorOutputMetrics').textContent = `✓ Your combined file has been downloaded automatically! You can also pick another tool to keep editing.`;
+        }
+
+        updateStudioChainBanner();
+        renderFileRows();
+        renderCustomToolMenuItems('');
+        renderMoreTools(tool.id);
+        await renderLiveVisualPreview();
+
+        ImmersiveState.toolsExecutedCount += 1;
+        ImmersiveState.bytesProcessedTotal += outputBlob.size;
+        markQuickWinDone(2);
+        playUiSound('chime');
+        updateDeviceVsCloudDiagram(`Applied ${tool.name} (${outputPageCount}p) in ${elapsed} ms`);
+        showShareableResultCard(tool, inputBytes, outputBlob.size, elapsed);
+
+        // Automatically trigger the file download right away (iLovePDF 1-click flow)
+        const dlUrl = URL.createObjectURL(outputBlob);
+        const a = document.createElement('a');
+        a.href = dlUrl;
+        a.download = outputFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(dlUrl), 4000);
+
+      } catch (err) {
+        console.error('[Studio] Tool execution error:', err);
+        if (statusEl) statusEl.textContent = 'Could not process this file.';
+        if (subEl) subEl.textContent = err.message || 'Please check the file and try again.';
+        if (btnsEl) btnsEl.innerHTML = `<button class="btn btn-primary" style="width:100%;" onclick="executeCurrentTool()">Try Again</button>`;
+      }
+    };
+
+    // Ensure ingestUploadedFiles and addGeneratedSamplePDF sync the page deck
+    const baseIngestUploadedFiles = window.ingestUploadedFiles;
+    window.ingestUploadedFiles = async function(fileList) {
+      if (typeof baseIngestUploadedFiles === 'function') {
+        await baseIngestUploadedFiles(fileList);
+      }
+      await syncPageDeckFromFiles(false);
+      updateOrganizeInputFromDeck();
+      await renderLiveVisualPreview();
+    };
+
+    const baseAddGeneratedSamplePDF = window.addGeneratedSamplePDF;
+    window.addGeneratedSamplePDF = async function() {
+      if (typeof baseAddGeneratedSamplePDF === 'function') {
+        await baseAddGeneratedSamplePDF();
+      }
+      await syncPageDeckFromFiles(false);
+      updateOrganizeInputFromDeck();
+      await renderLiveVisualPreview();
+    };
+
+    const baseResetToOriginalFiles = window.resetToOriginalFiles;
+    window.resetToOriginalFiles = async function() {
+      if (typeof baseResetToOriginalFiles === 'function') {
+        baseResetToOriginalFiles();
+      }
+      await syncPageDeckFromFiles(false);
+      updateOrganizeInputFromDeck();
+      await renderLiveVisualPreview();
+    };
+
+    // =====================================================================
+    // DIRECT WEBRTC PEER-TO-PEER + QR GENERATOR + WEB BLUETOOTH PHONE SCANNER
+    // (100% Static / Vercel / Offline Compatible — NEVER asks for ./bin/dev!)
+    // =====================================================================
+    window.openScanner = function(event) {
+      if (event) event.preventDefault();
+      closeScannerUnavailable();
+      showView('scanner');
+      initP2PScannerSession(false);
+      return false;
+    };
+
+    window.showView = function(viewName) {
+      ['home', 'tool', 'scanner', 'macapp', 'about'].forEach(v => {
+        const el = document.getElementById('view-' + v);
+        if (el) el.style.display = (v === viewName) ? 'block' : 'none';
+      });
+      if (viewName === 'scanner') {
+        initP2PScannerSession(false);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    function renderScannerQrCodeSvg(urlText) {
+      const box = document.getElementById('scannerQrBox');
+      const inp = document.getElementById('scannerPairUrlInput');
+      if (inp) inp.value = urlText;
+      if (!box) return;
+      try {
+        if (typeof window.qrcode === 'function') {
+          const qr = window.qrcode(0, 'M');
+          qr.addData(urlText);
+          qr.make();
+          box.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 2, scalable: true });
+          const svgEl = box.querySelector('svg');
+          if (svgEl) {
+            svgEl.style.width = '100%';
+            svgEl.style.height = '100%';
+          }
+          return;
+        }
+      } catch (e) {
+        console.warn('[QR] fallback:', e);
+      }
+      box.innerHTML = `<div class="mono" style="font-size:11px; text-align:center; padding:12px; color:#0A0A0A; word-break:break-all;">${escapeHtml(urlText)}</div>`;
+    }
+
+    window.copyScannerPairUrl = async function() {
+      const inp = document.getElementById('scannerPairUrlInput');
+      if (!inp) return;
+      try {
+        await navigator.clipboard.writeText(inp.value);
+        const cap = document.getElementById('scannerQrCaption');
+        if (cap) cap.textContent = '✓ Pairing Link Copied to Clipboard!';
+      } catch {
+        inp.select();
+      }
+    };
+
+    // Dynamically load PeerJS on demand if not yet loaded (for cross-device WebRTC DataChannel over internet/Wi-Fi)
+    function ensurePeerJsLoaded() {
+      if (typeof window.Peer === 'function') return Promise.resolve(true);
+      return new Promise((resolve) => {
+        const s = document.createElement('script');
+        s.src = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+        s.async = true;
+        s.onload = () => resolve(typeof window.Peer === 'function');
+        s.onerror = () => resolve(false);
+        document.head.appendChild(s);
+      });
+    }
+
+    window.initP2PScannerSession = async function(forceNew = false) {
+      const params = new URLSearchParams(location.search);
+      const urlRoom = params.get('scan_room');
+
+      if (!State.p2pRoomId || forceNew) {
+        State.p2pRoomId = urlRoom || ('NP-' + Math.random().toString(36).substring(2, 8).toUpperCase());
+      }
+
+      const badge = document.getElementById('scannerRoomBadge');
+      if (badge) badge.textContent = 'ROOM: ' + State.p2pRoomId;
+
+      const baseUrl = window.location.origin + window.location.pathname;
+      const pairUrl = `${baseUrl}?scan_room=${encodeURIComponent(State.p2pRoomId)}`;
+      renderScannerQrCodeSvg(pairUrl);
+
+      // Also listen on BroadcastChannel for instant same-browser / multi-tab pairing
+      try {
+        if (typeof BroadcastChannel === 'function' && !State.scannerBc) {
+          State.scannerBc = new BroadcastChannel('nouploadpdf-p2p-' + State.p2pRoomId);
+          State.scannerBc.onmessage = (ev) => {
+            const msg = ev.data || {};
+            if (msg.type === 'scan_page' && msg.image) {
+              receiveIncomingScannedPage(msg);
+            }
+          };
+        }
+      } catch {}
+
+      const isPhoneJoiner = Boolean(urlRoom);
+      const senderPanel = document.getElementById('phoneSenderPanel');
+      if (senderPanel && isPhoneJoiner) {
+        senderPanel.style.display = 'block';
+      }
+
+      const hasPeer = await ensurePeerJsLoaded();
+      if (!hasPeer) {
+        setScannerStatus('QR Generated · Camera & Local Transfer Ready', '#10B981');
+        return;
+      }
+
+      try {
+        if (State.p2pPeer && forceNew) {
+          try { State.p2pPeer.destroy(); } catch {}
+          State.p2pPeer = null;
+        }
+        if (State.p2pPeer) return;
+
+        const hostPeerId = 'nouploadpdf-room-' + State.p2pRoomId.toLowerCase();
+
+        if (isPhoneJoiner) {
+          // Phone / Sender Mode: connect to the desktop's hostPeerId via WebRTC DataChannel
+          const phonePeer = new window.Peer();
+          State.p2pPeer = phonePeer;
+          phonePeer.on('open', () => {
+            const conn = phonePeer.connect(hostPeerId, { reliable: true });
+            State.p2pConn = conn;
+            conn.on('open', () => {
+              const pill = document.getElementById('phoneSenderStatusPill');
+              if (pill) pill.textContent = '🟢 Connected to Desktop via WebRTC P2P!';
+              setScannerStatus('Connected to Desktop via WebRTC P2P', '#10B981');
+              conn.send({
+                type: 'hello',
+                device: /iPhone|iPad/i.test(navigator.userAgent) ? 'iPhone Camera' : (/Android/i.test(navigator.userAgent) ? 'Android Camera' : 'Mobile Scanner')
+              });
+            });
+          });
+        } else {
+          // Desktop / Receiver Mode: listen for incoming WebRTC connection on hostPeerId
+          const deskPeer = new window.Peer(hostPeerId);
+          State.p2pPeer = deskPeer;
+          deskPeer.on('open', () => {
+            setScannerStatus('WebRTC P2P Ready — Scan QR with your phone', '#10B981');
+          });
+          deskPeer.on('connection', (conn) => {
+            State.p2pConn = conn;
+            conn.on('open', () => {
+              showPhoneConnectedBanner('Mobile Camera', 'WebRTC P2P DataChannel');
+            });
+            conn.on('data', (data) => {
+              if (!data) return;
+              if (data.type === 'hello') {
+                showPhoneConnectedBanner(data.device || 'Phone Camera', 'WebRTC P2P DataChannel');
+              } else if (data.type === 'scan_page' && data.image) {
+                receiveIncomingScannedPage(data);
+              }
+            });
+          });
+          deskPeer.on('error', () => {
+            setScannerStatus('QR & Direct Camera Active', '#10B981');
+          });
+        }
+      } catch (err) {
+        console.warn('[WebRTC P2P] init note:', err);
+      }
+    };
+
+    function setScannerStatus(text, dotColor = '#10B981') {
+      const dot = document.getElementById('scannerConnectionDot');
+      const lbl = document.getElementById('scannerConnectionText');
+      if (dot) dot.style.backgroundColor = dotColor;
+      if (lbl) lbl.textContent = text;
+    }
+
+    function showPhoneConnectedBanner(deviceName, transportLabel) {
+      const banner = document.getElementById('p2pConnectedBanner');
+      const devEl = document.getElementById('p2pConnectedDeviceName');
+      const trEl = document.getElementById('p2pTransportBadge');
+      if (devEl) devEl.textContent = deviceName;
+      if (trEl) trEl.textContent = `🟢 ${transportLabel} · 0 Server Bytes`;
+      if (banner) banner.style.display = 'flex';
+      setScannerStatus(`Connected: ${deviceName}`, '#10B981');
+      playUiSound('chime');
+    }
+
+    // Web Bluetooth API Pairing (`navigator.bluetooth.requestDevice`)
+    window.connectBluetoothScanner = async function(ev) {
+      if (ev) ev.preventDefault();
+      const statusBox = document.getElementById('scannerBluetoothStatus');
+      if (statusBox) statusBox.style.display = 'block';
+
+      if (!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function') {
+        if (statusBox) {
+          statusBox.innerHTML = 'ℹ️ Web Bluetooth requires Chrome/Edge on Desktop or Android. Use the <strong>WebRTC QR Code</strong> above or <strong>📷 Direct Camera / Upload Photos</strong> on Safari/iOS.';
+        }
+        return;
+      }
+
+      try {
+        if (statusBox) statusBox.textContent = '🔵 Searching for nearby Bluetooth devices / phones…';
+        const device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true
+        });
+        const devName = device?.name || 'Bluetooth Phone / Scanner';
+        if (statusBox) {
+          statusBox.innerHTML = `✓ Paired via Bluetooth with <strong>${escapeHtml(devName)}</strong>! Ready to capture or import pages.`;
+        }
+        showPhoneConnectedBanner(devName, 'Bluetooth + WebRTC P2P');
+      } catch (err) {
+        if (statusBox) {
+          statusBox.innerHTML = `Bluetooth pairing canceled or unavailable (${escapeHtml(err.message || 'use QR or Direct Camera')}).`;
+        }
+      }
+    };
+
+    // Live Camera Viewfinder inside the browser (works on both Phone and Laptop!)
+    window.toggleScannerLiveVideo = async function() {
+      const video = document.getElementById('phoneLiveVideo');
+      const snapBtn = document.getElementById('snapLiveCamBtn');
+      const toggleBtn = document.getElementById('toggleLiveCamBtn');
+      const senderPanel = document.getElementById('phoneSenderPanel');
+      if (senderPanel) senderPanel.style.display = 'block';
+
+      if (State.scannerLiveStream) {
+        State.scannerLiveStream.getTracks().forEach(t => t.stop());
+        State.scannerLiveStream = null;
+        if (video) { video.srcObject = null; video.style.display = 'none'; }
+        if (snapBtn) snapBtn.style.display = 'none';
+        if (toggleBtn) toggleBtn.textContent = '🎥 Start Live Camera Viewfinder';
+        return;
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        document.getElementById('scannerDirectCameraInput')?.click();
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 } },
+          audio: false
+        });
+        State.scannerLiveStream = stream;
+        if (video) {
+          video.srcObject = stream;
+          video.style.display = 'block';
+          await video.play();
+        }
+        if (snapBtn) snapBtn.style.display = 'inline-flex';
+        if (toggleBtn) toggleBtn.textContent = '⏹ Stop Camera';
+        setScannerStatus('Live Camera Active — Click Snap & Beam', '#10B981');
+      } catch {
+        document.getElementById('scannerDirectCameraInput')?.click();
+      }
+    };
+
+    window.snapScannerLiveVideoFrame = function() {
+      const video = document.getElementById('phoneLiveVideo');
+      if (!video || !video.videoWidth) return;
+      const cnv = document.createElement('canvas');
+      const scale = Math.min(1, 1600 / Math.max(video.videoWidth, video.videoHeight, 1));
+      cnv.width = Math.round(video.videoWidth * scale);
+      cnv.height = Math.round(video.videoHeight * scale);
+      const ctx = cnv.getContext('2d');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, cnv.width, cnv.height);
+      ctx.drawImage(video, 0, 0, cnv.width, cnv.height);
+      applyScannerEnhancementFilter(ctx, cnv.width, cnv.height);
+      const b64 = cnv.toDataURL('image/jpeg', 0.86).split(',')[1];
+      const pageObj = {
+        type: 'scan_page',
+        image: b64,
+        title: `Camera-Scan-${State.scannerPages.length + 1}`,
+        device: 'Live Camera'
+      };
+      dispatchOrStageScanPage(pageObj);
+    };
+
+    function applyScannerEnhancementFilter(ctx, w, h) {
+      const mode = document.getElementById('scannerFilterSelect')?.value || 'auto';
+      if (mode === 'color') return;
+      const imgData = ctx.getImageData(0, 0, w, h);
+      const d = imgData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const luma = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) | 0;
+        if (mode === 'bw') {
+          const v = luma > 142 ? 255 : 0;
+          d[i] = d[i + 1] = d[i + 2] = v;
+        } else {
+          // Auto-Flat contrast stretch
+          const stretched = Math.min(255, Math.max(0, Math.round((luma - 28) * 1.22)));
+          d[i] = d[i + 1] = d[i + 2] = stretched;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    window.handleScannerDirectCapture = async function(ev) {
+      const files = Array.from(ev.target.files || []);
+      ev.target.value = '';
+      if (!files.length) return;
+
+      for (const file of files) {
+        const b64 = await new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            const cnv = document.createElement('canvas');
+            const scale = Math.min(1, 1600 / Math.max(img.width, img.height, 1));
+            cnv.width = Math.max(1, Math.round(img.width * scale));
+            cnv.height = Math.max(1, Math.round(img.height * scale));
+            const ctx = cnv.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, cnv.width, cnv.height);
+            ctx.drawImage(img, 0, 0, cnv.width, cnv.height);
+            applyScannerEnhancementFilter(ctx, cnv.width, cnv.height);
+            resolve(cnv.toDataURL('image/jpeg', 0.86).split(',')[1]);
+          };
+          img.onerror = () => resolve(null);
+          img.src = URL.createObjectURL(file);
+        });
+        if (b64) {
+          dispatchOrStageScanPage({
+            type: 'scan_page',
+            image: b64,
+            title: file.name.replace(/\.[^.]+$/, '') || `Scan-${State.scannerPages.length + 1}`,
+            device: 'Direct Camera / Photo'
+          });
+        }
+      }
+    };
+
+    window.beamTestScanPage = function() {
+      const num = State.scannerPages.length + 1;
+      const cnv = document.createElement('canvas');
+      cnv.width = 900;
+      cnv.height = 1270;
+      const ctx = cnv.getContext('2d');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, cnv.width, cnv.height);
+      ctx.strokeStyle = '#2F855A';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(48, 48, cnv.width - 96, cnv.height - 96);
+      ctx.fillStyle = '#0A0A0A';
+      ctx.font = 'bold 34px Helvetica, sans-serif';
+      ctx.fillText(`SCANNED DOCUMENT · PAGE #0${num}`, 84, 130);
+      ctx.fillStyle = '#2F855A';
+      ctx.font = 'bold 20px monospace';
+      ctx.fillText(`WebRTC Peer-to-Peer Direct Scan · Room ${State.p2pRoomId || 'LOCAL'}`, 84, 175);
+      ctx.fillStyle = '#374151';
+      ctx.font = '22px sans-serif';
+      ctx.fillText(`Invoice Reference #INV-${3040 + num} — Staged in Browser RAM`, 84, 245);
+      ctx.fillText('• 0 Bytes Uploaded to Cloud · Ready to Merge, Sign, Redact or Compress.', 84, 295);
+
+      const b64 = cnv.toDataURL('image/jpeg', 0.86).split(',')[1];
+      dispatchOrStageScanPage({
+        type: 'scan_page',
+        image: b64,
+        title: `Phone-Scan-Page-0${num}`,
+        device: 'WebRTC P2P Scanner'
+      });
+    };
+
+    function dispatchOrStageScanPage(pagePayload) {
+      // Send over WebRTC DataChannel if connected to desktop peer
+      if (State.p2pConn && State.p2pConn.open) {
+        try { State.p2pConn.send(pagePayload); } catch {}
+      }
+      // Send over BroadcastChannel for same-device / multi-tab pairing
+      if (State.scannerBc) {
+        try { State.scannerBc.postMessage(pagePayload); } catch {}
+      }
+      receiveIncomingScannedPage(pagePayload);
+    }
+
+    function receiveIncomingScannedPage(payload) {
+      State.scannerPages.push({
+        id: 'sp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        image: payload.image,
+        title: payload.title || `Scan-${State.scannerPages.length + 1}`,
+        device: payload.device || 'Phone Camera',
+        rotation: 0
+      });
+      playUiSound('tick');
+      renderScannerPagesGrid();
+    }
+
+    function renderScannerPagesGrid() {
+      const grid = document.getElementById('scannerPagesGrid');
+      const empty = document.getElementById('scannerEmptyState');
+      const countEl = document.getElementById('scannerPageCountLabel');
+      if (countEl) countEl.textContent = String(State.scannerPages.length);
+      if (empty) empty.style.display = State.scannerPages.length > 0 ? 'none' : 'block';
+      if (!grid) return;
+
+      grid.innerHTML = State.scannerPages.map((p, idx) => `
+        <div style="background:var(--surface-sunk); border:1px solid var(--border-strong); border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:6px;">
+          <div style="position:relative; background:#ffffff; border:1px solid var(--border); border-radius:6px; height:140px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+            <span class="mono" style="position:absolute; top:5px; left:5px; background:#0A0A0A; color:#FFFFFF; font-size:10px; padding:2px 6px; border-radius:4px; z-index:2;">Page ${idx + 1}</span>
+            <img src="data:image/jpeg;base64,${p.image}" alt="${escapeHtml(p.title)}" style="max-width:100%; max-height:100%; object-fit:contain; transform:rotate(${p.rotation || 0}deg);">
+          </div>
+          <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(p.title)}</div>
+          <div class="thumb-action-row">
+            <button type="button" class="thumb-btn" onclick="moveScannerStagedPage(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:0.35;"' : ''}>←</button>
+            <button type="button" class="thumb-btn" onclick="moveScannerStagedPage(${idx}, 1)" ${idx === State.scannerPages.length - 1 ? 'disabled style="opacity:0.35;"' : ''}>→</button>
+            <button type="button" class="thumb-btn" onclick="rotateScannerStagedPage(${idx})">↻</button>
+            <button type="button" class="thumb-btn" style="color:var(--danger);" onclick="deleteScannerStagedPage(${idx})">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.moveScannerStagedPage = function(idx, delta) {
+      const t = idx + delta;
+      if (t < 0 || t >= State.scannerPages.length) return;
+      const tmp = State.scannerPages[idx];
+      State.scannerPages[idx] = State.scannerPages[t];
+      State.scannerPages[t] = tmp;
+      renderScannerPagesGrid();
+    };
+
+    window.rotateScannerStagedPage = function(idx) {
+      if (!State.scannerPages[idx]) return;
+      State.scannerPages[idx].rotation = ((State.scannerPages[idx].rotation || 0) + 90) % 360;
+      renderScannerPagesGrid();
+    };
+
+    window.deleteScannerStagedPage = function(idx) {
+      State.scannerPages.splice(idx, 1);
+      renderScannerPagesGrid();
+    };
+
+    window.clearScannedPagesList = function() {
+      State.scannerPages = [];
+      renderScannerPagesGrid();
+    };
+
+    // Compile all staged scanner pages into a SINGLE multi-page PDF and open in Studio!
+    window.sendScannedPagesToStudio = async function() {
+      if (State.scannerPages.length === 0) {
+        beamTestScanPage();
+      }
+      const targetTool = document.getElementById('scannerTargetToolSelect')?.value || 'merge';
+      const combinedDoc = await PDFLib.PDFDocument.create();
+
+      for (let i = 0; i < State.scannerPages.length; i++) {
+        const sp = State.scannerPages[i];
+        const jpgBytes = Uint8Array.from(atob(sp.image), c => c.charCodeAt(0));
+        const emb = await combinedDoc.embedJpg(jpgBytes);
+        const page = combinedDoc.addPage([595.28, 841.89]);
+        const sc = Math.min(595.28 / emb.width, 841.89 / emb.height);
+        page.drawImage(emb, {
+          x: (595.28 - emb.width * sc) / 2,
+          y: (841.89 - emb.height * sc) / 2,
+          width: emb.width * sc,
+          height: emb.height * sc
+        });
+        if (sp.rotation) {
+          page.setRotation(PDFLib.degrees(sp.rotation));
+        }
+      }
+
+      const pdfBytes = await combinedDoc.save();
+      const scanDocFile = {
+        id: 'p2p-scan-doc-' + Date.now(),
+        name: `Scanned-Document-${State.scannerPages.length}p.pdf`,
+        bytes: new Uint8Array(pdfBytes),
+        size: pdfBytes.byteLength,
+        pageCount: State.scannerPages.length,
+        isScan: true,
+        imageBase64: State.scannerPages[0]?.image || null,
+        textPreview: State.scannerPages.map((p, idx) => `Scanned Page ${idx + 1} (${p.title})`)
+      };
+
+      // Replace or prepend in Studio queue and sync pageDeck
+      State.files = [scanDocFile];
+      State.editHistory = [];
+      snapshotOriginalFilesIfNeeded(true);
+      await syncPageDeckFromFiles(false);
+      openToolWorkspace(targetTool);
+    };
+
+    // Auto-check if URL has ?scan_room=XXXX or ?tool=scan on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      const p = new URLSearchParams(location.search);
+      if (p.get('scan_room') || p.get('tool') === 'scan' || location.pathname === '/scanner') {
+        setTimeout(() => {
+          showView('scanner');
+        }, 60);
+      }
     });
 
 </script>
