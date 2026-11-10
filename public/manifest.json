@@ -1,0 +1,16 @@
+{
+  "name": "NoUploadPDF — 28 Local-First PDF Tools & AI Studio",
+  "short_name": "NoUploadPDF",
+  "description": "28 private PDF tools, Local AI chat, Auto-Redact assistant, Document Detective, and Phone QR Scanner running 100% in browser RAM with 0 bytes uploaded.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAFAF8",
+  "theme_color": "#2F855A",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect width='48' height='48' rx='12' fill='%230A0A0A'/><path d='M12 9h14l7 7v23H12z' fill='%23FFFFFF'/><path d='M26 9v7h7z' fill='%232F855A'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

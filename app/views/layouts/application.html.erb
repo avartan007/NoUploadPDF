@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= content_for?(:title) ? yield(:title) : "NoUploadPDF — 28 Private Local PDF Tools (Ruby on Rails)" %></title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_importmap_tags %>
+</head>
+<body data-controller="workspace">
+  <%= yield %>
+</body>
+</html>

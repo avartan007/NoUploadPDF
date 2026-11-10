@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crop PDF Margins and Normalize Page Geometry Locally — NoUploadPDF</title>
+  <meta name="description" content="Trim whitespace margins and standardize page CropBox dimensions for clean printing and e-readers.">
+  <link rel="manifest" href="/manifest.json">
+  <style>/* NoUploadPDF — UI/UX Design Brief Complete Stylesheet (Light Default + Full Dark Mode) */
+:root {
+  color-scheme: light;
+  --bg: #FAFAF8;
+  --surface: #FFFFFF;
+  --surface-sunk: #F3F3EF;
+  --surface-chip: #EAEAE4;
+  --ink: #0A0A0A;
+  --muted: #6B7280;
+  --subtle: #9CA3AF;
+  --brand: #2F855A;
+  --brand-hover: #276749;
+  --brand-soft: #E7F5EC;
+  --brand-border: #B7E4C7;
+  --danger: #DC2626;
+  --danger-soft: #FEF2F2;
+  --border: #E7E5E0;
+  --border-strong: #D1CFC9;
+
+  /* Compatibility aliases for existing views & scanner */
+  --primary: var(--ink);
+  --on-primary: var(--bg);
+  --tertiary: var(--brand);
+  --on-tertiary: #FFFFFF;
+  --secondary: var(--muted);
+  --neutral: var(--bg);
+  --on-surface: var(--ink);
+  --on-surface-muted: var(--muted);
+  --on-surface-subtle: var(--subtle);
+  --outline: var(--border);
+  --outline-strong: var(--border-strong);
+  --divider: var(--border);
+  --accent: var(--brand);
+  --accent-light: #4ADE80;
+  --accent-text: var(--brand);
+  --accent-tint: var(--brand-soft);
+  --accent-container: var(--brand-soft);
+  --inverse-surface: #0B0D0C;
+  --inverse-outline: #232826;
+  --inverse-on-surface-muted: #8A918E;
+
+  --header-bg: rgba(250, 250, 248, 0.86);
+  --card-shadow: 0 12px 32px -18px rgba(10, 10, 10, 0.08);
+  --hover-shadow: 0 18px 38px -18px rgba(10, 10, 10, 0.14);
+  --logo-tile: #0A0A0A;
+  --logo-paper: #FFFFFF;
+  --logo-green: #2F855A;
+  --font-sans: 'Instrument Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0B0D0C;
+  --surface: #141716;
+  --surface-sunk: #0F1211;
+  --surface-chip: #1D2220;
+  --ink: #F2F4F3;
+  --muted: #8A918E;
+  --subtle: #646B68;
+  --brand: #4ADE80;
+  --brand-hover: #22C55E;
+  --brand-soft: #12261B;
+  --brand-border: #1E462F;
+  --danger: #F87171;
+  --danger-soft: #2C1517;
+  --border: #232826;
+  --border-strong: #323936;
+
+  --on-primary: #0B0D0C;
+  --on-tertiary: #0B0D0C;
+  --header-bg: rgba(11, 13, 12, 0.86);
+  --card-shadow: 0 16px 36px -18px rgba(0, 0, 0, 0.55);
+  --hover-shadow: 0 20px 42px -16px rgba(0, 0, 0, 0.72);
+  --logo-tile: #F2F4F3;
+  --logo-paper: #0B0D0C;
+  --logo-green: #4ADE80;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+body {
+  background-color: var(--bg);
+  background-image: radial-gradient(rgba(47, 133, 90, 0.04) 1px, transparent 0);
+  background-size: 24px 24px;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+h1, h2, h3, h4 {
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+p {
+  text-wrap: pretty;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.headline-display {
+  font-size: clamp(44px, 6vw, 76px);
+  font-weight: 600;
+  line-height: 0.98;
+  letter-spacing: -0.038em;
+}
+
+.headline-lg {
+  font-size: clamp(32px, 4.2vw, 48px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.032em;
+}
+
+.headline-md {
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+}
+
+.title-md {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+}
+
+.body-lg {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.container {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+}
+
+.container-tool {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+}
+
+.container-about {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+}
+
+/* =====================================================================
+   GLOBAL STICKY NAV (Section 5)
+   ===================================================================== */
+.site-header {
+  position: sticky;
+  top: 0;
+  height: 64px;
+  background-color: var(--header-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+  transition: height 180ms ease;
+}
+
+.header-inner {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 17.5px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-decoration: none;
+}
+
+.nav-desktop {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 7px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.nav-btn:hover, .nav-btn.active {
+  color: var(--ink);
+  background-color: var(--surface-chip);
+}
+
+/* Pulsing "0 bytes stored" pill */
+.privacy-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background-color: var(--brand-soft);
+  color: var(--brand);
+  border: 1px solid var(--brand-border);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 7px 11px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 150ms ease, border-color 150ms ease;
+}
+
+.privacy-pill:hover {
+  transform: translateY(-1px);
+  border-color: var(--brand);
+}
+
+.privacy-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(47, 133, 90, 0.22);
+  animation: pulseGreen 2.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulseGreen {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.86); }
+}
+
+.theme-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 150ms ease;
+}
+
+.theme-btn:hover {
+  border-color: var(--ink);
+}
+
+.mobile-menu-btn {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--ink);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* =====================================================================
+   BUTTONS & BADGES (Section 11)
+   ===================================================================== */
+.btn {
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1;
+  border-radius: 10px;
+  padding: 12px 18px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: transform 150ms ease-out, border-color 150ms ease, background-color 150ms ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background-color: var(--ink);
+  color: var(--bg);
+  border: 1px solid var(--ink);
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border-strong);
+}
+
+.btn-secondary:hover {
+  border-color: var(--ink);
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background-color: var(--brand);
+  color: #FFFFFF;
+  border: 1px solid var(--brand);
+}
+
+:root[data-theme="dark"] .btn-success {
+  color: #0B0D0C;
+  font-weight: 600;
+}
+
+.btn-success:hover {
+  background-color: var(--brand-hover);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background-color: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+  padding: 10px 12px;
+}
+
+.btn-ghost:hover {
+  color: var(--ink);
+  background: var(--surface-chip);
+}
+
+.btn-tiny {
+  padding: 6px 11px;
+  font-size: 12px;
+  border-radius: 7px;
+}
+
+.btn-disabled, .btn:disabled {
+  background-color: var(--surface-chip);
+  color: var(--subtle);
+  border-color: var(--border);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background-color: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.btn-icon:hover {
+  border-color: var(--ink);
+}
+
+/* =====================================================================
+   6.1 HERO + DEVICE BOUNDARY + LIVE DROP ZONE WITH TOOL SUGGESTIONS
+   ===================================================================== */
+.landing-hero {
+  padding: clamp(36px, 5vw, 64px) 0 44px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.12fr 0.88fr;
+  gap: 44px;
+  align-items: center;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--brand);
+  background: var(--brand-soft);
+  border: 1px solid var(--brand-border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  margin-bottom: 18px;
+}
+
+.hero-title {
+  margin-bottom: 16px;
+}
+
+.hero-title .leave-word {
+  color: var(--brand);
+  font-style: normal;
+  position: relative;
+  display: inline-block;
+}
+
+.hero-lead {
+  font-size: clamp(16px, 1.4vw, 18.5px);
+  color: var(--muted);
+  margin-bottom: 24px;
+  max-width: 540px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.micro-trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.micro-trust-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.micro-trust-row i {
+  color: var(--brand);
+  font-style: normal;
+  font-weight: 700;
+}
+
+/* Device Boundary Box around Right Hero Card */
+.device-boundary-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: var(--card-shadow);
+  position: relative;
+}
+
+.device-boundary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.blocked-cloud-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--danger);
+  background: var(--danger-soft);
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+}
+
+.hero-drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 28px 16px;
+  background: var(--surface-sunk);
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.hero-drop-zone:hover, .hero-drop-zone.drag-active {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.hero-drop-plus {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 20px;
+}
+
+/* Active file chip + Tool Suggestion Bar inside Hero */
+.hero-suggestion-bar {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--surface-sunk);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.hero-suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.hero-drop-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* =====================================================================
+   6.2 "WATCH IT WORK" INTERACTIVE PRODUCT DEMO
+   ===================================================================== */
+.demo-section {
+  padding: 48px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.demo-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+}
+
+.demo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--surface-sunk);
+  border-bottom: 1px solid var(--border);
+}
+
+.demo-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.demo-tab {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 13px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.demo-tab.active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+.demo-stage {
+  padding: 28px 24px;
+  min-height: 240px;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 28px;
+  align-items: center;
+}
+
+/* =====================================================================
+   6.3 PRIVACY PROOF STRIP & AIRPLANE MODE CHALLENGE
+   ===================================================================== */
+.proof-strip-section {
+  padding: 48px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.proof-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.proof-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* =====================================================================
+   6.4 TOOLS GRID (28 Pre-Rendered Cards with Icons & Popular Ribbons)
+   ===================================================================== */
+.filter-bar {
+  position: sticky;
+  top: 64px;
+  z-index: 40;
+  background: var(--header-bg);
+  backdrop-filter: blur(10px);
+  padding: 12px 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip-filter {
+  background-color: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 9999px;
+  padding: 7px 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 150ms ease;
+}
+
+.chip-filter:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.chip-filter.active {
+  background-color: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+.chip-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.tool-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-search {
+  background-color: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border-strong);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  border-radius: 10px;
+  padding: 8px 36px 8px 12px;
+  width: 250px;
+  outline: none;
+}
+
+.input-search:focus {
+  border-color: var(--brand);
+}
+
+.tool-search-wrap kbd {
+  position: absolute;
+  right: 10px;
+  font-size: 10.5px;
+  color: var(--subtle);
+  background: var(--surface-sunk);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  pointer-events: none;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.tool-card {
+  position: relative;
+  background-color: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  min-height: 156px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms ease-out, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.tool-card:hover {
+  border-color: var(--ink);
+  transform: translateY(-2px);
+  box-shadow: var(--hover-shadow);
+}
+
+.tool-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tool-card-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface-sunk);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+.tool-card-cat {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--subtle);
+}
+
+.popular-ribbon {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--brand);
+  background: var(--brand-soft);
+  border: 1px solid var(--brand-border);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.tool-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+  letter-spacing: -0.012em;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tool-card-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.42;
+}
+
+.tool-card-cta {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--subtle);
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 150ms ease, gap 150ms ease;
+}
+
+.tool-card:hover .tool-card-cta {
+  color: var(--brand);
+  gap: 8px;
+}
+
+/* =====================================================================
+   7. STUDIO 3-PANE WORKSPACE UX
+   ===================================================================== */
+.studio-topbar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.studio-3pane {
+  display: grid;
+  grid-template-columns: 280px 1fr 340px;
+  gap: 16px;
+  align-items: start;
+}
+
+.studio-pane {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: var(--card-shadow);
+}
+
+.studio-pane-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ram-meter-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--brand);
+  background: var(--brand-soft);
+  border: 1px solid var(--brand-border);
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+
+/* Studio Notice Banner */
+.studio-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  background: var(--brand-soft);
+  border: 1.5px solid var(--brand);
+  border-radius: 14px;
+}
+
+.studio-notice[hidden] {
+  display: none !important;
+}
+
+/* File Queue Rows */
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-row {
+  background-color: var(--surface-sunk);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-idx {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--subtle);
+  width: 18px;
+}
+
+.file-badge {
+  background-color: var(--brand-soft);
+  color: var(--brand);
+  border: 1px solid var(--brand-border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.file-name {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-size {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* Form Controls */
+.field-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.field-input, .field-select {
+  width: 100%;
+  background-color: var(--surface-sunk);
+  color: var(--ink);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  outline: none;
+}
+
+.field-input:focus, .field-select:focus {
+  border-color: var(--brand);
+  background-color: var(--surface);
+}
+
+/* Shell Terminal Console */
+.shell-terminal {
+  background: #0B0D0C;
+  color: #E2E8F0;
+  border: 1px solid #232826;
+  border-radius: 16px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  box-shadow: var(--card-shadow);
+}
+
+.shell-terminal-bar {
+  background: #141716;
+  border-bottom: 1px solid #232826;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11.5px;
+}
+
+.shell-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shell-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.shell-terminal-body {
+  padding: 14px 16px;
+  font-size: 12px;
+  line-height: 1.65;
+  max-height: 170px;
+  overflow-y: auto;
+}
+
+.shell-terminal-input-row {
+  border-top: 1px solid #232826;
+  background: #0F1211;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shell-terminal-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #4ADE80;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  flex: 1;
+}
+
+/* Comparison Table (Section 6.7) */
+.comp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.comp-table th, .comp-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.comp-table th {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface-sunk);
+}
+
+.tick-yes {
+  color: var(--brand);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.tick-no {
+  color: var(--danger);
+  font-family: var(--font-mono);
+}
+
+/* FAQ Accordion */
+.faq-list {
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+}
+
+.faq-row {
+  border-bottom: 1px solid var(--border);
+}
+
+.faq-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 18px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.faq-toggle {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.faq-answer {
+  display: none;
+  padding-bottom: 18px;
+  font-size: 14.5px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.faq-row.open .faq-answer {
+  display: block;
+}
+
+/* Toast Notification */
+.studio-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  box-shadow: var(--hover-shadow);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Fullscreen Drop Overlay */
+.global-drop-overlay {
+  position: fixed;
+  inset: 16px;
+  background: rgba(47, 133, 90, 0.12);
+  backdrop-filter: blur(6px);
+  border: 2.5px dashed var(--brand);
+  border-radius: 24px;
+  z-index: 9998;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Mobile Responsive */
+.mobile-sheet {
+  display: none;
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bg);
+  z-index: 99;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.mobile-sheet.open {
+  display: block;
+}
+
+@media (max-width: 1040px) {
+  .tool-grid { grid-template-columns: repeat(2, 1fr); }
+  .studio-3pane { grid-template-columns: 1fr; }
+  .demo-stage { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 820px) {
+  .nav-desktop, .header-pill-desktop { display: none; }
+  .mobile-menu-btn { display: inline-flex; }
+  .hero-grid { grid-template-columns: 1fr; gap: 28px; }
+  .input-search { width: 100%; }
+}
+
+@media (max-width: 560px) {
+  .tool-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* =====================================================================
+   IMMERSIVE UI EXTENSIONS (3D Tilt, Vault Animation, Shredder,
+   Spring Physics, Device vs Cloud Diagram, Onboarding, Share Card)
+   ===================================================================== */
+
+/* Scroll-linked Top Progress Bar */
+.scroll-story-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--brand), #4ADE80);
+  z-index: 9999;
+  transition: width 60ms linear;
+}
+
+/* 1. 3D Tilt Hero Card + Glare */
+.tilt-3d-stage {
+  perspective: 1100px;
+}
+
+.device-boundary-card.tilt-enabled {
+  transform-style: preserve-3d;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease;
+  will-change: transform;
+  overflow: hidden;
+}
+
+.tilt-glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(47, 133, 90, 0.14), transparent 60%);
+  opacity: 0;
+  transition: opacity 200ms ease;
+  z-index: 1;
+}
+
+.device-boundary-card.tilt-active .tilt-glare {
+  opacity: 1;
+}
+
+/* 2. "File Enters the Vault" Overlay Animation */
+.vault-ingest-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 13, 12, 0.92);
+  backdrop-filter: blur(8px);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+  color: #F2F4F3;
+  font-family: var(--font-mono);
+}
+
+.vault-ingest-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.vault-ring {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 2.5px solid #4ADE80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 0 28px rgba(74, 222, 128, 0.45);
+  animation: vaultLockSpin 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes vaultLockSpin {
+  0% { transform: scale(0.5) rotate(-90deg); opacity: 0; }
+  70% { transform: scale(1.08) rotate(8deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.vault-scan-beam {
+  width: 75%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #4ADE80, transparent);
+  animation: vaultBeamSweep 0.7s ease-in-out infinite;
+}
+
+@keyframes vaultBeamSweep {
+  0%, 100% { transform: translateX(-25%); opacity: 0.5; }
+  50% { transform: translateX(25%); opacity: 1; }
+}
+
+/* 3. Haptic Spring Micro-Interactions & Magnetic Buttons */
+.btn-magnetic {
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 150ms ease, box-shadow 150ms ease;
+  will-change: transform;
+}
+
+.tool-card, .file-row, .sheet-thumb-card {
+  transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 160ms ease, box-shadow 180ms ease, opacity 200ms ease;
+}
+
+.file-row.spring-enter, .sheet-thumb-card.spring-enter {
+  animation: springReflowIn 340ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes springReflowIn {
+  0% { opacity: 0; transform: translateY(12px) scale(0.94); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 4. Live "Your Device vs The Cloud" Telemetry Diagram */
+.diagram-section {
+  padding: 44px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.vs-diagram-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 18px;
+  align-items: stretch;
+  margin-top: 20px;
+}
+
+.vs-node {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  transition: border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.vs-node.local-node {
+  border-color: var(--brand);
+  box-shadow: 0 12px 30px -16px rgba(47, 133, 90, 0.25);
+}
+
+.vs-node.local-node.pulse-activity {
+  animation: localRamPulse 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes localRamPulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.018); box-shadow: 0 0 0 6px rgba(47, 133, 90, 0.22); }
+  100% { transform: scale(1); }
+}
+
+.vs-firewall-divider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--danger);
+}
+
+.vs-firewall-line {
+  width: 2px;
+  flex: 1;
+  background: repeating-linear-gradient(to bottom, var(--danger) 0, var(--danger) 6px, transparent 6px, transparent 12px);
+}
+
+/* 5. Satisfying "Shred" Effect Modal / Overlay */
+.shredder-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.78);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.shredder-Overlay-active {
+  display: flex;
+}
+
+.shredder-machine {
+  width: 340px;
+  max-width: 90vw;
+  background: #141716;
+  border: 2px solid #2F855A;
+  border-radius: 16px;
+  padding: 18px;
+  text-align: center;
+  color: #F2F4F3;
+  font-family: var(--font-mono);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+}
+
+.shredder-slot {
+  height: 10px;
+  background: #050606;
+  border-radius: 99px;
+  border: 1px solid #323936;
+  margin: 12px 0;
+  position: relative;
+  overflow: visible;
+}
+
+.shred-strips-box {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 3px;
+  height: 110px;
+  overflow: hidden;
+  padding: 0 10px;
+}
+
+.shred-strip {
+  background: linear-gradient(180deg, #FAFAF8 0%, #4ADE80 100%);
+  border-radius: 2px;
+  height: 95px;
+  transform: translateY(-100%);
+  animation: stripShredFall 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes stripShredFall {
+  0% { transform: translateY(-90%) rotate(0deg); opacity: 1; }
+  65% { transform: translateY(15%) rotate(2deg); opacity: 1; }
+  100% { transform: translateY(130%) rotate(-6deg); opacity: 0; }
+}
+
+/* 6. Scroll-Linked Storytelling Steps */
+.story-section {
+  padding: 48px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.story-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.story-step-card {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+.story-step-card.story-active {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  transform: translateY(-4px);
+  box-shadow: var(--hover-shadow);
+}
+
+/* 7. Onboarding Checklist ("3 Quick Wins in 10 Seconds") */
+.onboarding-card {
+  background: var(--surface);
+  border: 1.5px solid var(--brand-border);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: var(--card-shadow);
+}
+
+.onboarding-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.onboarding-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-sunk);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.onboarding-pill:hover {
+  border-color: var(--brand);
+  transform: translateY(-1px);
+}
+
+.onboarding-pill.done {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+/* 8. Shareable Result Proof Card */
+.share-proof-card {
+  margin-top: 16px;
+  background: linear-gradient(135deg, #0B0D0C 0%, #132A1E 100%);
+  color: #F2F4F3;
+  border: 1.5px solid #2F855A;
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: var(--hover-shadow);
+}
+
+@media (max-width: 860px) {
+  .vs-diagram-grid { grid-template-columns: 1fr; }
+  .vs-firewall-divider { flex-direction: row; padding: 8px 0; }
+  .vs-firewall-line { height: 2px; width: 100%; }
+  .story-steps-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="brand-link"><span>NoUpload<span style="color:var(--brand);">PDF</span></span></a>
+      <div class="privacy-pill"><span class="privacy-dot"></span><span>0 bytes stored</span></div>
+    </div>
+  </header>
+  <main style="flex:1; padding: 48px 0 80px;">
+    <div class="container" style="max-width: 960px;">
+      <div class="mono" style="font-size:12px; color:var(--muted); margin-bottom:14px;">
+        <a href="/" style="color:var(--ink);">← All 28 Local PDF Tools</a> / Edit / <span style="color:var(--brand);">crop-pdf-margins</span>
+      </div>
+      <div class="hero-badge"><span class="privacy-dot"></span><span>TOOL #22 · 100% CLIENT-SIDE RAM · 0 BYTES UPLOADED</span></div>
+      <h1 class="headline-lg" style="margin-bottom:14px;">Crop PDF Margins and Normalize Page Geometry Locally</h1>
+      <p class="body-lg" style="margin-bottom:28px;">Trim whitespace margins and standardize page CropBox dimensions for clean printing and e-readers.</p>
+      <div class="device-boundary-card" style="margin-bottom:36px;">
+        <div style="padding:28px 20px; text-align:center;">
+          <a class="btn btn-primary" href="/?tool=crop">Launch Crop margins in Local Studio →</a>
+        </div>
+      </div>
+      <h2 class="headline-md" style="margin-bottom:16px;">All 28 Local PDF Tools</h2>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:10px;">
+        <a href="/tools/merge-pdf/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">01 · Merge PDF</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/split-pdf/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">02 · Split PDF</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/extract-pdf-pages/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">03 · Extract pages</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/rotate-pdf/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">04 · Rotate PDF</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/reorder-delete-pdf-pages/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">05 · Reorder & delete</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/alternate-mix-duplex-pdf/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">06 · Alternate & mix</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/split-pdf-by-text/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">07 · Split by text</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/split-pdf-by-bookmarks/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">08 · Split by bookmarks</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/split-pdf-pages-in-half/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">09 · Split in half</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/split-pdf-by-size/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">10 · Split by size</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/n-up-pages-per-sheet-pdf/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">11 · Pages per sheet</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/phone-camera-pdf-scanner/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">12 · Phone camera scan</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/images-to-pdf/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">13 · Images to PDF</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/pdf-to-png-images/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">14 · PDF to images</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/pdf-to-word-docx/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">15 · PDF to Word</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/pdf-to-markdown/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">16 · PDF to Markdown</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/pdf-to-zip-bundle/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">17 · PDF to ZIP</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/sign-fill-pdf/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">18 · Sign PDF</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/redact-pdf-pii/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">19 · Redact PDF</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/watermark-pdf/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">20 · Watermark PDF</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/bates-page-numbers-pdf/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">21 · Page & Bates numbers</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/crop-pdf-margins/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">22 · Crop margins</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/flip-mirror-pdf/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">23 · Flip & mirror</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/compress-pdf/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">24 · Compress PDF</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/ocr-searchable-pdf/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">25 · OCR text index</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/protect-unlock-pdf-aes256/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">26 · Protect & unlock</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/scrub-pdf-metadata/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">27 · Scrub metadata</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+<a href="/tools/pdf-workflow-pipeline-compare/" style="padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--ink); display:flex; align-items:center; justify-content:space-between;"><span style="font-size:13.5px; font-weight:500;">28 · Compare & batch</span><span class="mono" style="font-size:11px; color:var(--brand);">→</span></a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
