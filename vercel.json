@@ -3,6 +3,7 @@
   "name": "nouploadpdf",
   "cleanUrls": true,
   "trailingSlash": false,
+  "framework": null,
   "outputDirectory": "public",
   "rewrites": [
     {
