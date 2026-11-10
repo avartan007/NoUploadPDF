@@ -100,7 +100,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  transition: background-color 180ms ease, color 180ms ease;
+  /* instant flip for WebGL2 ink-bleed */
 }
 
 h1, h2, h3, h4 {
@@ -2462,50 +2462,209 @@ p {
 
 
 /* =====================================================================
-   INK-BLEED THEME CHANGER (View Transitions API + Fluid SVG Ink Filter)
+   INK-BLEED THEME CHANGER (WebGL2 GLSL Shader + Tileable Perlin Noise)
    ===================================================================== */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
-  display: block;
-}
-
-::view-transition-old(root) {
-  z-index: 1;
-}
-
-::view-transition-new(root) {
-  z-index: 9999;
-  will-change: clip-path;
-}
-
-.ink-bleed-svg-overlay {
+.ink-canvas {
   position: fixed;
   inset: 0;
+  z-index: 1000;
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 99999;
+  visibility: hidden;
   opacity: 0;
-  transition: opacity 240ms ease;
 }
 
-.ink-bleed-svg-overlay.active {
-  opacity: 1;
+.ink-canvas.is-active {
+  visibility: visible;
 }
 
+.theme-toggle,
 .theme-btn.ink-theme-btn {
   position: relative;
-  overflow: hidden;
-  transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 150ms ease, background-color 150ms ease;
+  z-index: 1001; /* above the ink canvas (1000); hidden in snapshots via data-ink-live */
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
+.theme-toggle:hover,
 .theme-btn.ink-theme-btn:hover {
-  transform: scale(1.08) rotate(-8deg);
-  border-color: var(--brand);
+  transform: rotate(-12deg) scale(1.06);
+  border-color: var(--ink);
 }
 
+.theme-toggle:active,
 .theme-btn.ink-theme-btn:active {
-  transform: scale(0.92);
+  transform: scale(0.93);
 }
+
+.theme-toggle__icon {
+  overflow: visible;
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.theme-toggle__body {
+  fill: currentColor;
+  transition: d 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.theme-toggle__rays {
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  transform-origin: 12px 12px;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease;
+}
+
+:root[data-theme="dark"] .theme-toggle__icon {
+  transform: rotate(-25deg);
+}
+
+:root[data-theme="dark"] .theme-toggle__rays {
+  transform: scale(0.2) rotate(-60deg);
+  opacity: 0;
+}
+
+/* CSS fallback transition when WebGL2 is unavailable or under prefers-reduced-motion */
+html.theme-fade,
+html.theme-fade *,
+html.theme-fade *::before,
+html.theme-fade *::after {
+  transition:
+    background-color var(--theme-fade, 0.45s) ease,
+    border-color var(--theme-fade, 0.45s) ease,
+    color var(--theme-fade, 0.45s) ease,
+    fill var(--theme-fade, 0.45s) ease,
+    stroke var(--theme-fade, 0.45s) ease,
+    box-shadow var(--theme-fade, 0.45s) ease !important;
+}
+
+/* Optional hidden filming / tuning controls (toggle with "D" key) */
+.demo-panel {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 2000;
+  width: 272px;
+  padding: 14px 16px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(16, 16, 21, 0.95);
+  box-shadow: 0 18px 50px -20px rgba(0, 0, 0, 0.65);
+  color: #ece9e2;
+  font: 500 12.5px/1.4 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.demo-panel[hidden] {
+  display: none !important;
+}
+
+.demo-panel__head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.demo-panel__mode {
+  color: #4ADE80;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.demo-panel__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 8px;
+  margin-bottom: 8px;
+}
+
+.demo-panel__label {
+  color: #c9c5bd;
+}
+
+.demo-panel__value {
+  color: #4ADE80;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-panel__row input[type='range'] {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 2px 0 0;
+  accent-color: #2F855A;
+}
+
+.demo-panel__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  color: #c9c5bd;
+  cursor: pointer;
+}
+
+.demo-panel__check input {
+  accent-color: #2F855A;
+}
+
+.demo-panel__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.demo-panel__actions button {
+  flex: 1;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: #2F855A;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.demo-panel__actions button.is-quiet {
+  flex: 0 0 auto;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ece9e2;
+}
+
+.demo-panel__actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.demo-panel__keys {
+  margin: 10px 0 0;
+  color: #8A918E;
+  font-size: 11.5px;
+}
+
+.demo-panel kbd {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #c9c5bd;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+

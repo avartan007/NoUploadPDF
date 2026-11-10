@@ -12,32 +12,8 @@
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
-      <!-- Ink-Bleed Theme Changer SVG Filter & Fluid Ripple Layer -->
-  <svg width="0" height="0" style="position:absolute; width:0; height:0; pointer-events:none;" aria-hidden="true">
-    <defs>
-      <!-- Soft liquid ink diffusion filter (gentle organic lobes, zero sharp cracks) -->
-      <filter id="ink-bleed-filter" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
-        <feTurbulence id="inkBleedTurbulence" type="fractalNoise" baseFrequency="0.007 0.010" numOctaves="2" seed="7" result="noise" />
-        <feDisplacementMap id="inkBleedDisplacement" in="SourceGraphic" in2="noise" scale="22" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-        <feGaussianBlur in="displaced" stdDeviation="6" result="blurred" />
-        <feComponentTransfer in="blurred" result="liquidGoo">
-          <feFuncA type="linear" slope="2.4" intercept="-0.2" />
-        </feComponentTransfer>
-      </filter>
-      <!-- Velvety capillary paper-bleed halo filter -->
-      <filter id="ink-halo-filter" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
-        <feTurbulence type="fractalNoise" baseFrequency="0.005 0.008" numOctaves="2" seed="19" result="haloNoise" />
-        <feDisplacementMap in="SourceGraphic" in2="haloNoise" scale="32" xChannelSelector="R" yChannelSelector="G" result="haloDisp" />
-        <feGaussianBlur in="haloDisp" stdDeviation="12" result="haloBlur" />
-      </filter>
-    </defs>
-  </svg>
-  <svg class="ink-bleed-svg-overlay" id="inkBleedOverlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-    <!-- Soft outer capillary diffusion halo -->
-    <circle id="inkBleedHalo" cx="90" cy="5" r="0" fill="#00C853" opacity="0.32" filter="url(#ink-halo-filter)" />
-    <!-- Core fluid organic ink droplet -->
-    <circle id="inkBleedCircle" cx="90" cy="5" r="0" fill="#0B0D0C" filter="url(#ink-bleed-filter)" />
-  </svg>
+        <!-- Ink-Bleed Theme Changer WebGL2 Canvas Overlay -->
+  <canvas class="ink-canvas" id="inkBleedCanvas" aria-hidden="true" data-html2canvas-ignore=""></canvas>
 
 <!-- Scroll-Linked Storytelling Top Progress Bar -->
   <div class="scroll-story-progress" id="scrollStoryProgress"></div>
@@ -94,7 +70,21 @@
           <span id="soundToggleIcon">🔇</span>
           <span class="header-pill-desktop" id="soundToggleLabel">Sound: Off</span>
         </button>
-        <button class="theme-btn ink-theme-btn" id="themeToggleBtn" onclick="toggleThemeMode(event)" title="Ink-Bleed Theme Switch (Light / Dark)" aria-label="Toggle theme">☾</button>
+        <button class="theme-btn ink-theme-btn theme-toggle" id="themeToggleBtn" onclick="toggleThemeMode(event)" title="Ink-Bleed Theme Switch (T)" aria-label="Toggle dark mode" aria-pressed="false" data-ink-live>
+          <svg class="theme-toggle__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path class="theme-toggle__body" id="themeToggleSvgBody" d="M12 7a5 5 0 1 1 0 10a5 5 0 1 1 0-10z" />
+            <g class="theme-toggle__rays" id="themeToggleSvgRays">
+              <line x1="12" y1="1.5" x2="12" y2="3.5" />
+              <line x1="12" y1="20.5" x2="12" y2="22.5" />
+              <line x1="1.5" y1="12" x2="3.5" y2="12" />
+              <line x1="20.5" y1="12" x2="22.5" y2="12" />
+              <line x1="4.58" y1="4.58" x2="6" y2="6" />
+              <line x1="18" y1="18" x2="19.42" y2="19.42" />
+              <line x1="4.58" y1="19.42" x2="6" y2="18" />
+              <line x1="18" y1="6" x2="19.42" y2="4.58" />
+            </g>
+          </svg>
+        </button>
         <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileSheet()" aria-label="Open menu">
           <span class="mono" id="mobileMenuGlyph" style="font-size:16px;">≡</span>
         </button>
@@ -3171,154 +3161,715 @@
     });
 
 
-    // Design Brief Interactive Controllers (Theme, 5-Tab Demo, Network Monitor, Session Wipe)
+        // Design Brief Interactive Controllers (WebGL2 Ink-Bleed Theme Changer, 5-Tab Demo, Network Monitor, Session Wipe)
     const POPULAR_IDS = new Set(['merge', 'split', 'fillSign', 'redact', 'compress']);
 
-    function toggleThemeMode(ev) {
+    // =====================================================================
+    // INK-BLEED THEME CHANGER (Exact WebGL2 GLSL Shader + Tileable Perlin Noise)
+    // Ported 1:1 from ink-bleed-theme-changer-main (src/gl/* + src/ui/*)
+    // =====================================================================
+    const INK_NOISE_SIZE = 256;
+    const INK_NOISE_CELLS = 32;
+
+    const inkParams = {
+      duration: 1.4,
+      tendril: 1.0,
+      noiseScale: 1.0,
+      softness: 1.4,
+      drift: 1.0,
+      timeScale: 1.0
+    };
+
+    const INK_SPREAD = {
+      growth: 0.7,
+      cleanupFrom: 0.45,
+      cleanupReach: 0.4,
+      cleanupPow: 2
+    };
+
+    const INK_RIM_COLOR = {
+      dark: [0.0, 0.0, 0.01],     // dense ink rim ahead of dark theme (#0B0D0C)
+      light: [1.0, 0.996, 0.985]  // bright bleach rim ahead of light theme (#FAFAF8)
+    };
+
+    const INK_THEME_SURFACE = {
+      light: {
+        bg: [250, 250, 248],
+        dot: [47, 133, 90, 0.055],
+        headerBg: [250, 250, 248, 0.92],
+        border: [231, 229, 224],
+        ink: [10, 10, 10],
+        brand: [47, 133, 90],
+        cardBg: [255, 255, 255],
+        sunkBg: [243, 243, 239]
+      },
+      dark: {
+        bg: [11, 13, 12],
+        dot: [74, 222, 128, 0.06],
+        headerBg: [11, 13, 12, 0.92],
+        border: [35, 40, 38],
+        ink: [242, 244, 243],
+        brand: [74, 222, 128],
+        cardBg: [20, 23, 22],
+        sunkBg: [15, 18, 17]
+      }
+    };
+
+    const INK_SUN_PATH = 'M12 7a5 5 0 1 1 0 10a5 5 0 1 1 0-10z';
+    const INK_MOON_PATH = 'M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a7.2 7.2 0 0 0 9.7 9.7z';
+
+    function syncThemeIconPose(theme) {
+      const btn = document.getElementById('themeToggleBtn');
+      const body = document.getElementById('themeToggleSvgBody');
+      if (btn) btn.setAttribute('aria-pressed', String(theme === 'dark'));
+      if (body) body.setAttribute('d', theme === 'dark' ? INK_MOON_PATH : INK_SUN_PATH);
+    }
+
+    function mulberry32(seed) {
+      let a = seed >>> 0;
+      return function() {
+        a = (a + 0x6d2b79f5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function buildNoiseChannel(rand) {
+      const gx = new Float32Array(INK_NOISE_CELLS * INK_NOISE_CELLS);
+      const gy = new Float32Array(INK_NOISE_CELLS * INK_NOISE_CELLS);
+      for (let i = 0; i < gx.length; i++) {
+        const a = rand() * Math.PI * 2;
+        gx[i] = Math.cos(a);
+        gy[i] = Math.sin(a);
+      }
+      const texelsPerCell = INK_NOISE_SIZE / INK_NOISE_CELLS;
+      const out = new Float32Array(INK_NOISE_SIZE * INK_NOISE_SIZE);
+      const fade = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+      const at = (cx, cy) =>
+        ((cy + INK_NOISE_CELLS) % INK_NOISE_CELLS) * INK_NOISE_CELLS + ((cx + INK_NOISE_CELLS) % INK_NOISE_CELLS);
+
+      for (let y = 0; y < INK_NOISE_SIZE; y++) {
+        const py = (y + 0.5) / texelsPerCell;
+        const cy = Math.floor(py);
+        const fy = py - cy;
+        const v = fade(fy);
+        for (let x = 0; x < INK_NOISE_SIZE; x++) {
+          const px = (x + 0.5) / texelsPerCell;
+          const cx = Math.floor(px);
+          const fx = px - cx;
+          const u = fade(fx);
+          const i00 = at(cx, cy);
+          const i10 = at(cx + 1, cy);
+          const i01 = at(cx, cy + 1);
+          const i11 = at(cx + 1, cy + 1);
+          const n00 = gx[i00] * fx + gy[i00] * fy;
+          const n10 = gx[i10] * (fx - 1) + gy[i10] * fy;
+          const n01 = gx[i01] * fx + gy[i01] * (fy - 1);
+          const n11 = gx[i11] * (fx - 1) + gy[i11] * (fy - 1);
+          const nx0 = n00 + (n10 - n00) * u;
+          const nx1 = n01 + (n11 - n01) * u;
+          out[y * INK_NOISE_SIZE + x] = nx0 + (nx1 - nx0) * v;
+        }
+      }
+      for (let i = 0; i < out.length; i++) {
+        out[i] = Math.max(-1, Math.min(1, out[i] * 1.45));
+      }
+      return out;
+    }
+
+    function createInkNoiseTexture(gl) {
+      const rand = mulberry32(0x1b1eed);
+      const channels = [buildNoiseChannel(rand), buildNoiseChannel(rand), buildNoiseChannel(rand), buildNoiseChannel(rand)];
+      const data = new Uint8Array(INK_NOISE_SIZE * INK_NOISE_SIZE * 4);
+      for (let i = 0; i < INK_NOISE_SIZE * INK_NOISE_SIZE; i++) {
+        for (let c = 0; c < 4; c++) {
+          data[i * 4 + c] = Math.round((channels[c][i] * 0.5 + 0.5) * 255);
+        }
+      }
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, INK_NOISE_SIZE, INK_NOISE_SIZE, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+      return tex;
+    }
+
+    const INK_FULLSCREEN_VERT = `#version 300 es
+void main() {
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}
+`;
+
+    // Exact shader physics from ink-bleed-theme-changer-main/src/gl/shaders.ts:
+    // Renders the spreading ink mask with domain-warped fbm, anisotropic lobes,
+    // curling/branching ridged tendrils, paper fibres, thinning band, diffusion haze,
+    // isolated droplets (speckles), and pooled pigment rim.
+    // Note: Uses alpha masking over the live flipped DOM so the new theme reveals
+    // immediately underneath with 0 lag and razor-sharp fidelity!
+    const INK_BLEED_FRAG = `#version 300 es
+precision highp float;
+precision highp int;
+
+uniform sampler2D uFrom;
+uniform vec2 uFromSize;
+uniform vec4 uFromMap;
+uniform float uCanvasScale;
+uniform vec2 uRes;
+
+uniform vec2 uCenter;
+uniform float uRadius;
+uniform float uCleanup;
+uniform float uTime;
+uniform float uRef;
+uniform vec2 uSeed;
+uniform mat2 uSeedRot;
+
+uniform float uTendril;
+uniform float uNoiseScale;
+uniform float uSoftness;
+uniform float uDrift;
+uniform vec3 uRimColor;
+
+out vec4 outColor;
+
+const float A_LOBE = 0.22;
+const float A_BLOB = 0.20;
+const float A_SUM = A_LOBE + A_BLOB;
+const float TENDRIL_REACH = 0.24;
+const float FIBRE_PX = 1.8;
+const float THIN_MAX_PX = 26.0;
+const float SPECK_PX = 18.0;
+const float HAZE_PX = 16.0;
+
+uniform sampler2D uNoise;
+const float INV_CELLS = 1.0 / 32.0;
+
+float gnoise(vec2 p) {
+  return textureLod(uNoise, p * INV_CELLS, 0.0).r * 2.0 - 1.0;
+}
+
+float gnoise2(vec2 p) {
+  return textureLod(uNoise, p * INV_CELLS, 0.0).g * 2.0 - 1.0;
+}
+
+const mat2 OCT = mat2(0.8, 0.6, -0.6, 0.8) * 2.03;
+
+float fbm3(vec2 p) {
+  float s = 0.0, a = 0.5;
+  for (int i = 0; i < 3; i++) { s += a * gnoise(p); p = OCT * p + 17.13; a *= 0.5; }
+  return s / 0.875;
+}
+
+float fbm4(vec2 p) {
+  float s = 0.0, a = 0.5;
+  for (int i = 0; i < 4; i++) { s += a * gnoise(p); p = OCT * p + 17.13; a *= 0.5; }
+  return s / 0.9375;
+}
+
+float fbm5(vec2 p) {
+  float s = 0.0, a = 0.5;
+  for (int i = 0; i < 5; i++) { s += a * gnoise(p); p = OCT * p + 17.13; a *= 0.5; }
+  return s / 0.96875;
+}
+
+vec3 sampleDoc(sampler2D tex, vec2 size, vec4 map, vec2 devPx) {
+  vec2 texPx = devPx * map.x + map.yz;
+  if (map.w > 0.5) texPx.y = size.y - texPx.y;
+  vec2 uv = clamp(texPx, vec2(0.5), size - 0.5) / size;
+  return texture(tex, uv).rgb;
+}
+
+void main() {
+  vec2 devPx = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
+  vec2 css = devPx / uCanvasScale;
+  vec2 rel = css - uCenter;
+  float d = length(rel);
+  float R = uRadius;
+  float cleanup = uCleanup;
+
+  // Conservative bounds on f: skip the noise entirely far from the frontier.
+  float inner = R * (1.0 - A_SUM) + cleanup - FIBRE_PX - THIN_MAX_PX - uSoftness * 2.0;
+  float outer = R * (1.0 + A_SUM) * (1.0 + TENDRIL_REACH * uTendril) + cleanup + FIBRE_PX + SPECK_PX + uSoftness * 2.0;
+  if (d < inner) {
+    // Fully inked: transparent so the live flipped theme underneath shines through 100% crisp
+    outColor = vec4(0.0, 0.0, 0.0, 0.0);
+    return;
+  }
+  if (d > outer) {
+    // Un-inked: show the captured "from" snapshot
+    outColor = vec4(sampleDoc(uFrom, uFromSize, uFromMap, devPx), 1.0);
+    return;
+  }
+
+  float t = uTime * uDrift;
+  vec2 p = rel / uRef;
+  vec2 dir = uSeedRot * (rel / max(d, 1e-3));
+  float ns = uNoiseScale;
+
+  // Domain warp, evolving over time so the edge boils rather than scales.
+  vec2 q = p * (2.4 * ns) + uSeed;
+  vec2 w = vec2(
+    fbm3(q + vec2(0.0, 0.31 * t)),
+    fbm3(q + vec2(5.2, 1.3) - vec2(0.27 * t, 0.0))
+  );
+
+  // Large irregular blob + smooth direction-only lobes
+  float blob = fbm5(q + 2.3 * w + vec2(0.12 * t, -0.08 * t));
+  vec2 lq = dir * 0.9 + uSeed.yx * 0.37 + vec2(0.06 * t);
+  float lobes = gnoise(lq) * 0.75 + gnoise(lq * 2.1 + 9.1) * 0.25;
+  float reach = clamp(1.0 + A_LOBE * 1.6 * lobes + A_BLOB * 1.5 * blob, 1.0 - A_SUM, 1.0 + A_SUM);
+  float f = d - R * reach;
+
+  // Tendrils: thin filaments along the zero-lines of an fbm sampled on the direction circle.
+  float gate = smoothstep(-0.35, 0.4, fbm3(dir * 1.6 + uSeed * 0.61 + 3.7));
+  vec2 tq = dir * (2.2 * ns) + (d / uRef) * vec2(2.6, -1.9) * ns + 1.2 * w + uSeed * 1.7 + vec2(0.0, 0.18 * t);
+  float n = fbm4(tq);
+  float ridgePx = abs(n) * max(d, 24.0) / (4.0 * ns);
+  float lenN = gnoise(dir * 3.1 + uSeed * 0.43 + vec2(0.1 * t)) * 0.5 + 0.5;
+  float L = uTendril * TENDRIL_REACH * R * gate * (0.35 + 0.65 * lenN);
+  float along = clamp(f / max(L, 1.0), 0.0, 1.0);
+  float width = clamp(R * 0.022, 1.5, 9.0) * (1.0 - along * along) * gate;
+  float ft = max(f - L, ridgePx - width);
+  // Smooth union: filaments flare into the blob instead of meeting it at a crease.
+  float k = 6.0;
+  float hh = clamp(0.5 + 0.5 * (ft - f) / k, 0.0, 1.0);
+  f = mix(ft, f, hh) - k * hh * (1.0 - hh);
+
+  // Paper fibres: static in screen space so they don't shimmer.
+  vec2 fq = css * 0.34 + uSeed * 13.0;
+  float fibre = gnoise2(fq) * 0.65 + gnoise2(OCT * fq + 5.3) * 0.35;
+  f += fibre * FIBRE_PX;
+
+  f -= cleanup;
+
+  // ---------- compositing ----------
+  float soft = max(uSoftness, 0.6);
+  float inked = 1.0 - smoothstep(-soft, soft, f);
+
+  // Ink thins just behind the frontier: ~0.6 density, rising to solid.
+  float thinW = mix(3.0, THIN_MAX_PX, clamp(blob * 0.8 + 0.3, 0.0, 1.0));
+  float density = mix(0.6, 1.0, smoothstep(0.0, thinW, -f));
+  float cov = inked * density;
+
+  // Diffusion haze: a faint translucent gradient just ahead of the hard frontier
+  float hazeW = mix(4.0, HAZE_PX, clamp(0.5 + 0.5 * blob, 0.0, 1.0));
+  float haze = (1.0 - smoothstep(0.0, hazeW, f)) * smoothstep(-0.3, 0.6, 0.35 * fibre + w.x);
+  cov = max(cov, haze * 0.24 * step(0.0, f));
+
+  // Speckles: isolated droplets just ahead of the frontier
+  float ahead = clamp(f / SPECK_PX, 0.0, 1.0);
+  if (f > 0.0 && ahead < 1.0) {
+    float sn = gnoise2(css * 0.55 + uSeed * 7.0 + 41.0) * 0.5 + 0.5;
+    float th = mix(0.80, 0.96, ahead);
+    cov = max(cov, smoothstep(th, th + 0.04, sn) * 0.75 * (1.0 - ahead));
+  }
+
+  vec3 fromCol = sampleDoc(uFrom, uFromSize, uFromMap, devPx);
+
+  // Pigment rim pooled at the frontier (darker for ink, brighter for bleach).
+  float rimX = (f + soft * 1.1) / (soft * 1.4 + 1.2);
+  float rim = exp(-rimX * rimX) * inked * 0.45;
+
+  // Blend fromCol with rim pigment where cov < 1, and output alpha = (1.0 - cov) + rim
+  float uninkedAlpha = clamp(1.0 - cov, 0.0, 1.0);
+  float outAlpha = clamp(uninkedAlpha + rim * (1.0 - uninkedAlpha), 0.0, 1.0);
+  vec3 outRgb = mix(fromCol, uRimColor, clamp(rim / max(outAlpha, 1e-4), 0.0, 1.0));
+
+  outColor = vec4(outRgb, outAlpha);
+}
+`;
+
+    function compileInkShader(gl, type, source) {
+      const shader = gl.createShader(type);
+      if (!shader) throw new Error('createShader failed');
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS) && !gl.isContextLost()) {
+        const log = gl.getShaderInfoLog(shader) || '';
+        gl.deleteShader(shader);
+        throw new Error('Shader compile error: ' + log);
+      }
+      return shader;
+    }
+
+    function createInkProgram(gl, vert, frag) {
+      const program = gl.createProgram();
+      if (!program) throw new Error('createProgram failed');
+      const vs = compileInkShader(gl, gl.VERTEX_SHADER, vert);
+      const fs = compileInkShader(gl, gl.FRAGMENT_SHADER, frag);
+      gl.attachShader(program, vs);
+      gl.attachShader(program, fs);
+      gl.linkProgram(program);
+      gl.deleteShader(vs);
+      gl.deleteShader(fs);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS) && !gl.isContextLost()) {
+        throw new Error('Program link error: ' + (gl.getProgramInfoLog(program) || ''));
+      }
+      const cache = new Map();
+      return {
+        program,
+        uniform(name) {
+          if (!cache.has(name)) cache.set(name, gl.getUniformLocation(program, name));
+          return cache.get(name) ?? null;
+        }
+      };
+    }
+
+    // Fast, faithful viewport snapshot synthesizer for the outgoing ("from") theme
+    // Captures live DOM cards, borders, text blocks, and backgrounds into an HTMLCanvasElement
+    // in < 6ms with zero external library overhead.
+    function captureLiveThemeViewport(theme, scale) {
+      const vw = Math.max(1, document.documentElement.clientWidth || window.innerWidth);
+      const vh = Math.max(1, document.documentElement.clientHeight || window.innerHeight);
+      const cnv = document.createElement('canvas');
+      cnv.width = Math.round(vw * scale);
+      cnv.height = Math.round(vh * scale);
+      const ctx = cnv.getContext('2d');
+      ctx.scale(scale, scale);
+
+      const pal = INK_THEME_SURFACE[theme] || INK_THEME_SURFACE.light;
+      ctx.fillStyle = `rgb(${pal.bg[0]}, ${pal.bg[1]}, ${pal.bg[2]})`;
+      ctx.fillRect(0, 0, vw, vh);
+
+      // Subtle dot grid matching body background
+      ctx.fillStyle = `rgba(${pal.dot[0]}, ${pal.dot[1]}, ${pal.dot[2]}, ${pal.dot[3]})`;
+      for (let y = 12; y < vh; y += 24) {
+        for (let x = 12; x < vw; x += 24) {
+          ctx.fillRect(x, y, 1.2, 1.2);
+        }
+      }
+
+      // Render visible cards, buttons, and containers in their exact screen positions
+      const cards = document.querySelectorAll('.device-boundary-card, .onboarding-card, .demo-card, .proof-card, .tool-card, .studio-pane, .studio-topbar, .step-chain-banner, .power-panel.active, .founder-card, .req-log-box');
+      cards.forEach(el => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > vh || r.width <= 0 || r.height <= 0) return;
+        const cs = getComputedStyle(el);
+        ctx.fillStyle = cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' ? cs.backgroundColor : `rgb(${pal.cardBg[0]}, ${pal.cardBg[1]}, ${pal.cardBg[2]})`;
+        ctx.strokeStyle = cs.borderColor || `rgb(${pal.border[0]}, ${pal.border[1]}, ${pal.border[2]})`;
+        ctx.lineWidth = 1;
+        const rad = parseFloat(cs.borderRadius) || 12;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+          ctx.roundRect(r.left, r.top, r.width, r.height, rad);
+        } else {
+          ctx.rect(r.left, r.top, r.width, r.height);
+        }
+        ctx.fill();
+        ctx.stroke();
+      });
+
+      // Render visible headings and key labels so text visibly gets swallowed by the ink tendrils
+      const texts = document.querySelectorAll('h1, h2, h3, .brand-link, .tool-card-title, .eyebrow, .btn-primary, .privacy-pill');
+      texts.forEach(el => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > vh || r.width <= 0 || r.height <= 0) return;
+        const cs = getComputedStyle(el);
+        if (el.classList.contains('btn-primary') || el.classList.contains('privacy-pill')) {
+          ctx.fillStyle = cs.backgroundColor;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === 'function') ctx.roundRect(r.left, r.top, r.width, r.height, 8);
+          else ctx.rect(r.left, r.top, r.width, r.height);
+          ctx.fill();
+        }
+        const txt = (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 65);
+        if (!txt) return;
+        ctx.fillStyle = cs.color || `rgb(${pal.ink[0]}, ${pal.ink[1]}, ${pal.ink[2]})`;
+        ctx.font = `${cs.fontWeight || '600'} ${cs.fontSize || '16px'} ${cs.fontFamily || 'sans-serif'}`;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(txt, r.left + (el.classList.contains('btn-primary') ? 14 : 0), r.top + r.height / 2);
+      });
+
+      // Sticky header bar
+      ctx.fillStyle = `rgba(${pal.headerBg[0]}, ${pal.headerBg[1]}, ${pal.headerBg[2]}, ${pal.headerBg[3]})`;
+      ctx.fillRect(0, 0, vw, 64);
+      ctx.fillStyle = `rgb(${pal.border[0]}, ${pal.border[1]}, ${pal.border[2]})`;
+      ctx.fillRect(0, 63, vw, 1);
+
+      return { canvas: cnv, width: cnv.width, height: cnv.height, scale };
+    }
+
+    const InkBleedEngine = {
+      gl: null,
+      program: null,
+      vao: null,
+      noiseTex: null,
+      fromTex: null,
+      fromMeta: { width: 1, height: 1, scale: 1 },
+      canvasScale: 1,
+      animId: 0,
+      fadeId: 0,
+      lastClick: null,
+
+      init() {
+        const canvas = document.getElementById('inkBleedCanvas');
+        if (!canvas) return false;
+        if (this.gl) return true;
+        try {
+          const gl = canvas.getContext('webgl2', {
+            alpha: true,
+            antialias: false,
+            depth: false,
+            stencil: false,
+            premultipliedAlpha: false,
+            preserveDrawingBuffer: false,
+            powerPreference: 'high-performance'
+          });
+          if (!gl) return false;
+          this.gl = gl;
+          this.program = createInkProgram(gl, INK_FULLSCREEN_VERT, INK_BLEED_FRAG);
+          this.vao = gl.createVertexArray();
+          this.noiseTex = createInkNoiseTexture(gl);
+          this.fromTex = gl.createTexture();
+          gl.bindTexture(gl.TEXTURE_2D, this.fromTex);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+          gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+          document.documentElement.dataset.ink = 'webgl';
+          return true;
+        } catch (err) {
+          console.warn('[ink-bleed] WebGL2 init fallback:', err);
+          this.gl = null;
+          document.documentElement.dataset.ink = 'css';
+          return false;
+        }
+      },
+
+      resize(canvas) {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const vw = Math.max(1, document.documentElement.clientWidth || window.innerWidth);
+        const vh = Math.max(1, document.documentElement.clientHeight || window.innerHeight);
+        const w = Math.max(1, Math.round(vw * dpr));
+        const h = Math.max(1, Math.round(vh * dpr));
+        if (canvas.width !== w) canvas.width = w;
+        if (canvas.height !== h) canvas.height = h;
+        this.canvasScale = dpr;
+        return dpr;
+      },
+
+      uploadSnapshot(snap) {
+        const gl = this.gl;
+        if (!gl) return;
+        gl.bindTexture(gl.TEXTURE_2D, this.fromTex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, snap.canvas);
+        this.fromMeta = { width: snap.width, height: snap.height, scale: snap.scale };
+      },
+
+      drawFrame(frame) {
+        const gl = this.gl;
+        const canvas = document.getElementById('inkBleedCanvas');
+        if (!gl || !canvas || !this.program) return;
+        const { program, uniform } = this.program;
+
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.useProgram(program);
+        gl.bindVertexArray(this.vao);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.fromTex);
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, this.noiseTex);
+
+        const ratio = this.fromMeta.scale / this.canvasScale;
+        gl.uniform1i(uniform('uFrom'), 0);
+        gl.uniform1i(uniform('uNoise'), 2);
+        gl.uniform2f(uniform('uFromSize'), this.fromMeta.width, this.fromMeta.height);
+        gl.uniform4f(uniform('uFromMap'), ratio, 0, 0, 0);
+        gl.uniform1f(uniform('uCanvasScale'), this.canvasScale);
+        gl.uniform2f(uniform('uRes'), canvas.width, canvas.height);
+        gl.uniform2f(uniform('uCenter'), frame.center.x, frame.center.y);
+        gl.uniform1f(uniform('uRadius'), frame.radius);
+        gl.uniform1f(uniform('uCleanup'), frame.cleanup);
+        gl.uniform1f(uniform('uTime'), frame.time);
+        gl.uniform1f(uniform('uRef'), Math.max(canvas.width, canvas.height) / this.canvasScale);
+        gl.uniform2f(uniform('uSeed'), frame.seed.x, frame.seed.y);
+        const cos = Math.cos(frame.seed.angle);
+        const sin = Math.sin(frame.seed.angle);
+        gl.uniformMatrix2fv(uniform('uSeedRot'), false, [cos, sin, -sin, cos]);
+
+        gl.uniform1f(uniform('uTendril'), inkParams.tendril);
+        gl.uniform1f(uniform('uNoiseScale'), inkParams.noiseScale);
+        gl.uniform1f(uniform('uSoftness'), inkParams.softness);
+        gl.uniform1f(uniform('uDrift'), inkParams.drift);
+        gl.uniform3fv(uniform('uRimColor'), INK_RIM_COLOR[frame.to] || INK_RIM_COLOR.dark);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+    };
+
+    // power3.out easing matching GSAP's `power3.out`: 1 - (1 - t)^3
+    function easePower3Out(u) {
+      const inv = 1 - Math.min(1, Math.max(0, u));
+      return 1 - inv * inv * inv;
+    }
+
+    function farthestViewportCorner(p) {
+      const w = document.documentElement.clientWidth || window.innerWidth;
+      const h = document.documentElement.clientHeight || window.innerHeight;
+      return Math.max(
+        Math.hypot(p.x, p.y),
+        Math.hypot(w - p.x, p.y),
+        Math.hypot(p.x, h - p.y),
+        Math.hypot(w - p.x, h - p.y)
+      ) + 4;
+    }
+
+    function randomInkSeed() {
+      return {
+        x: Math.random() * 64 - 32,
+        y: Math.random() * 64 - 32,
+        angle: Math.random() * Math.PI * 2
+      };
+    }
+
+    function toggleThemeMode(ev, customSeed) {
       const root = document.documentElement;
-      const cur = root.getAttribute('data-theme') || 'light';
+      const cur = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
       const next = cur === 'dark' ? 'light' : 'dark';
       const btn = document.getElementById('themeToggleBtn');
 
-      // Determine origin coordinates (x, y) from click or theme button center
       let x = window.innerWidth - 48;
       let y = 32;
       if (ev && typeof ev.clientX === 'number' && (ev.clientX !== 0 || ev.clientY !== 0)) {
         x = ev.clientX;
         y = ev.clientY;
+      } else if (ev && typeof ev.x === 'number' && typeof ev.y === 'number') {
+        x = ev.x;
+        y = ev.y;
       } else if (btn) {
         const rect = btn.getBoundingClientRect();
         x = rect.left + rect.width / 2;
         y = rect.top + rect.height / 2;
       }
 
-      const endRadius = Math.hypot(
-        Math.max(x, window.innerWidth - x),
-        Math.max(y, window.innerHeight - y)
-      ) * 1.15;
-
-      // Soft, organic random seed
-      const turb = document.getElementById('inkBleedTurbulence');
-      if (turb) turb.setAttribute('seed', String(Math.floor(Math.random() * 899) + 1));
-
       if (typeof playUiSound === 'function') playUiSound('tick');
 
-      const applyThemeChange = () => {
-        root.setAttribute('data-theme', next);
-        try { localStorage.setItem('nouploadpdf_theme', next); } catch {}
-        if (btn) btn.textContent = next === 'dark' ? '☀' : '☾';
+      const applyThemeDom = (targetTheme) => {
+        root.setAttribute('data-theme', targetTheme);
+        try { localStorage.setItem('nouploadpdf_theme', targetTheme); } catch {}
+        syncThemeIconPose(targetTheme);
       };
 
       const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (prefersReduced) {
-        applyThemeChange();
+      const canvas = document.getElementById('inkBleedCanvas');
+
+      if (prefersReduced || !canvas || !InkBleedEngine.init()) {
+        root.classList.add('theme-fade');
+        root.style.setProperty('--theme-fade', '0.45s');
+        applyThemeDom(next);
+        setTimeout(() => root.classList.remove('theme-fade'), 500);
         return;
       }
 
-      const DURATION = 1250; // Smooth, luxurious 1.25s fluid transition
-      const EASING = 'cubic-bezier(0.16, 1, 0.3, 1)'; // Velvety deceleration curve
+      // Cancel any running animation
+      if (InkBleedEngine.animId) cancelAnimationFrame(InkBleedEngine.animId);
+      if (InkBleedEngine.fadeId) cancelAnimationFrame(InkBleedEngine.fadeId);
 
-      const overlay = document.getElementById('inkBleedOverlay');
-      const circle = document.getElementById('inkBleedCircle') || document.getElementById('inkBleedFallbackCircle');
-      const halo = document.getElementById('inkBleedHalo');
+      const scale = InkBleedEngine.resize(canvas);
+      // 1. Capture live "from" viewport before flipping theme
+      const snap = captureLiveThemeViewport(cur, scale);
+      InkBleedEngine.uploadSnapshot(snap);
 
-      const inkColor = next === 'dark' ? '#0B0D0C' : '#FAFAF8';
-      const haloColor = next === 'dark' ? '#2F855A' : '#CBD5E1';
+      const center = { x, y };
+      const maxDist = farthestViewportCorner(center);
+      const seed = customSeed || randomInkSeed();
+      InkBleedEngine.lastClick = { point: center, seed, from: cur };
 
-      if (overlay && circle) {
-        overlay.setAttribute('viewBox', '0 0 ' + window.innerWidth + ' ' + window.innerHeight);
-        circle.setAttribute('cx', String(x));
-        circle.setAttribute('cy', String(y));
-        circle.setAttribute('r', '0');
-        circle.setAttribute('fill', inkColor);
+      // 2. Show overlay with "from" frame at progress=0 and flip live DOM underneath in the exact same task
+      InkBleedEngine.drawFrame({
+        to: next,
+        center,
+        progress: 0,
+        time: 0,
+        radius: 0,
+        cleanup: 0,
+        maxDist,
+        seed
+      });
+      canvas.style.opacity = '1';
+      canvas.classList.add('is-active');
+      applyThemeDom(next);
 
-        if (halo) {
-          halo.setAttribute('cx', String(x));
-          halo.setAttribute('cy', String(y));
-          halo.setAttribute('r', '0');
-          halo.setAttribute('fill', haloColor);
-        }
-      }
+      // 3. Animate ink spread with power3.out and cleanup reach
+      const durationSec = inkParams.duration / Math.max(0.1, inkParams.timeScale);
+      const startMs = performance.now();
 
-      // 1. Primary path: Native View Transitions API with fluid wavefront
-      if (typeof document.startViewTransition === 'function') {
-        if (overlay) overlay.classList.add('active');
+      const tickSpread = (now) => {
+        const elapsedSec = (now - startMs) / 1000;
+        const linear = Math.min(1, elapsedSec / durationSec);
+        const progress = easePower3Out(linear);
+        const simTime = elapsedSec * inkParams.timeScale;
 
-        // Animate organic SVG ink halo along the expanding wavefront
-        if (circle) {
-          circle.animate(
-            [{ r: '0px' }, { r: endRadius + 'px' }],
-            { duration: DURATION, easing: EASING, fill: 'forwards' }
-          );
-        }
-        if (halo) {
-          halo.animate(
-            [{ r: '0px', opacity: 0.38 }, { r: (endRadius * 1.06) + 'px', opacity: 0 }],
-            { duration: DURATION, easing: EASING, fill: 'forwards' }
-          );
-        }
+        const ramp = Math.max(0, (linear - INK_SPREAD.cleanupFrom) / (1 - INK_SPREAD.cleanupFrom));
+        const cleanup =
+          Math.pow(ramp, INK_SPREAD.cleanupPow) * maxDist * INK_SPREAD.cleanupReach +
+          Math.max(0, (linear - 0.97) / 0.03) * maxDist;
+        const radius = progress * maxDist * INK_SPREAD.growth;
 
-        const transition = document.startViewTransition(() => {
-          applyThemeChange();
+        InkBleedEngine.drawFrame({
+          to: next,
+          center,
+          progress,
+          time: simTime,
+          radius,
+          cleanup,
+          maxDist,
+          seed
         });
 
-        transition.ready.then(() => {
-          document.documentElement.animate(
-            {
-              clipPath: [
-                'circle(0px at ' + x + 'px ' + y + 'px)',
-                'circle(' + endRadius + 'px at ' + x + 'px ' + y + 'px)'
-              ]
-            },
-            {
-              duration: DURATION,
-              easing: EASING,
-              pseudoElement: '::view-transition-new(root)'
+        if (linear < 1) {
+          InkBleedEngine.animId = requestAnimationFrame(tickSpread);
+        } else {
+          // 150ms fade out onto the already-flipped live DOM
+          const fadeStart = performance.now();
+          const fadeDurMs = (150 / Math.max(0.1, inkParams.timeScale));
+          const tickFade = (fNow) => {
+            const ft = Math.min(1, (fNow - fadeStart) / fadeDurMs);
+            canvas.style.opacity = String(1 - ft);
+            if (ft < 1) {
+              InkBleedEngine.fadeId = requestAnimationFrame(tickFade);
+            } else {
+              canvas.classList.remove('is-active');
+              canvas.style.opacity = '0';
             }
-          );
-        }).catch(() => {});
-
-        transition.finished.finally(() => {
-          if (overlay) {
-            overlay.classList.remove('active');
-            if (circle) circle.setAttribute('r', '0');
-            if (halo) halo.setAttribute('r', '0');
-          }
-        });
-        return;
-      }
-
-      // 2. Fallback path for browsers without View Transitions API
-      if (overlay && circle) {
-        overlay.classList.add('active');
-        const anim = circle.animate(
-          [{ r: '0px' }, { r: endRadius + 'px' }],
-          { duration: DURATION, easing: EASING, fill: 'forwards' }
-        );
-        if (halo) {
-          halo.animate(
-            [{ r: '0px', opacity: 0.4 }, { r: (endRadius * 1.06) + 'px', opacity: 0 }],
-            { duration: DURATION, easing: EASING, fill: 'forwards' }
-          );
+          };
+          InkBleedEngine.fadeId = requestAnimationFrame(tickFade);
         }
-        setTimeout(applyThemeChange, Math.round(DURATION * 0.38));
-        anim.onfinish = () => {
-          overlay.classList.remove('active');
-          circle.setAttribute('r', '0');
-          if (halo) halo.setAttribute('r', '0');
-        };
-      } else {
-        applyThemeChange();
-      }
+      };
+
+      InkBleedEngine.animId = requestAnimationFrame(tickSpread);
     }
 
-    try {
-      const savedTheme = localStorage.getItem('nouploadpdf_theme');
-      if (savedTheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        const btn = document.getElementById('themeToggleBtn');
-        if (btn) btn.textContent = '☀';
+    // Keyboard shortcut 'T' to toggle theme & 'R' to replay last ink spread (from main.ts)
+    window.addEventListener('keydown', (e) => {
+      if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target;
+      if (t instanceof Element && t.closest('input, textarea, select, [contenteditable="true"]')) return;
+      const k = e.key.toLowerCase();
+      if (k === 't') {
+        e.preventDefault();
+        toggleThemeMode();
+      } else if (k === 'r' && InkBleedEngine.lastClick) {
+        e.preventDefault();
+        const last = InkBleedEngine.lastClick;
+        document.documentElement.setAttribute('data-theme', last.from);
+        syncThemeIconPose(last.from);
+        setTimeout(() => toggleThemeMode(last.point, last.seed), 320);
       }
+    });
+
+    try {
+      const savedTheme = localStorage.getItem('nouploadpdf_theme') === 'dark' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      syncThemeIconPose(savedTheme);
     } catch {}
 
     function scrollToSection(id) {
