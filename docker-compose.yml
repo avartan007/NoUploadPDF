@@ -1,0 +1,10 @@
+services:
+  nouploadpdf:
+    build: .
+    container_name: nouploadpdf-studio
+    ports:
+      - "3000:3000"
+    environment:
+      - RAILS_ENV=development
+      - RAILS_LOG_TO_STDOUT=true
+    restart: unless-stopped

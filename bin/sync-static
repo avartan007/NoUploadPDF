@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+# Regenerate the static landing page from the Rails source of truth.
+#
+#   app/assets/stylesheets/application.css  -> public/styles.css
+#   app/views/pages/home.html.erb body+engine -> public/index.html + index.html
+#
+# The scanner pages are Rails-only; the static build keeps the marketing page
+# and the local PDF tools.
+
+ROOT = File.expand_path("..", __dir__)
+ERB = File.join(ROOT, "app/views/pages/home.html.erb")
+CSS = File.join(ROOT, "app/assets/stylesheets/application.css")
+PUBLIC = File.join(ROOT, "public/index.html")
+ROOT_INDEX = File.join(ROOT, "index.html")
+PUBLIC_CSS = File.join(ROOT, "public/styles.css")
+
+HEADER = "<!-- CLEAN MINIMALIST HEADER (64px) -->"
+TITLE = "NoUploadPDF — 28 private PDF tools + iPhone → Mac scanner"
+
+erb = File.read(ERB)
+start = erb.index(HEADER) or abort "header marker not found in #{ERB}"
+finish = erb.rindex("</script>") or abort "engine script not found in #{ERB}"
+finish += "</script>".length
+segment = erb[start...finish]
+
+File.write(PUBLIC_CSS, File.read(CSS))
+puts "wrote public/styles.css (#{File.size(PUBLIC_CSS)} bytes)"
+
+html = File.read(PUBLIC)
+html.sub!(/<style>.*?<\/style>/m, '<link rel="stylesheet" href="/styles.css">')
+html.sub!(/<title>.*?<\/title>/m, "<title>#{TITLE}</title>")
+
+old_start = html.index(HEADER) or abort "header marker not found in #{PUBLIC}"
+old_finish = html.rindex("</script>") or abort "engine script not found in #{PUBLIC}"
+old_finish += "</script>".length
+html = html[0...old_start] + segment + html[old_finish..]
+
+File.write(PUBLIC, html)
+File.write(ROOT_INDEX, html)
+puts "wrote public/index.html and index.html (#{html.bytesize} bytes)"

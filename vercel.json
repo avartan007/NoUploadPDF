@@ -1,0 +1,69 @@
+{
+  "version": 2,
+  "name": "nouploadpdf",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "outputDirectory": "public",
+  "rewrites": [
+    {
+      "source": "/compress-pdf-to-200kb",
+      "destination": "/compress-pdf-to-200kb/index.html"
+    },
+    {
+      "source": "/merge-pdf-for-visa",
+      "destination": "/merge-pdf-for-visa/index.html"
+    },
+    {
+      "source": "/redact-private-pdf",
+      "destination": "/redact-private-pdf/index.html"
+    },
+    {
+      "source": "/tools/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/scanner",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-NoUploadPDF-Privacy",
+          "value": "processed-in-browser"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ]
+}

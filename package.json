@@ -1,0 +1,16 @@
+{
+  "name": "nouploadpdf-rails",
+  "version": "1.0.0",
+  "description": "Private, local-first 28-tool PDF studio built with Ruby on Rails & Hotwire Stimulus + Mac/iPhone Continuity Scanner Bridge.",
+  "author": "avartan007",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/avartan007/NoUploadPDF.git"
+  },
+  "scripts": {
+    "dev": "./bin/dev",
+    "build": "echo 'Static public/ bundle ready for Vercel'",
+    "start": "./bin/dev"
+  }
+}

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -e
+PORT="${PORT:-3000}"
+
+# The iPhone has to reach this Mac over the local network, so bind to all
+# interfaces (127.0.0.1 would keep the scanner bridge Mac-only).
+LAN_IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "")"
+
+echo "Starting NoUploadPDF (Ruby on Rails 8.0 · Zero-Upload Local Engine) on http://127.0.0.1:${PORT}"
+if [ -n "$LAN_IP" ]; then
+  echo "iPhone scanner: http://${LAN_IP}:${PORT}/scanner  (open this on the Mac, then scan the QR with the iPhone)"
+fi
+
+if command -v bundle >/dev/null 2>&1 && bundle check >/dev/null 2>&1; then
+  exec bundle exec rails server -b 0.0.0.0 -p "${PORT}"
+else
+  echo "Ruby gems not yet installed; serving pre-rendered Rails public/ studio on http://127.0.0.1:${PORT}"
+  exec python3 -m http.server "${PORT}" --bind 0.0.0.0 --directory public
+fi

@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+require "fileutils"
+APP_ROOT = File.expand_path("..", __dir__)
+FileUtils.chdir APP_ROOT do
+  puts "== Installing Ruby dependencies =="
+  system("bundle check") || system!("bundle install")
+  puts "\n== NoUploadPDF Rails setup complete! Run bin/dev to launch =="
+end
