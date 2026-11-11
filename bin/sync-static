@@ -1,11 +1,13 @@
 #!/usr/bin/env ruby
-# Regenerate the static landing page and dedicated /tools and /compare pages
-# from the Rails source of truth.
-#
+# Regenerate the static landing page and all route/slug subpages from the Rails source of truth:
 #   app/assets/stylesheets/application.css  -> public/styles.css
 #   app/views/pages/home.html.erb body+engine -> public/index.html, index.html,
 #                                                public/tools/index.html,
-#                                                public/compare/index.html
+#                                                public/compare/index.html,
+#                                                public/studio/index.html,
+#                                                public/scanner/index.html,
+#                                                public/about/index.html,
+#                                                and all public/tools/*/index.html & guide subpages
 
 require "fileutils"
 
@@ -14,8 +16,6 @@ ERB = File.join(ROOT, "app/views/pages/home.html.erb")
 CSS = File.join(ROOT, "app/assets/stylesheets/application.css")
 PUBLIC = File.join(ROOT, "public/index.html")
 ROOT_INDEX = File.join(ROOT, "index.html")
-PUBLIC_TOOLS = File.join(ROOT, "public/tools/index.html")
-PUBLIC_COMPARE = File.join(ROOT, "public/compare/index.html")
 PUBLIC_CSS = File.join(ROOT, "public/styles.css")
 
 HEADER = "<!-- Ink-Bleed Theme Changer WebGL2 Canvas Overlay -->"
@@ -27,7 +27,7 @@ finish = erb.rindex("</script>") or abort "engine script not found in #{ERB}"
 finish += "</script>".length
 segment = erb[start...finish]
 
-File.write(PUBLIC_CSS, File.read(CSS, encoding: "UTF-8"))
+File.write(PUBLIC_CSS, File.read(CSS, encoding: "UTF-8"), encoding: "UTF-8")
 puts "wrote public/styles.css (#{File.size(PUBLIC_CSS)} bytes)"
 
 html = File.read(PUBLIC, encoding: "UTF-8")
@@ -46,24 +46,31 @@ old_finish = html.rindex("</script>") or abort "engine script not found in #{PUB
 old_finish += "</script>".length
 html = html[0...old_start] + segment + html[old_finish..]
 
-File.write(PUBLIC, html)
-File.write(ROOT_INDEX, html)
+File.write(PUBLIC, html, encoding: "UTF-8")
+File.write(ROOT_INDEX, html, encoding: "UTF-8")
 puts "wrote public/index.html and index.html (#{html.bytesize} bytes)"
 
-# Generate standalone /tools page (public/tools/index.html)
-FileUtils.mkdir_p(File.dirname(PUBLIC_TOOLS))
-tools_page = html.dup
-tools_page.sub!("<title>#{TITLE}</title>", "<title>All 28 Local PDF Tools · NoUploadPDF</title>")
-tools_page.sub!('<main id="view-home" style="flex:1;">', '<main id="view-home" style="display:none; flex:1;">')
-tools_page.sub!('<main id="view-tools" style="display:none; flex:1;">', '<main id="view-tools" style="flex:1;">')
-File.write(PUBLIC_TOOLS, tools_page)
-puts "wrote public/tools/index.html (#{tools_page.bytesize} bytes)"
+# Sync top-level route directories (/tools, /compare, /studio, /scanner, /about, and guide slugs)
+route_dirs = [
+  "public/tools",
+  "public/compare",
+  "public/studio",
+  "public/scanner",
+  "public/about",
+  "public/compress-pdf-to-200kb",
+  "public/merge-pdf-for-visa",
+  "public/redact-private-pdf"
+]
 
-# Generate standalone /compare page (public/compare/index.html)
-FileUtils.mkdir_p(File.dirname(PUBLIC_COMPARE))
-compare_page = html.dup
-compare_page.sub!("<title>#{TITLE}</title>", "<title>Compare Local RAM vs. Cloud PDF Tools · NoUploadPDF</title>")
-compare_page.sub!('<main id="view-home" style="flex:1;">', '<main id="view-home" style="display:none; flex:1;">')
-compare_page.sub!('<main id="view-compare" style="display:none; flex:1;">', '<main id="view-compare" style="flex:1;">')
-File.write(PUBLIC_COMPARE, compare_page)
-puts "wrote public/compare/index.html (#{compare_page.bytesize} bytes)"
+route_dirs.each do |rel_dir|
+  dir_path = File.join(ROOT, rel_dir)
+  FileUtils.mkdir_p(dir_path)
+  File.write(File.join(dir_path, "index.html"), html, encoding: "UTF-8")
+end
+
+# Sync all existing public/tools/<slug>/index.html subdirectories so no stale Nov 10 HTML remains anywhere
+Dir.glob(File.join(ROOT, "public/tools/*/index.html")).each do |subpage|
+  File.write(subpage, html, encoding: "UTF-8")
+end
+
+puts "synced #{route_dirs.size} route directories and #{Dir.glob(File.join(ROOT, 'public/tools/*/index.html')).size} tool subpages"
