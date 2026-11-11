@@ -1,0 +1,16 @@
+# GitHub Linguist Language Overrides
+# Exclude static build outputs, generated HTML exports, and vendored assets from language stats
+index.html linguist-generated=true linguist-detectable=false
+public/** linguist-generated=true linguist-detectable=false
+vendor/** linguist-vendored=true linguist-detectable=false
+assets/** linguist-vendored=true linguist-detectable=false
+
+# Treat Rails ERB views as Ruby
+*.html.erb linguist-language=Ruby
+*.erb linguist-language=Ruby
+app/views/**/*.html.erb linguist-language=Ruby
+app/views/**/*.erb linguist-language=Ruby
+
+# Exclude test fixtures and e2e test configurations
+e2e/** linguist-detectable=false
+playwright.config.js linguist-detectable=false
