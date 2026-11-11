@@ -2,7 +2,7 @@ class ToolsController < ApplicationController
   def index
     @category = params[:category] || "All"
     @filtered_tools = ToolCatalog.by_category(@category)
-    @active_view = "home"
+    @active_view = "tools"
     render "pages/home"
   end
 

@@ -1,21 +1,25 @@
 #!/usr/bin/env ruby
-# Regenerate the static landing page from the Rails source of truth.
+# Regenerate the static landing page and dedicated /tools and /compare pages
+# from the Rails source of truth.
 #
 #   app/assets/stylesheets/application.css  -> public/styles.css
-#   app/views/pages/home.html.erb body+engine -> public/index.html + index.html
-#
-# The scanner pages are Rails-only; the static build keeps the marketing page
-# and the local PDF tools.
+#   app/views/pages/home.html.erb body+engine -> public/index.html, index.html,
+#                                                public/tools/index.html,
+#                                                public/compare/index.html
+
+require "fileutils"
 
 ROOT = File.expand_path("..", __dir__)
 ERB = File.join(ROOT, "app/views/pages/home.html.erb")
 CSS = File.join(ROOT, "app/assets/stylesheets/application.css")
 PUBLIC = File.join(ROOT, "public/index.html")
 ROOT_INDEX = File.join(ROOT, "index.html")
+PUBLIC_TOOLS = File.join(ROOT, "public/tools/index.html")
+PUBLIC_COMPARE = File.join(ROOT, "public/compare/index.html")
 PUBLIC_CSS = File.join(ROOT, "public/styles.css")
 
 HEADER = "<!-- Ink-Bleed Theme Changer WebGL2 Canvas Overlay -->"
-TITLE = "NoUploadPDF — 28 private PDF tools + iPhone → Mac scanner"
+TITLE = "NoUploadPDF — Your PDFs never leave your device"
 
 erb = File.read(ERB, encoding: "UTF-8")
 start = erb.index(HEADER) or abort "header marker not found in #{ERB}"
@@ -30,6 +34,13 @@ html = File.read(PUBLIC, encoding: "UTF-8")
 html.sub!(/<style>.*?<\/style>/m, '<link rel="stylesheet" href="/styles.css">')
 html.sub!(/<title>.*?<\/title>/m, "<title>#{TITLE}</title>")
 
+unless html.include?("three.min.js")
+  html.sub!(
+    '<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>',
+    "<script src=\"https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>"
+  )
+end
+
 old_start = html.index(HEADER) or abort "header marker not found in #{PUBLIC}"
 old_finish = html.rindex("</script>") or abort "engine script not found in #{PUBLIC}"
 old_finish += "</script>".length
@@ -38,3 +49,21 @@ html = html[0...old_start] + segment + html[old_finish..]
 File.write(PUBLIC, html)
 File.write(ROOT_INDEX, html)
 puts "wrote public/index.html and index.html (#{html.bytesize} bytes)"
+
+# Generate standalone /tools page (public/tools/index.html)
+FileUtils.mkdir_p(File.dirname(PUBLIC_TOOLS))
+tools_page = html.dup
+tools_page.sub!("<title>#{TITLE}</title>", "<title>All 28 Local PDF Tools · NoUploadPDF</title>")
+tools_page.sub!('<main id="view-home" style="flex:1;">', '<main id="view-home" style="display:none; flex:1;">')
+tools_page.sub!('<main id="view-tools" style="display:none; flex:1;">', '<main id="view-tools" style="flex:1;">')
+File.write(PUBLIC_TOOLS, tools_page)
+puts "wrote public/tools/index.html (#{tools_page.bytesize} bytes)"
+
+# Generate standalone /compare page (public/compare/index.html)
+FileUtils.mkdir_p(File.dirname(PUBLIC_COMPARE))
+compare_page = html.dup
+compare_page.sub!("<title>#{TITLE}</title>", "<title>Compare Local RAM vs. Cloud PDF Tools · NoUploadPDF</title>")
+compare_page.sub!('<main id="view-home" style="flex:1;">', '<main id="view-home" style="display:none; flex:1;">')
+compare_page.sub!('<main id="view-compare" style="display:none; flex:1;">', '<main id="view-compare" style="flex:1;">')
+File.write(PUBLIC_COMPARE, compare_page)
+puts "wrote public/compare/index.html (#{compare_page.bytesize} bytes)"

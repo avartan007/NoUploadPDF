@@ -3373,3 +3373,272 @@ html.theme-fade *::after {
   .segmented-control { display: flex; flex-wrap: wrap; }
   .segmented-pill-indicator { display: none; }
 }
+
+/* ==========================================================================
+   RADICAL SUBTRACTION, 100PX TYPOGRAPHY & THREE.JS PAPER TORNADO HERO
+   ========================================================================== */
+
+.ui-icon {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: -2px;
+}
+
+.ui-icon-lg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  flex-shrink: 0;
+}
+
+/* Single Unified Page Eyebrow (1 per page) */
+.page-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin-bottom: 24px;
+}
+
+.page-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+/* Big ~100px Headlines with Tight Tracking & Generous Whitespace */
+.hero-display-100 {
+  font-family: var(--font-sans);
+  font-size: clamp(54px, 7.6vw, 102px);
+  font-weight: 650;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  margin: 0 0 28px 0;
+  max-width: 13.5ch;
+}
+
+.page-display-90 {
+  font-family: var(--font-sans);
+  font-size: clamp(44px, 6vw, 84px);
+  font-weight: 650;
+  line-height: 0.97;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  margin: 0 0 20px 0;
+  max-width: 16ch;
+}
+
+/* Subtracted Hero Stage with Full-Bleed Three.js Paper Tornado Canvas */
+.landing-hero-subtracted {
+  position: relative;
+  min-height: calc(100vh - 56px);
+  display: flex;
+  align-items: center;
+  padding: 96px 0 112px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-three-canvas-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#heroThreeCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Architectural Telemetry Labels in the 3D Scene */
+.three-telemetry-tag {
+  position: absolute;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  background: var(--glass);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+  pointer-events: none;
+}
+
+.three-telemetry-server {
+  top: 26px;
+  right: max(24px, 5vw);
+}
+
+.three-telemetry-local {
+  bottom: 26px;
+  left: max(24px, 5vw);
+}
+
+.hero-subtracted-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.hero-subcopy {
+  font-size: clamp(18px, 1.45vw, 22px);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: var(--ink-2);
+  max-width: 44ch;
+  margin: 0 0 36px 0;
+}
+
+/* Single Focal Drop Zone Card on the Landing Page */
+.focal-drop-card {
+  background: var(--glass);
+  backdrop-filter: saturate(180%) blur(22px);
+  -webkit-backdrop-filter: saturate(180%) blur(22px);
+  border: 1px solid var(--border-strong);
+  border-radius: 22px;
+  padding: 28px;
+  box-shadow: var(--sh-2);
+  transition: transform 260ms var(--ease), border-color 220ms var(--ease);
+}
+
+.focal-drop-card:hover {
+  border-color: var(--brand);
+}
+
+.focal-drop-target {
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--surface);
+  transition: border-color 180ms var(--ease), background 180ms var(--ease), transform 180ms var(--ease);
+}
+
+.focal-drop-target:hover,
+.focal-drop-target.drag-active {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  transform: scale(0.995);
+}
+
+/* Subtracted Editorial Proof Strip (No boxes, no badges, generous whitespace) */
+.editorial-proof-section {
+  padding: 120px 0;
+  background: var(--bg);
+}
+
+.editorial-proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px;
+  border-top: 1px solid var(--border);
+  padding-top: 48px;
+}
+
+.editorial-proof-col h3 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 10px 0;
+}
+
+.editorial-proof-col p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-2);
+  margin: 0;
+}
+
+.editorial-nav-strip {
+  margin-top: 72px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.editorial-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 10px 0;
+  border-bottom: 1.5px solid var(--ink);
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  cursor: pointer;
+  transition: color 180ms ease, border-color 180ms ease;
+}
+
+.editorial-nav-link:hover {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+
+/* Dedicated /tools and /compare Page Containers */
+.dedicated-page-section {
+  padding: 88px 0 120px;
+}
+
+@media (max-width: 960px) {
+  .hero-subtracted-inner {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .landing-hero-subtracted {
+    padding: 64px 0 80px;
+    min-height: auto;
+  }
+  .editorial-proof-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .three-telemetry-server {
+    display: none;
+  }
+}

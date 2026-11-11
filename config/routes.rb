@@ -2,8 +2,9 @@ Rails.application.routes.draw do
   root "pages#home"
 
   get "/studio",        to: "pages#home",    as: :studio
-  get "/privacy-proof", to: "pages#home",    as: :privacy_proof
-  get "/faq",           to: "pages#about",   as: :faq
+  get "/compare",       to: "pages#compare", as: :compare
+  get "/privacy-proof", to: "pages#compare", as: :privacy_proof
+  get "/faq",           to: "pages#compare", as: :faq
   resources :tools, only: %i[index show], param: :id
   get "/scanner",       to: "scanner#index", as: :scanner_bridge
   get "/scan/:room_code", to: "scanner#phone", as: :scanner_phone

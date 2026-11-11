@@ -3,6 +3,11 @@ class PagesController < ApplicationController
     @active_view = "home"
   end
 
+  def compare
+    @active_view = "compare"
+    render :home
+  end
+
   def pricing
     @active_view = "macapp"
   end

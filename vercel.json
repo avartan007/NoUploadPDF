@@ -19,19 +19,27 @@
       "destination": "/redact-private-pdf/index.html"
     },
     {
-      "source": "/tools/:id",
-      "destination": "/index.html"
+      "source": "/tools",
+      "destination": "/tools/index.html"
+    },
+    {
+      "source": "/compare",
+      "destination": "/compare/index.html"
+    },
+    {
+      "source": "/tools/:slug",
+      "destination": "/tools/:slug/index.html"
     },
     {
       "source": "/scanner",
       "destination": "/index.html"
     },
     {
-      "source": "/about",
+      "source": "/studio",
       "destination": "/index.html"
     },
     {
-      "source": "/(.*)",
+      "source": "/about",
       "destination": "/index.html"
     }
   ],

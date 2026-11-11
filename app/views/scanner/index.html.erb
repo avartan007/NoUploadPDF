@@ -9,15 +9,15 @@
 >
   <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
     <div>
-      <div class="eyebrow" style="color:var(--brand);margin-bottom:6px;">WebRTC Peer-to-Peer &amp; Direct Camera Capture</div>
+      <div class="eyebrow" style="color:var(--brand);margin-bottom:6px;">WebRTC Peer-to-Peer Scanner</div>
       <h1 class="headline-md">Scan with your phone. Edit live in the Studio.</h1>
       <p style="font-size:13.5px;color:var(--muted);margin-top:4px;">
-        Photos transfer directly from your phone browser to this tab via encrypted WebRTC peer-to-peer — or use <strong>Direct Camera / Photo Upload</strong> below on any connection.
+        Photos go peer-to-peer; a signaling relay sees only the connection handshake. Or use <strong>Direct Camera / Photo Upload</strong> below on any connection.
       </p>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button type="button" class="btn btn-primary" data-action="scanner-mac#openDirectCapture">📷 Direct Camera / Photo Upload</button>
-      <a href="/" class="btn btn-secondary">← Back to Studio &amp; Tools</a>
+      <button type="button" class="btn btn-primary" data-action="scanner-mac#openDirectCapture">Direct Camera / Photo Upload</button>
+      <a href="/" class="btn btn-secondary">Back to Studio</a>
     </div>
   </div>
 
@@ -41,8 +41,8 @@
   >
     <div style="display:flex;align-items:center;gap:10px;">
       <span style="width:10px;height:10px;border-radius:50%;background:#00875a;box-shadow:0 0 0 4px rgba(0,135,90,0.2);display:inline-block;"></span>
-      <span style="font-size:14.5px;font-weight:600;">📱 Phone Connected: <strong id="connectedPhoneName">iPhone</strong></span>
-      <span style="font-size:13px;color:#0f5132;">— Photos transfer directly into your browser memory.</span>
+      <span style="font-size:14.5px;font-weight:600;">Phone Connected: <strong id="connectedPhoneName">iPhone</strong></span>
+      <span style="font-size:13px;color:#0f5132;">— Photos transfer peer-to-peer into your browser memory.</span>
     </div>
     <span class="mono" id="connectedPhoneTransport" style="font-size:11.5px;background:#ffffff;padding:4px 10px;border-radius:999px;border:1px solid #86efac;">WebRTC P2P · Room <%= @room_code %></span>
   </div>
@@ -54,7 +54,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
         <div class="title-md">Step 1 · Scan QR or Capture Directly</div>
         <span class="mono" data-scanner-mac-target="p2pBadge" style="font-size:11px;color:var(--brand);background:var(--brand-soft);border:1px solid var(--brand-border);padding:4px 9px;border-radius:6px;font-weight:600;">
-          🔒 P2P ROOM: <%= @room_code %>
+          P2P ROOM: <%= @room_code %>
         </span>
       </div>
 
@@ -80,18 +80,18 @@
       </div>
 
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-        <button type="button" class="btn btn-secondary btn-tiny" data-action="scanner-mac#usePublicOriginUrl">🌐 Use Site Origin URL (HTTPS / Public)</button>
-        <button type="button" class="btn btn-secondary btn-tiny" data-action="scanner-mac#useLanUrl">📶 Use Local Wi-Fi IP (<%= ScannerBridge.lan_ip %>)</button>
+        <button type="button" class="btn btn-secondary btn-tiny" data-action="scanner-mac#usePublicOriginUrl">Use Site Origin URL (HTTPS)</button>
+        <button type="button" class="btn btn-secondary btn-tiny" data-action="scanner-mac#useLanUrl">Use Local Wi-Fi IP (<%= ScannerBridge.lan_ip %>)</button>
       </div>
 
       <!-- Universal fallback box (<input type="file" capture>) -->
       <div style="margin-top:14px;padding:12px;background:var(--surface-sunk);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
         <div style="font-size:12.5px;color:var(--ink);">
           <strong>On this device or restricted network?</strong><br>
-          <span style="color:var(--muted);font-size:12px;">Use native camera capture or pick photos with zero network pairing:</span>
+          <span style="color:var(--muted);font-size:12px;">Use native camera capture or pick photos directly:</span>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button type="button" class="btn btn-primary btn-tiny" data-action="scanner-mac#openDirectCapture">📷 Camera / Pick Photos</button>
+          <button type="button" class="btn btn-primary btn-tiny" data-action="scanner-mac#openDirectCapture">Camera / Pick Photos</button>
           <button type="button" class="btn btn-secondary btn-tiny" data-action="scanner-mac#addSimulatedScan">+ Test Scan</button>
         </div>
       </div>
@@ -116,7 +116,7 @@
         data-scanner-mac-target="empty"
         style="padding:32px 16px;text-align:center;border:1.5px dashed var(--border-strong);border-radius:12px;background:var(--surface-sunk);color:var(--muted);font-size:13.5px;margin-bottom:14px;"
       >
-        No photos scanned yet.<br>Scan the QR code with your phone, click <strong>📷 Camera / Pick Photos</strong>, or click <strong>+ Test Scan</strong>.
+        No photos scanned yet.<br>Scan the QR code with your phone, click <strong>Camera / Pick Photos</strong>, or click <strong>+ Test Scan</strong>.
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
