@@ -1,18 +1,24 @@
 <div align="center">
 
-# 🔒 NoUploadPDF
+<img src="docs/logo.svg" alt="NoUploadPDF" width="72">
+
+# NoUploadPDF
 
 ### Your PDFs never leave your device.
 
-**Merge, sign, redact and compress PDFs without uploading them — plus a WebRTC peer-to-peer phone camera scanner that feeds pages straight into the Studio.**
+**28 private PDF tools that run entirely in your browser, plus a phone-camera scanner that sends pages to your computer peer-to-peer.**
 
-No signup · Processed in your browser · Works offline (PWA) · MIT licensed
+No signup · No uploads · Works offline · MIT
 
-[Verify the privacy claim](#-dont-trust-us-verify-it) · [Report a bug](../../issues) · [Request a tool](../../issues/new)
+[**Open the app**](https://nouploadpdf.vercel.app/) · [Verify the claim](#-dont-trust-us-verify-it) · [Report a bug](https://github.com/avartan007/NoUploadPDF/issues) · [Request a tool](https://github.com/avartan007/NoUploadPDF/issues/new)
 
-<img src="assets/nouploadpdf-demo.gif" alt="NoUploadPDF Interactive Studio Demo" width="780">
+<!-- 10-second GIF: drop a PDF → compress to 200 KB → DevTools Network tab showing no requests -->
+<img src="docs/demo.gif" alt="NoUploadPDF demo" width="780">
 
-*8-second walkthrough: real-time live preview, WebRTC phone scanning & target-size compression with 0 network uploads.*
+![License: MIT](https://img.shields.io/badge/license-MIT-2f855a)
+![Tools](https://img.shields.io/badge/tools-28-2f855a)
+![Uploads](https://img.shields.io/badge/files%20uploaded-0-2f855a)
+![PWA](https://img.shields.io/badge/PWA-offline%20ready-2f855a)
 
 </div>
 
@@ -20,101 +26,117 @@ No signup · Processed in your browser · Works offline (PWA) · MIT licensed
 
 ## Why this exists
 
-Most online PDF tools ask you to upload contracts, agreements and private documents to a server you know nothing about, then cap you at "2 free tasks per day."
+I needed to compress and redact personal application PDFs to fit strict 200 KB portal limits, without handing private pages to a random cloud server. Most online PDF tools upload your file, store a copy, and cap you at a couple of free tasks a day.
 
-NoUploadPDF does the work **inside your browser tab**. The file is read into memory, processed with JavaScript/WebAssembly, and handed back to you. Close the tab and it is gone.
+NoUploadPDF does the work **inside your browser tab**. The file is read into memory, processed with JavaScript and WebAssembly, and handed back to you.
 
-## ✨ What you get
+## ✨ Features
 
-| Category | Tools |
+| Group | Tools |
 |---|---|
-| **Organize (11)** | Merge, Split, Extract pages, Rotate, Reorder & delete, Alternate & mix (duplex), Split by text, Split by bookmarks, Split in half, Split by size, Pages per sheet (N-up) |
-| **Convert (6)** | Phone camera scan (WebRTC P2P + Direct Camera Capture), Images → PDF, PDF → images (ZIP), PDF → Word (`.docx`), PDF → Markdown (`.md`), PDF → ZIP |
-| **Edit (6)** | Sign, Redact (rasterized burn-in + metadata wipe), Watermark, Page & Bates numbers, Crop margins, Flip & mirror |
-| **Optimize (5)** | Target-Size Compress (`100 KB` / `200 KB` / `1 MB`), OCR text index (Tesseract WASM + text layer), Protect & unlock (AES-256-GCM), Scrub metadata, Compare & batch |
+| **Organize (11)** | Merge, Split, Extract pages, Rotate, Reorder & delete, Alternate & mix, Split by text, Split by bookmarks, Split in half, Split by size, Pages per sheet |
+| **Convert (6)** | Phone camera scan, Images → PDF, PDF → images (ZIP), PDF → Word, PDF → Markdown, PDF → ZIP |
+| **Edit (6)** | Sign, Redact (216 DPI burn-in), Watermark, Page & Bates numbers, Crop margins, Flip & mirror |
+| **Optimize (5)** | Compress (incl. target size: 100 KB / 200 KB presets), OCR text index, Protect & unlock (AES-256-GCM), Scrub metadata, Compare & batch |
 
-**Studio workspace.** A 3-pane editor (files · live page thumbnail preview · settings) with multi-step **Undo (`⌘Z`)** and keyboard shortcuts (`?`). Edits carry from one tool to the next, so you can merge → compress → sign without re-selecting files.
-
-**Phone → Studio scanner (WebRTC Peer-to-Peer + Direct Capture).** Scan a QR code with an iPhone or Android phone to stream pages directly phone-to-browser over an encrypted WebRTC `RTCDataChannel` (0 bytes stored on any server), or use the built-in `<input type="file" capture="environment">` camera button on any connection.
-
-**Verifiable network log.** Instead of a static badge, NoUploadPDF wraps `fetch`, `XMLHttpRequest`, and `PerformanceObserver` to show a real, live request log (`Requests carrying your data: 0 · view log`).
+**Also:** 3-pane Studio with live page preview, tool chaining (edits carry to the next tool), undo, command palette (`⌘K`), keyboard shortcuts (`?`), installable PWA, shareable "proof" card, one-click workflow presets.
 
 ## 🔍 Don't trust us. Verify it.
 
-1. Open your browser DevTools → **Network** tab (or click **Requests carrying your data: 0 · view log** in the header).
+1. Open DevTools → **Network**.
 2. Drop a PDF and run any tool.
-3. Watch the list: you will only see static assets, never your file.
-4. Turn on **Airplane mode** and run a tool again. It still works.
+3. You will see static assets only. Your file is never in a request.
+4. Switch to **Airplane mode** and run a tool again. It still works.
 
-You can also read the code: every tool lives in `app/javascript/` and `app/views/pages/home.html.erb`.
+The app also shows a live outgoing-request monitor (wraps `fetch`, `XMLHttpRequest`, `sendBeacon`, and observes resource loads). It is a convenience, so use DevTools as the source of truth.
 
-## 🧱 How it works
+## 📱 Phone → Studio scanner (how pairing works)
 
 ```mermaid
-flowchart LR
-  A[Your file] --> B[Magic-byte check<br/>%PDF · PNG · JPEG · WebP]
-  B --> C[Browser memory]
-  C --> D[pdf-lib · PDF.js · Canvas · JSZip · WebCrypto]
-  D --> E[Result download]
-  C -. blocked .-> X[(Server)]
+sequenceDiagram
+  participant D as Desktop (Studio)
+  participant S as PeerJS signaling
+  participant P as Phone
+  D->>D: Create room ID + QR
+  P->>D: Scan QR (opens /?scan_room=ID)
+  D-->>S: Register peer nouploadpdf-room-ID
+  P-->>S: Connect to that peer
+  S-->>D: Relay SDP / ICE only
+  S-->>P: Relay SDP / ICE only
+  D<<->>P: Direct encrypted WebRTC DataChannel
+  P->>D: Scanned pages (photos never touch the server)
 ```
 
-- **Rails 8 + Hotwire (Stimulus)** serves the app shell and WebRTC signaling room only.
-- **`pdf-lib`** edits PDFs, **PDF.js** renders and extracts text, **Canvas** handles redaction/rotation/target-size compression, **JSZip** bundles outputs, **WebCrypto** does SHA-256 and AES-256-GCM (PBKDF2-derived keys).
-- **`NoUploadGuardMiddleware`** rejects binary/multipart upload bodies and sets `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Cross-Origin-Opener-Policy: same-origin`, `Referrer-Policy: no-referrer`.
-- Filenames, room codes and metadata fields are sanitized against XSS and path traversal.
-
-## 🚀 Run it locally
-
-```bash
-git clone git@github.com:avartan007/NoUploadPDF.git
-cd NoUploadPDF
-bundle install
-bin/rails server -p 3005
-```
-
-### Phone scanner
-
-Open `/scanner` on your computer, then scan the QR code with your phone:
-- **Public HTTPS site:** Uses your site's HTTPS origin and establishes a direct **WebRTC peer-to-peer `RTCDataChannel`** between phone and desktop browser.
-- **Local Wi-Fi (`localhost`):** Uses your LAN IP so a phone on the same Wi-Fi can connect, and provides a direct `<input type="file" accept="image/*" capture="environment">` fallback button that works on any connection.
+- **Photos travel peer-to-peer** over an encrypted WebRTC DataChannel.
+- **A signaling relay is used for the handshake.** By default this is the public PeerJS cloud, which sees the room ID, your IP address, and connection negotiation data (SDP/ICE), never your photos. You can self-host a PeerJS server and change the host in the config.
+- STUN/TURN servers used for NAT traversal can see IP addresses. A TURN relay only carries encrypted traffic.
+- **Fallbacks:** `BroadcastChannel` for testing in two tabs on one device, and a native camera/file input if WebRTC is blocked.
+- Pair only with your own devices. Close the scanner when done.
 
 ## 🛡️ Security model & honest limitations
 
-**What we guarantee:** the app server is configured to refuse file uploads, and no tool sends your document anywhere.
+- **No upload endpoint.** The site is static files. There is no server route that accepts a document.
+- **Local storage.** Working files are kept in memory and in your browser's IndexedDB so edits survive a refresh. **Clear All** removes them. You can inspect this in DevTools → Application → IndexedDB.
+- **Redaction** rasterizes redacted pages at 216 DPI, so text under black boxes cannot be extracted. Review every box (auto-detect can miss things) and run *Scrub metadata*.
+- **Large files** are limited by your device's memory (roughly 300 MB on desktop, 80 MB on mobile Safari).
+- **OCR** is local WASM and works best on clean printed text.
+- **Signatures** are visual stamps, not certificate-based e-signatures.
+- Browser extensions can read page content. Use a clean profile for very sensitive files.
 
-**What to know:**
-- *Redact* rasterizes the redacted pages, so those pages lose selectable text by design. That is what makes the redaction irreversible.
-- Very large PDFs (300 MB+) are limited by your device's memory, especially on mobile Safari.
-- The phone scanner sends photos from your phone to the computer over WebRTC peer-to-peer or your local network.
-- Browser extensions can see page content. Use a clean profile for highly sensitive files.
-- Local OCR and extractive summary helpers run locally and are less capable than cloud AI services or hardware-backed legal e-signature platforms.
+Found a vulnerability? See [SECURITY.md](SECURITY.md) and report privately.
 
-Found a vulnerability? Please read [SECURITY.md](SECURITY.md) and report it privately.
+## 🚀 Run locally
+
+```bash
+git clone https://github.com/avartan007/NoUploadPDF.git
+cd NoUploadPDF
+npx serve .            # or: python3 -m http.server 3005
+# open the printed URL
+```
+
+No build step is required unless you add one. Camera access on a phone needs **HTTPS**, so test the scanner on the deployed site or through a local HTTPS tunnel.
+
+## 🗂️ Project structure
+
+```
+.
+├── index.html                 # app shell
+├── assets/
+│   ├── css/                   # tokens, layout, components
+│   └── js/
+│       ├── core/              # state, storage, file verification
+│       ├── tools/             # one module per tool (01–28)
+│       ├── scanner/           # WebRTC phone bridge
+│       └── ui/                # studio, command palette, monitor
+├── vendor/                    # pdf-lib, PDF.js, JSZip, qrcode-generator, PeerJS (self-hosted)
+├── tools/<slug>/index.html    # SEO guide pages
+├── docs/                      # demo.gif, architecture, privacy model, design guide
+├── tests/
+├── .github/                   # workflows, issue templates, FUNDING.yml
+├── vercel.json                # headers (CSP etc.) and clean URLs
+└── LICENSE · SECURITY.md · CONTRIBUTING.md · CHANGELOG.md
+```
+
+## 🧰 Built with
+
+[pdf-lib](https://pdf-lib.js.org/) · [PDF.js](https://mozilla.github.io/pdf.js/) · [JSZip](https://stuk.github.io/jszip/) · [PeerJS](https://peerjs.com/) · [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) · WebCrypto · Canvas · IndexedDB · Service Worker · Vercel
 
 ## 🗺️ Roadmap
 
-- [x] Installable PWA with full offline cache
-- [x] Target-size compression ("under 100 KB / 200 KB / 1 MB" for government and job portals)
-- [x] Local auto-redact pattern scanner for emails, phone numbers and common ID formats
-- [x] Fill & sign form fields
-- [x] Peer-to-peer (WebRTC `RTCDataChannel`) phone transfer for the hosted site + direct `<input type="file" capture>` fallback
-- [x] Shareable "pipeline recipes" (the steps, never the files)
-- [x] Multi-step Undo (`⌘Z`) and keyboard shortcuts overlay (`?`)
-Vote on features or suggest new ones in [Issues](../../issues).
+- [ ] Self-hostable signaling server option and longer pairing codes with on-screen approval
+- [ ] Local AI summary and chat (WebGPU/WASM)
+- [ ] Fill & sign form fields
+- [ ] Reproducible build + build-hash footer
+- [ ] Hindi and Japanese UI
 
 ## 🤝 Contributing
 
-PRs are welcome. Good first issues are labeled [`good first issue`](../../labels/good%20first%20issue). Please:
-
-1. Open an issue for larger changes first.
-2. Keep every feature **fully client-side**. Anything that transmits a user's file will not be merged.
-3. Add or update tests for tool logic.
+PRs are welcome. Keep every feature **fully client-side**: anything that sends a user's document anywhere won't be merged. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [`good first issue`](https://github.com/avartan007/NoUploadPDF/labels/good%20first%20issue) label.
 
 ## 📄 License
 
-[MIT](LICENSE) © 2026 @avartan007
+MIT © 2026 [@avartan007](https://github.com/avartan007)
 
 ## ⭐ If this saved you from uploading a file
 
-Give the repo a star. It helps other privacy-minded people find it, and it genuinely makes my day.
+Star the repo so other privacy-minded people can find it.

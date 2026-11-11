@@ -1,9 +1,10 @@
 # GitHub Linguist Language Overrides
-# Exclude static build outputs, generated HTML exports, and vendored assets from language stats
+# Exclude static build outputs, generated HTML exports, documentation assets, and vendored assets from language stats
 index.html linguist-generated=true linguist-detectable=false
 public/** linguist-generated=true linguist-detectable=false
 vendor/** linguist-vendored=true linguist-detectable=false
 assets/** linguist-vendored=true linguist-detectable=false
+docs/** linguist-documentation=true linguist-detectable=false
 
 # Treat Rails ERB views as Ruby
 *.html.erb linguist-language=Ruby

@@ -14,19 +14,19 @@ PUBLIC = File.join(ROOT, "public/index.html")
 ROOT_INDEX = File.join(ROOT, "index.html")
 PUBLIC_CSS = File.join(ROOT, "public/styles.css")
 
-HEADER = "<!-- CLEAN MINIMALIST HEADER (64px) -->"
+HEADER = "<!-- Ink-Bleed Theme Changer WebGL2 Canvas Overlay -->"
 TITLE = "NoUploadPDF — 28 private PDF tools + iPhone → Mac scanner"
 
-erb = File.read(ERB)
+erb = File.read(ERB, encoding: "UTF-8")
 start = erb.index(HEADER) or abort "header marker not found in #{ERB}"
 finish = erb.rindex("</script>") or abort "engine script not found in #{ERB}"
 finish += "</script>".length
 segment = erb[start...finish]
 
-File.write(PUBLIC_CSS, File.read(CSS))
+File.write(PUBLIC_CSS, File.read(CSS, encoding: "UTF-8"))
 puts "wrote public/styles.css (#{File.size(PUBLIC_CSS)} bytes)"
 
-html = File.read(PUBLIC)
+html = File.read(PUBLIC, encoding: "UTF-8")
 html.sub!(/<style>.*?<\/style>/m, '<link rel="stylesheet" href="/styles.css">')
 html.sub!(/<title>.*?<\/title>/m, "<title>#{TITLE}</title>")
 

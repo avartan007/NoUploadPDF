@@ -3,15 +3,15 @@ import { createConsumer } from "@rails/actioncable"
 
 const CHUNK = 16 * 1024
 
-// Phone side. Markup: data-controller="bridge-phone" data-bridge-phone-room-value="<%= params[:id] %>"
-// Needs HTTPS for the live camera. The file-input fallback (capture) works everywhere.
+// Phone side. Displays 4-digit SAS confirmation code and sends SHA-256 verified chunks over WebRTC DataChannel.
 export default class extends Controller {
-  static targets = ["video", "status", "fallback", "sent"]
+  static targets = ["video", "status", "fallback", "sent", "sas"]
   static values = { room: String, useStun: { type: Boolean, default: false } }
 
   async connect() {
     this.me = crypto.randomUUID()
     this.sentCount = 0
+    this.sasCode = null
     this.sub = createConsumer().subscriptions.create({ channel: "SignalChannel", room: this.roomValue }, {
       connected: () => this.send({ type: "ready" }),
       received: (m) => this.onSignal(m)
@@ -33,7 +33,7 @@ export default class extends Controller {
       this.videoTarget.srcObject = this.stream
       await this.videoTarget.play()
     } catch (e) {
-      if (this.hasFallbackTarget) this.fallbackTarget.hidden = false // show <input type=file accept=image/* capture=environment>
+      if (this.hasFallbackTarget) this.fallbackTarget.hidden = false
       this.status("Camera unavailable. Use “Take photo” instead.")
     }
   }
@@ -43,13 +43,33 @@ export default class extends Controller {
     try {
       if (m.type === "offer") {
         this.pc?.close()
+        if (m.sas) {
+          this.sasCode = m.sas
+          if (this.hasSasTarget) this.sasTarget.textContent = m.sas
+        }
         const iceServers = this.useStunValue ? [{ urls: "stun:stun.l.google.com:19302" }] : []
         this.pc = new RTCPeerConnection({ iceServers })
         this.pc.onicecandidate = (e) => e.candidate && this.send({ type: "ice", candidate: e.candidate.toJSON() })
         this.pc.ondatachannel = (e) => {
           this.dc = e.channel
           this.dc.bufferedAmountLowThreshold = 1 << 20
-          this.dc.onopen = () => this.status("● Connected to your computer")
+          this.dc.onopen = () => {
+            if (this.sasCode) {
+              this.dc.send(JSON.stringify({ t: "sas_confirm", sas: this.sasCode }))
+            }
+            this.status(`● Connected to computer${this.sasCode ? ` (Code ${this.sasCode})` : ""}`)
+          }
+          this.dc.onmessage = (ev) => {
+            try {
+              const msg = JSON.parse(ev.data)
+              if (msg.t === "sas_challenge" && msg.sas) {
+                this.sasCode = msg.sas
+                if (this.hasSasTarget) this.sasTarget.textContent = msg.sas
+                this.dc.send(JSON.stringify({ t: "sas_confirm", sas: msg.sas }))
+                this.status(`● Verified with computer (Code ${msg.sas})`)
+              }
+            } catch {}
+          }
           this.dc.onclose = () => this.status("Disconnected")
         }
         await this.pc.setRemoteDescription({ type: "offer", sdp: m.sdp })
@@ -58,6 +78,9 @@ export default class extends Controller {
         this.send({ type: "answer", sdp: answer.sdp })
       } else if (m.type === "ice" && this.pc) {
         await this.pc.addIceCandidate(m.candidate)
+      } else if (m.type === "sas_rejected") {
+        this.dc?.close(); this.pc?.close()
+        this.status("Connection rejected by desktop.")
       }
     } catch (e) { console.warn("signal error", e) }
   }

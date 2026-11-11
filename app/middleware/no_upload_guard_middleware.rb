@@ -2,12 +2,24 @@ module NoUploadPdf
   class NoUploadGuardMiddleware
     SECURITY_HEADERS = {
       "X-NoUploadPDF-Zero-Storage" => "verified-0-bytes",
+      "X-NoUploadPDF-Privacy"      => "processed-in-browser-0-bytes-uploaded",
       "X-Content-Type-Options"     => "nosniff",
       "X-Frame-Options"            => "DENY",
       "Referrer-Policy"            => "no-referrer",
       "Cross-Origin-Opener-Policy" => "same-origin",
+      "Cross-Origin-Resource-Policy" => "same-origin",
       "Permissions-Policy"         => "camera=(self), microphone=(), geolocation=(), payment=(), usb=()"
     }.freeze
+
+    BLOCKED_CONTENT_TYPES = %w[
+      multipart/form-data
+      application/pdf
+      application/octet-stream
+      image/jpeg
+      image/png
+      image/webp
+      application/zip
+    ].freeze
 
     def initialize(app)
       @app = app
@@ -19,9 +31,7 @@ module NoUploadPdf
 
       # Block any attempt to upload files or binary payloads to HTTP endpoints
       if %w[POST PUT PATCH].include?(request_method) &&
-         (content_type.include?("multipart/form-data") ||
-          content_type.include?("application/pdf") ||
-          content_type.include?("application/octet-stream"))
+         BLOCKED_CONTENT_TYPES.any? { |t| content_type.include?(t) }
         return [
           403,
           SECURITY_HEADERS.merge(

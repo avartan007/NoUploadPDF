@@ -2873,3 +2873,503 @@ html.theme-fade *::after {
     position: static;
   }
 }
+
+
+/* =====================================================================
+   APPLE-GRADE DESIGN SYSTEM UPGRADE (DESIGN_GUIDE.md Sections 1–14)
+   ===================================================================== */
+:root {
+  color-scheme: light;
+  --bg: #FBFBFA;
+  --surface: #FFFFFF;
+  --surface-sunk: #F3F3F1;
+  --surface-chip: #EAEAE6;
+  --ink: #0B0B0C;
+  --ink-2: #4B4F52;
+  --muted: #86898C;
+  --subtle: #9CA3AF;
+  --line: rgba(0, 0, 0, 0.08);
+  --brand: #1F7A4D;
+  --brand-ink: #0F5132;
+  --brand-hover: #16603B;
+  --brand-soft: #E8F5EE;
+  --brand-border: rgba(31, 122, 77, 0.24);
+  --danger: #D92D20;
+  --danger-soft: #FEF2F2;
+  --glass: rgba(255, 255, 255, 0.72);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+
+  /* Shape & Depth */
+  --r-sm: 12px;
+  --r-md: 20px;
+  --r-lg: 28px;
+  --r-xl: 40px;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.05), 0 24px 64px rgba(0, 0, 0, 0.12);
+  --card-shadow: var(--shadow-1);
+  --hover-shadow: var(--shadow-2);
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-fast: 160ms;
+  --t-med: 320ms;
+  --t-slow: 700ms;
+
+  /* Typography */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Instrument Sans", "Inter", system-ui, sans-serif;
+  --font-sans: var(--font);
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --font-mono: var(--mono);
+  --header-bg: var(--glass);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0A0B0A;
+    --surface: #141615;
+    --surface-sunk: #0E100F;
+    --surface-chip: #1C201E;
+    --ink: #F5F5F4;
+    --ink-2: #B6BAB8;
+    --muted: #8A8F8C;
+    --subtle: #646B68;
+    --line: rgba(255, 255, 255, 0.1);
+    --brand: #4ADE80;
+    --brand-ink: #86EFAC;
+    --brand-hover: #22C55E;
+    --brand-soft: #0F2A1B;
+    --brand-border: rgba(74, 222, 128, 0.28);
+    --danger: #F87171;
+    --danger-soft: #2C1517;
+    --glass: rgba(20, 22, 21, 0.72);
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --header-bg: var(--glass);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0A0B0A;
+  --surface: #141615;
+  --surface-sunk: #0E100F;
+  --surface-chip: #1C201E;
+  --ink: #F5F5F4;
+  --ink-2: #B6BAB8;
+  --muted: #8A8F8C;
+  --subtle: #646B68;
+  --line: rgba(255, 255, 255, 0.1);
+  --brand: #4ADE80;
+  --brand-ink: #86EFAC;
+  --brand-hover: #22C55E;
+  --brand-soft: #0F2A1B;
+  --brand-border: rgba(74, 222, 128, 0.28);
+  --danger: #F87171;
+  --danger-soft: #2C1517;
+  --glass: rgba(20, 22, 21, 0.72);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --header-bg: var(--glass);
+}
+
+/* Materials (Section 4) */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--line);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+}
+
+/* Morphing Sticky Header (56px -> 48px on scroll) */
+.site-header {
+  height: 56px;
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid transparent;
+  transition: height var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+
+.site-header.scrolled {
+  height: 48px;
+  border-bottom-color: var(--line);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.privacy-pill.tick-flash {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 4px rgba(31, 122, 77, 0.25);
+}
+
+/* Typography refinements (Section 3) */
+.headline-display {
+  font-size: clamp(2.75rem, 6.2vw, 5.2rem);
+  font-weight: 650;
+  line-height: 1.01;
+  letter-spacing: -0.04em;
+}
+
+.hero-lead {
+  font-size: clamp(1.125rem, 1.5vw, 1.38rem);
+  font-weight: 400;
+  color: var(--ink-2);
+  max-width: 38ch;
+  line-height: 1.48;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+[data-count], .tabular-nums, .mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tactile Apple button press & release */
+.btn {
+  border-radius: var(--r-sm);
+  transition: transform var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+
+.btn:active {
+  transform: scale(0.97) !important;
+  transition-duration: 120ms;
+}
+
+/* Cursor Spotlight on Cards (Section 7) */
+.spot, .tool-card, .bento-tile, .proof-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-md);
+}
+
+.spot::before, .tool-card::before, .bento-tile::before, .proof-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s var(--ease);
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), rgba(31, 122, 77, 0.14), transparent 70%);
+  z-index: 0;
+}
+
+.spot:hover::before, .tool-card:hover::before, .bento-tile:hover::before, .proof-card:hover::before {
+  opacity: 1;
+}
+
+.tool-card > *, .bento-tile > *, .proof-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 3D Hero Vault Stage (#hero-3d, Section 8) */
+.hero-vault-stage {
+  position: relative;
+  border-radius: var(--r-lg);
+  background: radial-gradient(circle at 50% 35%, rgba(31, 122, 77, 0.12), transparent 68%), var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-2);
+  padding: 20px;
+  overflow: hidden;
+  transition: transform var(--t-med) var(--ease), border-color var(--t-fast) var(--ease);
+}
+
+.hero-vault-stage.vault-drag-over {
+  transform: scale(1.03);
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px var(--brand-soft), var(--shadow-2);
+}
+
+.hero-3d-canvas-box {
+  position: relative;
+  width: 100%;
+  height: 185px;
+  border-radius: var(--r-md);
+  background: linear-gradient(180deg, var(--surface-sunk) 0%, var(--surface) 100%);
+  border: 1px solid var(--line);
+  margin-bottom: 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-3d-canvas-box canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hero-cloud-plane-badge {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 3;
+}
+
+/* Big Numbers Count-Up Bar (Section 5 & 7) */
+.big-numbers-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 28px;
+  padding: 20px 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.big-num-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.big-num-val {
+  font-size: clamp(1.85rem, 3.2vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+
+.big-num-label {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* 6-Tile Apple Bento Grid (Section 5 & 14) */
+.bento-section {
+  padding: 64px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.bento-tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  transition: transform var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease), border-color var(--t-fast) var(--ease);
+}
+
+.bento-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-2);
+  border-color: var(--brand-border);
+}
+
+.bento-span-7 { grid-column: span 7; }
+.bento-span-5 { grid-column: span 5; }
+.bento-span-4 { grid-column: span 4; }
+
+.bento-visual {
+  background: var(--surface-sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+/* Segmented Control with Sliding Pill Indicator (Section 5 & 9) */
+.segmented-control {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: var(--surface-sunk);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 0;
+}
+
+.segmented-pill-indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  box-shadow: var(--shadow-1);
+  transition: transform var(--t-med) var(--ease);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.segmented-control .demo-tab {
+  position: relative;
+  z-index: 1;
+  border: none !important;
+  background: transparent !important;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  text-align: center;
+  transition: color var(--t-fast) var(--ease);
+}
+
+.segmented-control .demo-tab.active {
+  color: var(--ink) !important;
+}
+
+/* Live "Where Your File Is" Trust Diagram (Section 10) */
+.where-file-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  margin-top: 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.wf-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface-sunk);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  transition: all var(--t-fast) var(--ease);
+}
+
+.wf-step.wf-active {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.wf-step.wf-cloud-blocked {
+  opacity: 0.55;
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* Honest Comparison Table Toggle ("Show where we lose") */
+.comp-row-limit {
+  transition: background-color var(--t-fast) var(--ease);
+}
+
+.comp-table.hide-limits .comp-row-limit {
+  display: none;
+}
+
+.comp-table.highlight-limits .comp-row-limit {
+  background: var(--brand-soft) !important;
+}
+
+/* Full-Window Frosted Drag Overlay (Section 9) */
+.window-drop-veil {
+  position: fixed;
+  inset: 0;
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  z-index: 9995;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  pointer-events: none;
+}
+
+.window-drop-veil.active {
+  display: flex;
+}
+
+.window-drop-box {
+  border: 2px dashed var(--brand);
+  background: var(--surface);
+  border-radius: var(--r-xl);
+  padding: 48px 64px;
+  text-align: center;
+  box-shadow: var(--shadow-2);
+}
+
+/* 4-Digit SAS Confirmation Gate Banner (Section 10 Security) */
+.sas-approval-gate {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 18px 22px;
+  margin-bottom: 20px;
+  background: var(--surface);
+  border: 2px solid var(--brand);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-2);
+}
+
+.sas-code-pill {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  padding: 6px 14px;
+  border-radius: 10px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  border: 1.5px solid var(--brand);
+}
+
+@media (max-width: 960px) {
+  .bento-span-7, .bento-span-5, .bento-span-4 { grid-column: span 12; }
+  .big-numbers-strip { grid-template-columns: 1fr; }
+  .segmented-control { display: flex; flex-wrap: wrap; }
+  .segmented-pill-indicator { display: none; }
+}
