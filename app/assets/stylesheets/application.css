@@ -3857,3 +3857,101 @@ html[data-theme="dark"] .focal-drop-target.transparent-drop-zone {
   border-color: var(--brand) !important;
   transform: translateY(-2px);
 }
+
+/* =====================================================================
+   FULL-SCREEN 100VW x 100VH TORNADO INTRO STAGE + SYNCHRONIZED HEADER REVEAL
+   + LIQUID RIPPLE EFFECT ON "leave" WORD + CLEAN SCANNER & PAGE LAYOUTS
+   ===================================================================== */
+
+/* Hide Header during Stages 1-3 so the Tornado & Laptop Screen are 100% Full-Screen,
+   then reveal Header simultaneously with the Hero Text in Stage 4 */
+#mainSiteHeader.header-intro-hidden {
+  opacity: 0;
+  transform: translateY(-18px);
+  pointer-events: none;
+}
+
+#mainSiteHeader.header-intro-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 100% Full-Screen 3D Canvas Stage during Intro (Stages 1-3) */
+.hero-three-canvas-wrap.intro-fullscreen-stage {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 55 !important;
+  background: var(--bg);
+}
+
+/* Liquid Ink/Water Ripple Effect on the word "leave" (#heroLeaveRippleWord) */
+#heroLeaveRippleWord {
+  position: relative;
+  display: inline-block;
+  color: var(--brand);
+  cursor: pointer;
+  padding: 0 0.05em;
+}
+
+#heroLeaveRippleWord .leave-word-text {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  filter: url(#leaveWordRippleFilter);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#heroLeaveRippleWord:hover .leave-word-text {
+  transform: scale(1.03);
+}
+
+#heroLeaveRippleWord .leave-ripple-ring {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: 108%;
+  height: 78%;
+  transform: translate(-50%, -50%) scale(0.75);
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--brand) 55%, transparent);
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--brand) 16%, transparent) 0%, transparent 72%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+#heroLeaveRippleWord.ripple-active .leave-ripple-ring.r1 {
+  animation: leaveRippleExpand 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+#heroLeaveRippleWord.ripple-active .leave-ripple-ring.r2 {
+  animation: leaveRippleExpand 1.55s cubic-bezier(0.16, 1, 0.3, 1) 0.16s forwards;
+}
+
+@keyframes leaveRippleExpand {
+  0% {
+    opacity: 0.78;
+    transform: translate(-50%, -50%) scale(0.72);
+  }
+  70% {
+    opacity: 0.28;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.52);
+  }
+}
+
+/* Clean 2-Column Scanner Layout & Page Container Polish */
+#view-scanner .container,
+#view-tool .container,
+#view-about .container-about {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}

@@ -40,7 +40,7 @@
     </div>
   </div>
 
-  <header class="site-header glass">
+  <header class="site-header glass header-intro-hidden" id="mainSiteHeader">
     <div class="header-inner">
       <a class="brand-link" href="/" onclick="return navigateAppRoute(event, 'home')" aria-label="NoUploadPDF Home" style="text-decoration:none;">
         <svg width="26" height="26" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink:0;">
@@ -112,12 +112,16 @@
     </div>
   </div>
 
-  <!-- SVG Ink-Bleed Filter for "Your PDFs never leave your device." Headline Reveal -->
+  <!-- SVG Ink-Bleed Filter for Headline + Dedicated Liquid Ripple Filter for "leave" Word -->
   <svg width="0" height="0" style="position:absolute; pointer-events:none;" aria-hidden="true">
     <defs>
       <filter id="inkBleedTitleFilter" x="-15%" y="-25%" width="130%" height="150%">
         <feTurbulence id="inkBleedTurbulence" type="fractalNoise" baseFrequency="0.035 0.06" numOctaves="3" seed="11" result="noise" />
         <feDisplacementMap id="inkBleedDispMap" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+      <filter id="leaveWordRippleFilter" x="-25%" y="-35%" width="150%" height="170%">
+        <feTurbulence id="leaveRippleTurbulence" type="turbulence" baseFrequency="0.022 0.048" numOctaves="2" seed="7" result="rippleNoise" />
+        <feDisplacementMap id="leaveRippleDispMap" in="SourceGraphic" in2="rippleNoise" scale="0" xChannelSelector="R" yChannelSelector="G" />
       </filter>
     </defs>
   </svg>
@@ -147,7 +151,11 @@
             <span class="ink-word">Your</span>
             <span class="ink-word">PDFs</span>
             <span class="ink-word">never</span>
-            <span class="ink-word leave-word">leave</span>
+            <span class="ink-word leave-word" id="heroLeaveRippleWord" data-text="leave" onmouseenter="triggerLeaveWordRipple(14)">
+              <span class="leave-word-text">leave</span>
+              <span class="leave-ripple-ring r1" aria-hidden="true"></span>
+              <span class="leave-ripple-ring r2" aria-hidden="true"></span>
+            </span>
             <span class="ink-word">your</span>
             <span class="ink-word">device.</span>
           </h1>
@@ -1295,7 +1303,10 @@
             <div class="mono" style="font-size:11px; color:#0A0A0A; margin-top:8px; font-weight:600;" id="scannerQrCaption">Point iPhone or Android camera at QR</div>
           </div>
 
-          
+          <!-- Hidden until a phone connects and requests SAS verification -->
+          <div id="sasApprovalCard" style="display:none; margin-top:14px; padding:14px; border-radius:12px; background:var(--surface-sunk); border:1.5px solid var(--brand);">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+              <span class="mono" style="font-size:11.5px; font-weight:600; color:var(--ink);">Confirm 4-digit SAS code on phone:</span>
               <div class="sas-code-pill" id="sasDesktopCodeDisplay">----</div>
             </div>
             <div style="display:flex; gap:8px; margin-top:10px;">
@@ -1954,6 +1965,10 @@
     };
 
     function showView(viewName, pushUrl = true) {
+      if (viewName !== "home") {
+        const hdr = document.getElementById("mainSiteHeader");
+        if (hdr) { hdr.classList.remove("header-intro-hidden"); hdr.classList.add("header-intro-revealed"); }
+      }
       const resolved = (viewName === 'studio') ? 'tool' : ((viewName === 'tools' || viewName === 'compare') ? 'home' : viewName);
       ['home', 'tool', 'scanner', 'macapp', 'about'].forEach(v => {
         const el = document.getElementById('view-' + v);
@@ -9040,12 +9055,12 @@ window.qrcode = qrcode;
 
     // =====================================================================
     // POWERFUL 4-STAGE THREE.JS + GSAP + WEBGL2 INK-BLEED HERO ENGINE
-    // Stage 1: ONLY a realistic 3D laptop screen fills the scene (camera tightly framed on screen)
-    // Stage 2: Realistic PDF documents appear slowly inside the screen & form a 3D Tornado
-    // Stage 3: The realistic machined-aluminum 3D laptop zooms out & settles behind the text area
-    // Stage 4: Page text ("Your PDFs never leave your device.") & UI bleed in via our Theme-Changer
-    //          WebGL2 InkBleedEngine shader + SVG feTurbulence displacement filter
-    // Stage 5: Dropped files mix into Tornado -> Tornado flies into Studio -> settles flat & vanishes
+    // Stage 1: Full-screen 100vw x 100vh realistic laptop display & 4-corner high-DPI PDF pages
+    // Stage 2: High-resolution PDF pages swirl into a massive FULL-SCREEN 3D Tornado
+    // Stage 3: Laptop zooms out & minimizes sleekly behind the text area as the tornado funnels inside it
+    // Stage 4: Header + Page text ("Your PDFs never leave your device.") bleed in together via our
+    //          Theme-Changer WebGL2 InkBleedEngine shader + liquid Ripple Effect on the word "leave"
+    // Stage 5: Dropped files mix into the Tornado -> Tornado flies into Studio -> settles flat & vanishes
     // =====================================================================
     const HeroTornadoController = {
       replay: null,
@@ -9076,17 +9091,60 @@ window.qrcode = qrcode;
       }
     };
 
-    // Uses our Theme-Changer WebGL2 InkBleedEngine shader + SVG feTurbulence filter to bleed the hero text into view!
+    // Dedicated Liquid Ripple Effect on the word "leave" (#heroLeaveRippleWord)
+    let leaveRippleAnimId = 0;
+    window.triggerLeaveWordRipple = function(initialScale = 20) {
+      const leaveEl = document.getElementById("heroLeaveRippleWord");
+      const turbEl = document.getElementById("leaveRippleTurbulence");
+      const dispEl = document.getElementById("leaveRippleDispMap");
+      if (!leaveEl) return;
+
+      leaveEl.classList.remove("ripple-active");
+      void leaveEl.offsetWidth;
+      leaveEl.classList.add("ripple-active");
+
+      if (!turbEl || !dispEl) return;
+      if (leaveRippleAnimId) cancelAnimationFrame(leaveRippleAnimId);
+
+      const t0 = performance.now();
+      const dur = 1650;
+
+      function tickRipple(now) {
+        const elapsed = now - t0;
+        const k = Math.min(1, elapsed / dur);
+        const decay = Math.pow(1 - k, 1.85);
+        const wave = Math.sin(elapsed * 0.018) * 0.5 + 0.5;
+        const fx = (0.020 + Math.sin(elapsed * 0.011) * 0.008).toFixed(4);
+        const fy = (0.045 + Math.cos(elapsed * 0.014) * 0.014).toFixed(4);
+        const scale = (initialScale * decay * (0.65 + 0.35 * wave)).toFixed(2);
+
+        turbEl.setAttribute("baseFrequency", `${fx} ${fy}`);
+        dispEl.setAttribute("scale", scale);
+
+        if (k < 1) {
+          leaveRippleAnimId = requestAnimationFrame(tickRipple);
+        } else {
+          dispEl.setAttribute("scale", "0");
+        }
+      }
+      leaveRippleAnimId = requestAnimationFrame(tickRipple);
+    };
+
+    // Uses our Theme-Changer WebGL2 InkBleedEngine shader + SVG feTurbulence filter to bleed the Header + Hero Text into view!
     function runHeadlineInkBleedReveal(laptopScreenOriginNorm) {
       const fgEl = document.getElementById("heroForegroundContent");
+      const hdrEl = document.getElementById("mainSiteHeader");
+      const wrapEl = document.getElementById("heroThreeCanvasWrap");
       const titleEl = document.getElementById("heroInkBleedTitle");
       const dispEl = document.getElementById("inkBleedDispMap");
       const inkCanvas = document.getElementById("inkBleedCanvas");
       if (!fgEl) return;
 
+      if (wrapEl) wrapEl.classList.remove("intro-fullscreen-stage");
+
       // 1. Run our exact Theme-Changer WebGL2 InkBleedEngine shader (`InkBleedEngine.drawFrame`)
-      //    capturing the pre-text [3D Laptop Only] viewport into `fromTex`, revealing the Hero Text DOM
-      //    underneath `#inkBleedCanvas`, and spreading organic Perlin + radial ink tendrils across the screen!
+      //    capturing the pre-text [3D Laptop + Tornado] viewport into `fromTex`, revealing BOTH the Header
+      //    and Hero Text DOM underneath `#inkBleedCanvas`, and spreading organic Perlin + radial ink tendrils!
       try {
         if (inkCanvas && typeof InkBleedEngine !== "undefined" && InkBleedEngine.init()) {
           if (InkBleedEngine.animId) cancelAnimationFrame(InkBleedEngine.animId);
@@ -9096,7 +9154,7 @@ window.qrcode = qrcode;
           const scale = InkBleedEngine.resize(inkCanvas);
           const snap = captureLiveThemeViewport(curTheme, scale);
 
-          // Composite the live 3D Laptop WebGL canvas into the "from" snapshot (before text is visible)
+          // Composite the live 3D Laptop WebGL canvas into the "from" snapshot (before header & text are visible)
           const threeCnv = document.getElementById("heroThreeCanvas");
           const stageSec = document.getElementById("heroStageSection");
           if (threeCnv && stageSec && snap && snap.canvas) {
@@ -9115,7 +9173,7 @@ window.qrcode = qrcode;
           const vw = document.documentElement.clientWidth || window.innerWidth;
           const vh = document.documentElement.clientHeight || window.innerHeight;
           const center = {
-            x: (laptopScreenOriginNorm?.x ?? 0.36) * vw,
+            x: (laptopScreenOriginNorm?.x ?? 0.38) * vw,
             y: (laptopScreenOriginNorm?.y ?? 0.48) * vh
           };
           const maxDist = farthestViewportCorner(center);
@@ -9134,11 +9192,15 @@ window.qrcode = qrcode;
           inkCanvas.style.opacity = "1";
           inkCanvas.classList.add("is-active");
 
-          // Reveal the hero text & transparent drop card underneath the WebGL2 ink-bleed canvas
+          // Reveal BOTH the Header and the Hero Text / Drop Card underneath the WebGL2 ink-bleed canvas
+          if (hdrEl) {
+            hdrEl.classList.remove("header-intro-hidden");
+            hdrEl.classList.add("header-intro-revealed");
+          }
           fgEl.classList.remove("hero-intro-hidden");
           fgEl.classList.add("hero-intro-revealed");
 
-          const durationSec = 1.25;
+          const durationSec = 1.22;
           const startMs = performance.now();
 
           const tickSpread = (now) => {
@@ -9184,28 +9246,37 @@ window.qrcode = qrcode;
 
           InkBleedEngine.animId = requestAnimationFrame(tickSpread);
         } else {
+          if (hdrEl) {
+            hdrEl.classList.remove("header-intro-hidden");
+            hdrEl.classList.add("header-intro-revealed");
+          }
           fgEl.classList.remove("hero-intro-hidden");
           fgEl.classList.add("hero-intro-revealed");
         }
       } catch (_) {
+        if (hdrEl) {
+          hdrEl.classList.remove("header-intro-hidden");
+          hdrEl.classList.add("header-intro-revealed");
+        }
         fgEl.classList.remove("hero-intro-hidden");
         fgEl.classList.add("hero-intro-revealed");
       }
 
       // 2. Simultaneously run the per-word SVG feTurbulence + feDisplacementMap organic ink-bleed on the headline
+      //    AND trigger the liquid Ripple Effect on the word "leave"!
       if (titleEl && typeof window.gsap !== "undefined") {
         const words = titleEl.querySelectorAll(".ink-word");
-        const filterState = { scale: 58, blur: 6.5 };
-        titleEl.style.filter = "url(#inkBleedTitleFilter) blur(6.5px)";
+        const filterState = { scale: 56, blur: 6 };
+        titleEl.style.filter = "url(#inkBleedTitleFilter) blur(6px)";
 
         window.gsap.fromTo(words,
-          { opacity: 0, y: 18, filter: "blur(8px)" },
+          { opacity: 0, y: 20, filter: "blur(8px)" },
           {
             opacity: 1,
             y: 0,
             filter: "blur(0px)",
-            duration: 0.98,
-            stagger: 0.085,
+            duration: 0.96,
+            stagger: 0.08,
             ease: "power3.out"
           }
         );
@@ -9213,7 +9284,7 @@ window.qrcode = qrcode;
         window.gsap.to(filterState, {
           scale: 0,
           blur: 0,
-          duration: 1.38,
+          duration: 1.35,
           ease: "expo.out",
           onUpdate: () => {
             if (dispEl) dispEl.setAttribute("scale", filterState.scale.toFixed(1));
@@ -9226,14 +9297,26 @@ window.qrcode = qrcode;
             titleEl.style.filter = "none";
           }
         });
+
+        // Trigger the liquid ripple wave on "leave" as it lands!
+        setTimeout(() => {
+          if (typeof window.triggerLeaveWordRipple === "function") {
+            window.triggerLeaveWordRipple(24);
+          }
+        }, 320);
       }
     }
 
-function initHeroPaperTornadoThreeJs() {
+    function initHeroPaperTornadoThreeJs() {
       const canvas = document.getElementById("heroThreeCanvas");
       const wrap = document.getElementById("heroThreeCanvasWrap");
       const fgEl = document.getElementById("heroForegroundContent");
+      const hdrEl = document.getElementById("mainSiteHeader");
       if (!canvas || !wrap || typeof window.THREE === "undefined") {
+        if (hdrEl) {
+          hdrEl.classList.remove("header-intro-hidden");
+          hdrEl.classList.add("header-intro-revealed");
+        }
         if (fgEl) {
           fgEl.classList.remove("hero-intro-hidden");
           fgEl.classList.add("hero-intro-revealed");
@@ -9254,6 +9337,10 @@ function initHeroPaperTornadoThreeJs() {
           preserveDrawingBuffer: true
         });
       } catch (e) {
+        if (hdrEl) {
+          hdrEl.classList.remove("header-intro-hidden");
+          hdrEl.classList.add("header-intro-revealed");
+        }
         if (fgEl) {
           fgEl.classList.remove("hero-intro-hidden");
           fgEl.classList.add("hero-intro-revealed");
@@ -9265,11 +9352,102 @@ function initHeroPaperTornadoThreeJs() {
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.08;
+      renderer.toneMappingExposure = 1.06;
 
       // ===================================================================
-      // SCENE A (INNER SCENE `IS`): Rendered to 1600x1000 WebGLRenderTarget
-      // Mapped directly onto the 3D Laptop Retina Display (`screenMesh`)!
+      // HIGH-DPI CRISP PDF PAGE TEXTURES FROM EARLIER (512x660 CanvasTexture)
+      // Sharp #FCFBF8 paper, #166534/#18181B PDF badge, financial tables,
+      // black-out redaction bars, emerald vector signature & local seal!
+      // ===================================================================
+      function createRealisticPdfPageTexture(variant) {
+        const c = document.createElement("canvas");
+        c.width = 512;
+        c.height = 660;
+        const ctx = c.getContext("2d");
+        ctx.scale(2, 2);
+
+        ctx.fillStyle = "#FCFBF8";
+        ctx.fillRect(0, 0, 256, 330);
+        ctx.strokeStyle = "#D4CFC4";
+        ctx.lineWidth = 3.5;
+        ctx.strokeRect(2, 2, 252, 326);
+
+        // Top header bar + PDF badge
+        ctx.fillStyle = variant % 2 === 0 ? "#166534" : "#18181B";
+        ctx.fillRect(20, 20, 48, 18);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 10px monospace";
+        ctx.fillText("PDF", 31, 33);
+
+        ctx.fillStyle = "#27272A";
+        ctx.fillRect(78, 22, 132, 6);
+        ctx.fillStyle = "#A1A1AA";
+        ctx.fillRect(78, 33, 86, 4);
+
+        // Realistic document body lines + table / redaction blocks
+        for (let r = 0; r < 13; r++) {
+          const y = 58 + r * 17;
+          if (variant === 0 && (r === 4 || r === 5)) {
+            ctx.fillStyle = "#18181B";
+            ctx.fillRect(20, y - 2, 168, 10);
+          } else if (variant === 1 && r >= 5 && r <= 8) {
+            ctx.strokeStyle = "#D4D4D8";
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(20, y - 3, 214, 13);
+            ctx.fillStyle = "#71717A";
+            ctx.fillRect(26, y + 1, 76, 5);
+            ctx.fillStyle = "#166534";
+            ctx.fillRect(178, y + 1, 46, 5);
+          } else {
+            ctx.fillStyle = r % 4 === 0 ? "#52525B" : "#A1A1AA";
+            const w = r % 3 === 2 ? 142 : 212;
+            ctx.fillRect(20, y, w, 5);
+          }
+        }
+
+        // Signature scribble & green local-device verification seal at bottom
+        ctx.strokeStyle = "#166534";
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(26, 298);
+        ctx.bezierCurveTo(44, 282, 58, 305, 78, 288);
+        ctx.bezierCurveTo(92, 276, 108, 298, 134, 290);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(22, 101, 52, 0.14)";
+        ctx.fillRect(166, 282, 68, 24);
+        ctx.strokeStyle = "#166534";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(166, 282, 68, 24);
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.anisotropy = 8;
+        tex.needsUpdate = true;
+        return tex;
+      }
+
+      const crispPageTextures = [
+        createRealisticPdfPageTexture(0),
+        createRealisticPdfPageTexture(1),
+        createRealisticPdfPageTexture(2)
+      ];
+
+      // Aerodynamic curved PDF sheet geometry
+      function createCurvedPageGeometry(w, h) {
+        const g = new THREE.PlaneGeometry(w, h, 6, 6);
+        const pos = g.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          const y = pos.getY(i);
+          pos.setZ(i, Math.sin(x * 2.5) * 0.065 + Math.cos(y * 1.9) * 0.042);
+        }
+        g.computeVertexNormals();
+        return g;
+      }
+
+      // ===================================================================
+      // SCENE A (INNER SCREEN SCENE): Rendered to 1600x1000 WebGLRenderTarget
+      // Mapped directly onto the 3D Laptop Retina Display (`screenMesh`)
       // ===================================================================
       const RT = new THREE.WebGLRenderTarget(1600, 1000, {
         minFilter: THREE.LinearFilter,
@@ -9278,218 +9456,70 @@ function initHeroPaperTornadoThreeJs() {
       });
       const innerScene = new THREE.Scene();
       const isDarkInit = document.documentElement.getAttribute("data-theme") === "dark";
-      innerScene.background = new THREE.Color(isDarkInit ? 0x0d1210 : 0xf4f1ea);
-      innerScene.fog = new THREE.FogExp2(isDarkInit ? 0x0d1210 : 0xf4f1ea, 0.042);
+      innerScene.background = new THREE.Color(isDarkInit ? 0x0b0e0d : 0xf6f4ef);
+      innerScene.fog = new THREE.FogExp2(isDarkInit ? 0x0b0e0d : 0xf6f4ef, 0.038);
 
       const innerCam = new THREE.PerspectiveCamera(42, 16 / 10, 0.1, 100);
-      innerCam.position.set(0, 0.25, 11.2);
+      innerCam.position.set(0, 0.2, 10.6);
       innerCam.lookAt(0, 0.1, 0);
 
-      innerScene.add(new THREE.AmbientLight(0xfffcf5, 0.86));
-      const innerKey = new THREE.DirectionalLight(0xfff5e4, 1.35);
+      innerScene.add(new THREE.AmbientLight(0xffffff, 0.94));
+      const innerKey = new THREE.DirectionalLight(0xfffbeb, 1.15);
       innerKey.position.set(6, 11, 8);
       innerScene.add(innerKey);
-      const innerRim = new THREE.PointLight(0x1f8f63, 1.15, 18);
-      innerRim.position.set(-4, 2, 5);
-      innerScene.add(innerRim);
 
-      // Subtle architectural grid & local sandbox HUD ring inside the laptop screen world
-      const innerGrid = new THREE.GridHelper(26, 26, 0xc8c2b6, 0xe2ddd2);
-      innerGrid.position.y = -3.5;
-      innerGrid.material.transparent = true;
-      innerGrid.material.opacity = 0.42;
-      innerScene.add(innerGrid);
-
-      const innerShieldRing = new THREE.Mesh(
-        new THREE.RingGeometry(1.9, 1.96, 64),
-        new THREE.MeshBasicMaterial({ color: 0x166534, side: THREE.DoubleSide, transparent: true, opacity: 0.32 })
-      );
-      innerShieldRing.rotation.x = -Math.PI / 2;
-      innerShieldRing.position.y = -3.45;
-      innerScene.add(innerShieldRing);
-
-      // ===================================================================
-      // REALISTIC MULTI-VARIETY PDF DOCUMENT TEXTURES (4 Distinct Archetypes)
-      // ===================================================================
-      function makeRealisticPdfTexture(variant) {
-        const c = document.createElement("canvas");
-        c.width = 256;
-        c.height = 340;
-        const g = c.getContext("2d");
-
-        g.fillStyle = "#fbf9f4";
-        g.fillRect(0, 0, 256, 340);
-        const grd = g.createLinearGradient(0, 0, 256, 340);
-        grd.addColorStop(0, "rgba(255,255,255,0.35)");
-        grd.addColorStop(1, "rgba(212,205,190,0.32)");
-        g.fillStyle = grd;
-        g.fillRect(0, 0, 256, 340);
-
-        g.strokeStyle = "#d5cec0";
-        g.lineWidth = 3;
-        g.strokeRect(2, 2, 252, 336);
-
-        g.fillStyle = variant % 2 === 0 ? "#b91c1c" : "#166534";
-        g.fillRect(18, 18, 46, 18);
-        g.fillStyle = "#ffffff";
-        g.font = "bold 10px monospace";
-        g.fillText(variant % 2 === 0 ? "PDF" : "LOCAL", 24, 31);
-
-        g.fillStyle = "#22211e";
-        g.fillRect(74, 20, 128, 6);
-        g.fillStyle = "#8b857a";
-        g.fillRect(74, 30, 84, 4);
-
-        g.strokeStyle = "#e2dcd0";
-        g.lineWidth = 1;
-        g.beginPath();
-        g.moveTo(18, 46);
-        g.lineTo(238, 46);
-        g.stroke();
-
-        if (variant === 0) {
-          let y = 60;
-          for (let i = 0; i < 16; i++) {
-            if (i === 4 || i === 10) {
-              g.fillStyle = "#141413";
-              g.fillRect(18, y - 2, 152, 10);
-            } else {
-              g.fillStyle = i % 5 === 0 ? "#302e2a" : "#7b756b";
-              g.fillRect(18, y, i % 4 === 3 ? 136 : 210, 4);
-            }
-            y += 12;
-          }
-          g.strokeStyle = "#166534";
-          g.lineWidth = 2.2;
-          g.beginPath();
-          g.moveTo(24, 294);
-          g.bezierCurveTo(46, 274, 62, 304, 88, 282);
-          g.bezierCurveTo(106, 268, 122, 294, 152, 285);
-          g.stroke();
-        } else if (variant === 1) {
-          g.strokeStyle = "#beb7a8";
-          g.strokeRect(18, 58, 220, 114);
-          for (let r = 1; r < 5; r++) {
-            g.beginPath();
-            g.moveTo(18, 58 + r * 22.8);
-            g.lineTo(238, 58 + r * 22.8);
-            g.stroke();
-          }
-          const bh = [36, 62, 48, 84, 72, 92];
-          bh.forEach((h, idx) => {
-            g.fillStyle = idx === 5 ? "#166534" : "#3a3732";
-            g.fillRect(26 + idx * 34, 286 - h, 20, h);
-          });
-        } else if (variant === 2) {
-          for (let col = 0; col < 2; col++) {
-            const x = 18 + col * 114;
-            for (let r = 0; r < 20; r++) {
-              g.fillStyle = r % 6 === 0 ? "#2b2925" : "#857f74";
-              g.fillRect(x, 60 + r * 11, r % 5 === 4 ? 68 : 98, 4);
-            }
-          }
-          g.save();
-          g.translate(158, 268);
-          g.rotate(-0.18);
-          g.strokeStyle = "rgba(22,101,52,0.82)";
-          g.lineWidth = 2.5;
-          g.strokeRect(-48, -14, 96, 28);
-          g.fillStyle = "rgba(22,101,52,0.85)";
-          g.font = "bold 10px monospace";
-          g.fillText("ON-DEVICE", -34, 4);
-          g.restore();
-        } else {
-          g.fillStyle = "#dfd9cc";
-          g.fillRect(18, 58, 76, 94);
-          g.strokeStyle = "#9c9486";
-          g.strokeRect(18, 58, 76, 94);
-          for (let r = 0; r < 7; r++) {
-            g.fillStyle = r % 2 === 0 ? "#2b2925" : "#7b756b";
-            g.fillRect(106, 62 + r * 13, 124, 5);
-          }
-          for (let r = 0; r < 8; r++) {
-            g.fillStyle = "#857f74";
-            g.fillRect(18, 172 + r * 12, 216, 4);
-          }
-          g.fillStyle = "#18181b";
-          g.font = "bold 9px monospace";
-          g.fillText("P<INDAVARTAN<<NOUPLOADPDF<<<<<<<<<<", 18, 304);
-          g.fillText("0000000000LOCAL<<00000000000000000", 18, 316);
-        }
-
-        const tex = new THREE.CanvasTexture(c);
-        tex.anisotropy = 4;
-        return tex;
-      }
-
-      const pageMaterials = [0, 1, 2, 3].map(v => new THREE.MeshStandardMaterial({
-        map: makeRealisticPdfTexture(v),
-        roughness: 0.62,
-        metalness: 0.04,
-        side: THREE.DoubleSide
-      }));
-
-      function createCurvedPageGeometry(w, h, bendAmount) {
-        const g = new THREE.PlaneGeometry(w, h, 8, 10);
-        const pos = g.attributes.position;
-        for (let j = 0; j < pos.count; j++) {
-          const x = pos.getX(j);
-          const y = pos.getY(j);
-          const z = Math.sin((x / w) * Math.PI) * 0.055 * bendAmount + Math.pow(y / h, 2) * 0.04 * bendAmount;
-          pos.setZ(j, z);
-        }
-        g.computeVertexNormals();
-        return g;
-      }
-
-      const INNER_DOC_COUNT = 180;
+      const innerPageGeom = createCurvedPageGeometry(0.84, 1.10);
+      const INNER_COUNT = 96;
       const innerDocs = [];
-      for (let i = 0; i < INNER_DOC_COUNT; i++) {
-        const geo = createCurvedPageGeometry(0.66, 0.88, (Math.random() - 0.35) * 1.4);
-        const mesh = new THREE.Mesh(geo, pageMaterials[i % 4]);
-
-        const cornerIdx = i % 4;
-        const cornerX = (cornerIdx === 0 || cornerIdx === 2 ? -1 : 1) * (5.2 + Math.random() * 3.4);
-        const cornerY = (cornerIdx < 2 ? 1 : -1) * (3.2 + Math.random() * 2.4);
-        const cornerZ = -2.5 + (Math.random() - 0.5) * 3.0;
-
+      for (let i = 0; i < INNER_COUNT; i++) {
+        const mat = new THREE.MeshStandardMaterial({
+          map: crispPageTextures[i % 3],
+          side: THREE.DoubleSide,
+          roughness: 0.48,
+          metalness: 0.04
+        });
+        const mesh = new THREE.Mesh(innerPageGeom, mat);
+        const cIdx = i % 4;
+        const cOrigin = new THREE.Vector3(
+          (cIdx % 2 === 0 ? -1 : 1) * (5.5 + Math.random() * 3.0),
+          (cIdx < 2 ? 1 : -1) * (3.5 + Math.random() * 2.0),
+          -2.0 + (Math.random() - 0.5) * 2.5
+        );
         innerScene.add(mesh);
         innerDocs.push({
           mesh,
-          h: Math.pow(Math.random(), 0.92),
-          theta: Math.random() * Math.PI * 2,
-          speed: (0.85 + Math.random() * 0.85) * (1.28 - 0.45 * (i / INNER_DOC_COUNT)),
-          radOffset: (Math.random() - 0.5) * 0.38,
-          wobblePhase: Math.random() * 10,
-          wobbleSpeed: 1.5 + Math.random() * 2.2,
-          tiltX: (Math.random() - 0.5) * 0.7,
-          tiltZ: (Math.random() - 0.5) * 0.7,
-          spawnDelay: (i / INNER_DOC_COUNT) * 0.62,
-          cornerOrigin: new THREE.Vector3(cornerX, cornerY, cornerZ)
+          cornerOrigin: cOrigin,
+          angle: (i / INNER_COUNT) * Math.PI * 2 * 4,
+          heightNorm: i / INNER_COUNT,
+          orbitRadius: 0.65 + (i % 7) * 0.28,
+          angularSpeed: 0.9 + (i % 5) * 0.25,
+          verticalSpeed: 0.15 + (i % 4) * 0.04,
+          spawnDelay: (i / INNER_COUNT) * 0.52
         });
       }
 
       // ===================================================================
-      // SCENE B (OUTER SCENE `OS`): Photorealistic Machined-Aluminum 3D Laptop
+      // SCENE B (MAIN FULL-SCREEN SCENE):
+      // 1) Photorealistic Machined-Aluminum 3D Laptop (minimizes on zoom-out)
+      // 2) FULL-SCREEN 76 High-DPI PDF Pages swirling across the entire viewport
       // ===================================================================
       const outerScene = new THREE.Scene();
-      const outerCam = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+      const outerCam = new THREE.PerspectiveCamera(38, 1, 0.1, 140);
 
-      outerScene.add(new THREE.AmbientLight(0xffffff, 0.92));
-      const outerKey = new THREE.DirectionalLight(0xfff8eb, 1.55);
-      outerKey.position.set(6, 10, 8);
-      outerKey.castShadow = true;
-      outerKey.shadow.mapSize.set(1024, 1024);
+      outerScene.add(new THREE.AmbientLight(0xffffff, 0.95));
+      const outerKey = new THREE.DirectionalLight(0xfff8eb, 1.35);
+      outerKey.position.set(6, 10, 9);
       outerScene.add(outerKey);
 
-      const outerRim = new THREE.DirectionalLight(0xdbeafe, 0.75);
+      const outerRim = new THREE.DirectionalLight(0xdbeafe, 0.65);
       outerRim.position.set(-7, 4, -5);
       outerScene.add(outerRim);
 
-      const screenGlowLight = new THREE.PointLight(0x1f8f63, 0.85, 9);
-      screenGlowLight.position.set(0, 1.2, 2.2);
-      outerScene.add(screenGlowLight);
+      const localVaultLight = new THREE.PointLight(0x1f8f63, 1.15, 18);
+      localVaultLight.position.set(0.4, 0.2, 3.2);
+      outerScene.add(localVaultLight);
 
+      // Photorealistic Machined-Aluminum 3D Laptop (`laptopGroup`)
       const laptopGroup = new THREE.Group();
       outerScene.add(laptopGroup);
 
@@ -9515,8 +9545,6 @@ function initHeroPaperTornadoThreeJs() {
 
       const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(BASE_W, BASE_H, BASE_D), aluminumBodyMat);
       baseMesh.position.y = BASE_H / 2;
-      baseMesh.castShadow = true;
-      baseMesh.receiveShadow = true;
       laptopGroup.add(baseMesh);
 
       const wellMesh = new THREE.Mesh(
@@ -9532,12 +9560,10 @@ function initHeroPaperTornadoThreeJs() {
       const kctx = kbCanvas.getContext("2d");
       kctx.fillStyle = "#121317";
       kctx.fillRect(0, 0, 1024, 420);
-      const rows = 6;
-      const cols = 15;
-      for (let r = 0; r < rows; r++) {
+      for (let r = 0; r < 6; r++) {
         const rh = r === 0 ? 44 : 62;
         const ry = r === 0 ? 12 : 66 + (r - 1) * 68;
-        for (let c = 0; c < cols; c++) {
+        for (let c = 0; c < 15; c++) {
           if (r === 5 && c >= 4 && c <= 9) {
             if (c === 4) {
               kctx.fillStyle = "#1e2026";
@@ -9549,12 +9575,11 @@ function initHeroPaperTornadoThreeJs() {
             continue;
           }
           const kx = 14 + c * 66;
-          const kw = 58;
           kctx.fillStyle = "#1d1f26";
-          kctx.fillRect(kx, ry, kw, rh);
+          kctx.fillRect(kx, ry, 58, rh);
           kctx.strokeStyle = "rgba(255,255,255,0.14)";
           kctx.lineWidth = 1.5;
-          kctx.strokeRect(kx, ry, kw, rh);
+          kctx.strokeRect(kx, ry, 58, rh);
         }
       }
       const kbTex = new THREE.CanvasTexture(kbCanvas);
@@ -9602,7 +9627,6 @@ function initHeroPaperTornadoThreeJs() {
 
       const lidShell = new THREE.Mesh(new THREE.BoxGeometry(BASE_W, LID_H, LID_T), aluminumBodyMat);
       lidShell.position.set(0, LID_H / 2, -LID_T / 2);
-      lidShell.castShadow = true;
       lidPivot.add(lidShell);
 
       const bezelGlass = new THREE.Mesh(new THREE.PlaneGeometry(BASE_W - 0.10, LID_H - 0.10), glassBezelMat);
@@ -9632,42 +9656,20 @@ function initHeroPaperTornadoThreeJs() {
       screenMesh.position.set(0, LID_H / 2 + 0.01, 0.004);
       lidPivot.add(screenMesh);
 
-      const glossCanvas = document.createElement("canvas");
-      glossCanvas.width = 512;
-      glossCanvas.height = 512;
-      const gctx = glossCanvas.getContext("2d");
-      const ggrad = gctx.createLinearGradient(0, 0, 512, 512);
-      ggrad.addColorStop(0, "rgba(255,255,255,0.11)");
-      ggrad.addColorStop(0.38, "rgba(255,255,255,0.02)");
-      ggrad.addColorStop(0.5, "rgba(255,255,255,0)");
-      gctx.fillStyle = ggrad;
-      gctx.fillRect(0, 0, 512, 512);
-      const glossMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(SCREEN_W, SCREEN_H),
-        new THREE.MeshBasicMaterial({
-          map: new THREE.CanvasTexture(glossCanvas),
-          transparent: true,
-          depthWrite: false
-        })
-      );
-      glossMesh.position.set(0, LID_H / 2 + 0.01, 0.007);
-      lidPivot.add(glossMesh);
-
-      const OPEN_LID_ANGLE = -0.18;
-      lidPivot.rotation.x = OPEN_LID_ANGLE;
+      lidPivot.rotation.x = -0.18;
 
       const shCanvas = document.createElement("canvas");
       shCanvas.width = 256;
       shCanvas.height = 256;
       const shCtx = shCanvas.getContext("2d");
       const shGrad = shCtx.createRadialGradient(128, 128, 16, 128, 128, 122);
-      shGrad.addColorStop(0, "rgba(15,18,16,0.42)");
-      shGrad.addColorStop(0.55, "rgba(15,18,16,0.16)");
+      shGrad.addColorStop(0, "rgba(15,18,16,0.38)");
+      shGrad.addColorStop(0.55, "rgba(15,18,16,0.14)");
       shGrad.addColorStop(1, "rgba(15,18,16,0)");
       shCtx.fillStyle = shGrad;
       shCtx.fillRect(0, 0, 256, 256);
       const contactShadow = new THREE.Mesh(
-        new THREE.PlaneGeometry(7.2, 5.0),
+        new THREE.PlaneGeometry(6.8, 4.6),
         new THREE.MeshBasicMaterial({
           map: new THREE.CanvasTexture(shCanvas),
           transparent: true,
@@ -9678,35 +9680,65 @@ function initHeroPaperTornadoThreeJs() {
       contactShadow.position.y = 0.002;
       laptopGroup.add(contactShadow);
 
-      const OUTER_DOC_COUNT = 38;
-      const outerHaloGroup = new THREE.Group();
-      laptopGroup.add(outerHaloGroup);
-      const outerDocs = [];
-      for (let i = 0; i < OUTER_DOC_COUNT; i++) {
-        const geo = createCurvedPageGeometry(0.42, 0.56, (Math.random() - 0.4) * 1.3);
-        const mat = pageMaterials[i % 4].clone();
-        mat.transparent = true;
-        mat.opacity = 0;
-        const mesh = new THREE.Mesh(geo, mat);
+      // ===================================================================
+      // FULL-SCREEN 76 HIGH-DPI PDF PAGES IN `outerScene`
+      // Swirl across the ENTIRE full-screen viewport during the intro,
+      // then funnel compactly into the minimized 3D laptop!
+      // ===================================================================
+      const FULLSCREEN_PAGE_COUNT = 76;
+      const fullScreenPageGeom = createCurvedPageGeometry(0.96, 1.26);
+      const fullScreenTornadoGroup = new THREE.Group();
+      outerScene.add(fullScreenTornadoGroup);
 
-        const gridCols = 6;
+      const fourCorners = [
+        new THREE.Vector3(-13.5,  7.5, -2.5),
+        new THREE.Vector3( 13.5,  7.5, -2.5),
+        new THREE.Vector3(-13.5, -7.5, -2.5),
+        new THREE.Vector3( 13.5, -7.5, -2.5)
+      ];
+
+      const fullScreenPages = [];
+      for (let i = 0; i < FULLSCREEN_PAGE_COUNT; i++) {
+        const mat = new THREE.MeshStandardMaterial({
+          map: crispPageTextures[i % 3],
+          side: THREE.DoubleSide,
+          roughness: 0.48,
+          metalness: 0.04,
+          transparent: true,
+          opacity: 0.97
+        });
+        const mesh = new THREE.Mesh(fullScreenPageGeom, mat);
+
+        const cBase = fourCorners[i % 4];
+        const cornerOrigin = new THREE.Vector3(
+          cBase.x + (Math.random() - 0.5) * 4.2,
+          cBase.y + (Math.random() - 0.5) * 3.2,
+          cBase.z + (Math.random() - 0.5) * 2.4
+        );
+
+        const gridCols = 8;
         const col = i % gridCols;
         const row = Math.floor(i / gridCols);
         const studioTarget = new THREE.Vector3(
-          (col - (gridCols - 1) * 0.5) * 0.72,
-          2.25 - row * 0.68,
-          1.4 + (i % 3) * 0.06
+          (col - (gridCols - 1) * 0.5) * 1.15,
+          (3.6 - row) * 1.25,
+          2.2 + (i % 3) * 0.08
         );
 
-        outerHaloGroup.add(mesh);
-        outerDocs.push({
+        mesh.position.copy(cornerOrigin);
+        fullScreenTornadoGroup.add(mesh);
+
+        fullScreenPages.push({
           mesh,
           mat,
-          angle: (i / OUTER_DOC_COUNT) * Math.PI * 2,
-          speed: 0.65 + (i % 7) * 0.14,
-          heightNorm: (i / OUTER_DOC_COUNT),
-          radius: 1.85 + (i % 5) * 0.34,
-          studioTarget
+          cornerOrigin,
+          studioTarget,
+          angle: (i / FULLSCREEN_PAGE_COUNT) * Math.PI * 2 * 4.5,
+          heightNorm: i / FULLSCREEN_PAGE_COUNT,
+          orbitRadius: 0.92 + (i % 8) * 0.42,
+          angularSpeed: 0.88 + (i % 6) * 0.24,
+          verticalSpeed: 0.15 + (i % 4) * 0.038,
+          spawnDelay: (i / FULLSCREEN_PAGE_COUNT) * 0.42
         });
       }
 
@@ -9717,12 +9749,18 @@ function initHeroPaperTornadoThreeJs() {
       screenMesh.getWorldQuaternion(screenQuat);
       const screenNormal = new THREE.Vector3(0, 0, 1).applyQuaternion(screenQuat).normalize();
 
+      // Master Choreographed State
+      // Notice:
+      // - G.zoomOut: 0 -> Camera is inside/tightly on the laptop screen (`d0`), while the FULL-SCREEN Tornado swirls across the entire 100vw x 100vh viewport!
+      // - G.zoomOut: 1 -> Camera pulls out to `dF = 11.4` and `laptopScale` shrinks to `0.48` so the 3D laptop is sleek & MINIMIZED behind the text,
+      //                   while `trapFactor: 0 -> 1` funnels the full-screen tornado compactly into the minimized laptop!
       const G = {
         gather: prefersReduced ? 1 : 0,
-        spinSpeed: prefersReduced ? 0.58 : 0.32,
+        spinSpeed: prefersReduced ? 0.65 : 0.42,
         zoomOut: prefersReduced ? 1 : 0,
-        haloAlpha: prefersReduced ? 0.55 : 0,
-        laptopShiftX: prefersReduced ? -0.85 : 0,
+        trapFactor: prefersReduced ? 1 : 0,
+        laptopScale: prefersReduced ? 0.48 : 1.0,
+        laptopShiftX: prefersReduced ? 0.35 : 0,
         clashProgress: 0,
         vanishOpacity: 1
       };
@@ -9736,7 +9774,7 @@ function initHeroPaperTornadoThreeJs() {
 
       function syncSize() {
         const w = wrap.clientWidth || window.innerWidth;
-        const h = wrap.clientHeight || 680;
+        const h = wrap.clientHeight || window.innerHeight;
         renderer.setSize(w, h, false);
         outerCam.aspect = w / h;
         outerCam.updateProjectionMatrix();
@@ -9746,8 +9784,8 @@ function initHeroPaperTornadoThreeJs() {
 
       const themeObs = new MutationObserver(() => {
         const dark = document.documentElement.getAttribute("data-theme") === "dark";
-        innerScene.background.setHex(dark ? 0x0d1210 : 0xf4f1ea);
-        innerScene.fog.color.setHex(dark ? 0x0d1210 : 0xf4f1ea);
+        innerScene.background.setHex(dark ? 0x0b0e0d : 0xf6f4ef);
+        innerScene.fog.color.setHex(dark ? 0x0b0e0d : 0xf6f4ef);
       });
       themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
@@ -9771,11 +9809,17 @@ function initHeroPaperTornadoThreeJs() {
         const skipBtn = document.getElementById("heroSkipIntroBtn");
         if (prefersReduced || typeof window.gsap === "undefined") {
           G.gather = 1;
-          G.spinSpeed = 0.58;
+          G.spinSpeed = 0.65;
           G.zoomOut = 1;
-          G.haloAlpha = 0.55;
-          G.laptopShiftX = 0.28;
+          G.trapFactor = 1;
+          G.laptopScale = 0.48;
+          G.laptopShiftX = 0.35;
           HeroTornadoController.isIntroDone = true;
+          wrap.classList.remove("intro-fullscreen-stage");
+          if (hdrEl) {
+            hdrEl.classList.remove("header-intro-hidden");
+            hdrEl.classList.add("header-intro-revealed");
+          }
           if (fgEl) {
             fgEl.classList.remove("hero-intro-hidden");
             fgEl.classList.add("hero-intro-revealed");
@@ -9788,6 +9832,14 @@ function initHeroPaperTornadoThreeJs() {
         if (introTimeline) introTimeline.kill();
         HeroTornadoController.isIntroDone = false;
 
+        // Make canvas 100% full-screen (100vw x 100vh) and hide both Header & Hero Text during Stages 1-3!
+        wrap.classList.add("intro-fullscreen-stage");
+        syncSize();
+
+        if (hdrEl) {
+          hdrEl.classList.remove("header-intro-revealed");
+          hdrEl.classList.add("header-intro-hidden");
+        }
         if (fgEl) {
           fgEl.classList.remove("hero-intro-revealed");
           fgEl.classList.add("hero-intro-hidden");
@@ -9795,15 +9847,16 @@ function initHeroPaperTornadoThreeJs() {
         if (skipBtn) skipBtn.textContent = "Skip intro →";
 
         G.gather = 0;
-        G.spinSpeed = 0.30;
+        G.spinSpeed = 0.45;
         G.zoomOut = 0;
-        G.haloAlpha = 0;
+        G.trapFactor = 0;
+        G.laptopScale = 1.0;
         G.laptopShiftX = 0;
         G.clashProgress = 0;
         G.vanishOpacity = 1;
         wrap.style.opacity = "1";
 
-        setCaption("01 / ON-DEVICE DISPLAY · INITIALIZING LOCAL SANDBOX", true);
+        setCaption("01 / ON-DEVICE DISPLAY · FULL-SCREEN LOCAL SANDBOX", true);
         setPhaseText("01 / ON-DEVICE DISPLAY · LOCAL SANDBOX ACTIVE");
 
         introTimeline = window.gsap.timeline({
@@ -9813,64 +9866,69 @@ function initHeroPaperTornadoThreeJs() {
           }
         });
 
+        // STAGE 1 -> 2 (0.15s -> 2.55s): High-DPI PDF pages stream in from all 4 corners to form a FULL-SCREEN 3D Tornado
         introTimeline.call(() => {
-          setCaption("02 / LOCAL VORTEX · DOCUMENTS APPEAR & FORM TORNADO ON YOUR SCREEN", true);
-          setPhaseText("02 / LOCAL VORTEX · DOCUMENTS SWIRL IN BROWSER RAM");
-        }, null, 0.35);
+          setCaption("02 / FULL-SCREEN VORTEX · DOCUMENTS SWIRL IN BROWSER RAM", true);
+          setPhaseText("02 / FULL-SCREEN VORTEX · DOCUMENTS SWIRL IN BROWSER RAM");
+        }, null, 0.25);
 
         introTimeline.to(G, {
           gather: 1,
-          duration: 2.45,
-          ease: "power2.inOut"
-        }, 0.25);
+          duration: 2.25,
+          ease: "expo.out"
+        }, 0.15);
 
         introTimeline.to(G, {
-          spinSpeed: 2.15,
-          duration: 2.1,
-          ease: "power2.in"
-        }, 0.55);
+          spinSpeed: 2.25,
+          duration: 2.0,
+          ease: "power2.inOut"
+        }, 0.35);
 
+        // STAGE 3 (2.40s -> 4.35s): Laptop zooms out & minimizes sleekly (`laptopScale: 0.48`) behind the text area
+        // while the full-screen tornado funnels into the minimized laptop!
         introTimeline.call(() => {
-          setCaption("03 / ZERO CLOUD UPLOADS · CONTAINED INSIDE YOUR LAPTOP", true);
+          setCaption("03 / ZERO CLOUD UPLOADS · TRAPPED INSIDE YOUR LAPTOP", true);
           setPhaseText("03 / ZERO CLOUD UPLOADS · TRAPPED INSIDE YOUR LAPTOP");
-        }, null, 2.65);
+        }, null, 2.40);
 
         introTimeline.to(G, {
           zoomOut: 1,
-          laptopShiftX: -0.85,
-          duration: 2.05,
+          trapFactor: 1,
+          laptopScale: 0.48,
+          laptopShiftX: 0.35,
+          spinSpeed: 0.72,
+          duration: 1.95,
           ease: "expo.inOut"
-        }, 2.65);
+        }, 2.40);
 
-        introTimeline.to(G, {
-          haloAlpha: 0.55,
-          spinSpeed: 0.62,
-          duration: 1.65,
-          ease: "power3.out"
-        }, 3.15);
-
+        // STAGE 4 (4.15s): Header + Hero Text ("Your PDFs never leave your device.") bleed in together
+        // via our Theme-Changer WebGL2 InkBleedEngine shader + Liquid Ripple on "leave"!
         introTimeline.call(() => {
           setCaption("", false);
           setPhaseText("LOCAL DEVICE VAULT ACTIVE · 0 BYTES LEAVE YOUR LAPTOP");
-          runHeadlineInkBleedReveal({ x: 0.48, y: 0.48 });
-        }, null, 4.40);
+          syncSize();
+          runHeadlineInkBleedReveal({ x: 0.46, y: 0.48 });
+        }, null, 4.15);
       }
 
       function skipIntroToCompletedState() {
         if (introTimeline) introTimeline.kill();
         G.gather = 1;
-        G.spinSpeed = 0.62;
+        G.spinSpeed = 0.72;
         G.zoomOut = 1;
-        G.haloAlpha = 0.55;
-        G.laptopShiftX = 0.28;
+        G.trapFactor = 1;
+        G.laptopScale = 0.48;
+        G.laptopShiftX = 0.35;
         G.clashProgress = 0;
         G.vanishOpacity = 1;
         HeroTornadoController.isIntroDone = true;
+        wrap.classList.remove("intro-fullscreen-stage");
+        syncSize();
         setCaption("", false);
         setPhaseText("LOCAL DEVICE VAULT ACTIVE · 0 BYTES LEAVE YOUR LAPTOP");
         const skipBtn = document.getElementById("heroSkipIntroBtn");
         if (skipBtn) skipBtn.textContent = "↻ Replay intro";
-        runHeadlineInkBleedReveal({ x: 0.48, y: 0.48 });
+        runHeadlineInkBleedReveal({ x: 0.46, y: 0.48 });
       }
 
       function playTornadoClashIntoStudio(onOpenStudioCallback) {
@@ -9886,11 +9944,11 @@ function initHeroPaperTornadoThreeJs() {
         setPhaseText("MIXING DROPPED FILE INTO TORNADO → CLASHING INTO STUDIO");
         const tl = window.gsap.timeline();
 
+        // Dropped file mixes into tornado: vortex expands & surges
         tl.to(G, {
-          spinSpeed: 2.85,
-          haloAlpha: 0.96,
-          zoomOut: 0.72,
-          duration: 0.48,
+          spinSpeed: 2.95,
+          trapFactor: 0.25,
+          duration: 0.46,
           ease: "power2.in"
         }, 0);
 
@@ -9900,7 +9958,7 @@ function initHeroPaperTornadoThreeJs() {
 
         tl.to(G, {
           clashProgress: 1,
-          spinSpeed: 0.2,
+          spinSpeed: 0.22,
           duration: 0.56,
           ease: "back.out(1.2)"
         }, 0.46);
@@ -9916,8 +9974,9 @@ function initHeroPaperTornadoThreeJs() {
             G.clashProgress = 0;
             G.vanishOpacity = 1;
             G.zoomOut = 1;
-            G.haloAlpha = 0.55;
-            G.spinSpeed = 0.62;
+            G.trapFactor = 1;
+            G.laptopScale = 0.48;
+            G.spinSpeed = 0.72;
             wrap.style.opacity = "1";
             setPhaseText("LOCAL DEVICE VAULT ACTIVE · 0 BYTES LEAVE YOUR LAPTOP");
           }
@@ -9939,77 +9998,106 @@ function initHeroPaperTornadoThreeJs() {
         elapsed += dt;
 
         const g = G.gather;
-        for (let i = 0; i < INNER_DOC_COUNT; i++) {
+
+        // 1. Update 96 high-DPI pages inside the Laptop Screen (`innerScene`)
+        for (let i = 0; i < INNER_COUNT; i++) {
           const d = innerDocs[i];
-          d.theta += dt * d.speed * G.spinSpeed;
+          d.angle += dt * d.angularSpeed * G.spinSpeed;
+          d.heightNorm = (d.heightNorm + dt * d.verticalSpeed * G.spinSpeed) % 1.0;
 
           const localG = Math.max(0, Math.min(1, (g - d.spawnDelay * 0.45) / (1 - d.spawnDelay * 0.45)));
           const smoothG = localG * localG * (3 - 2 * localG);
 
-          const funnelY = (d.h - 0.46) * 5.8 + Math.sin(elapsed * d.wobbleSpeed + d.wobblePhase) * 0.08;
-          const funnelR = (0.28 + Math.pow(d.h, 1.12) * 2.45 + d.radOffset) * (1.65 - 0.65 * smoothG);
+          const hn = d.heightNorm;
+          const cone = 0.28 + Math.pow(hn, 0.85) * 1.45;
+          const r = d.orbitRadius * cone;
 
-          const torX = Math.cos(d.theta) * funnelR;
-          const torY = funnelY;
-          const torZ = Math.sin(d.theta) * funnelR;
+          const tx = Math.cos(d.angle) * r;
+          const ty = (hn - 0.45) * 5.2;
+          const tz = Math.sin(d.angle) * r;
 
-          d.mesh.position.x = THREE.MathUtils.lerp(d.cornerOrigin.x, torX, smoothG);
-          d.mesh.position.y = THREE.MathUtils.lerp(d.cornerOrigin.y, torY, smoothG);
-          d.mesh.position.z = THREE.MathUtils.lerp(d.cornerOrigin.z, torZ, smoothG);
+          d.mesh.position.x = THREE.MathUtils.lerp(d.cornerOrigin.x, tx, smoothG);
+          d.mesh.position.y = THREE.MathUtils.lerp(d.cornerOrigin.y, ty, smoothG);
+          d.mesh.position.z = THREE.MathUtils.lerp(d.cornerOrigin.z, tz, smoothG);
 
-          const scaleIn = Math.max(0.001, Math.min(1, (g - d.spawnDelay * 0.55) * 2.6));
-          d.mesh.scale.setScalar(scaleIn);
-
-          d.mesh.rotation.y = -d.theta + Math.PI / 2;
-          d.mesh.rotation.x = 0.34 * smoothG + Math.sin(elapsed * d.wobbleSpeed + d.wobblePhase) * 0.14 + d.tiltX * (1 - smoothG);
-          d.mesh.rotation.z = -0.26 * smoothG + Math.cos(elapsed * d.wobbleSpeed + d.wobblePhase) * 0.12 + d.tiltZ * (1 - smoothG);
+          d.mesh.rotation.x = 0.34 + Math.sin(d.angle) * 0.42;
+          d.mesh.rotation.y = -d.angle + Math.PI * 0.5;
+          d.mesh.rotation.z = Math.cos(d.angle * 0.7) * 0.28;
         }
 
-        innerCam.position.x = Math.sin(elapsed * 0.42) * 0.28;
-        innerCam.position.y = 0.25 + Math.cos(elapsed * 0.32) * 0.16;
-        innerCam.lookAt(0, 0.12, 0);
+        // 2. Update 76 FULL-SCREEN High-DPI PDF Pages in `outerScene`
+        //    When trapFactor = 0 (Stages 1-2): Huge full-screen tornado spanning the entire viewport!
+        //    When trapFactor = 1 (Stage 3-4): Funnels down compactly into the minimized laptop behind the text!
+        const vortexCenterX = THREE.MathUtils.lerp(0.0, G.laptopShiftX, G.trapFactor) + pointerX * 0.22;
+        const vortexCenterY = THREE.MathUtils.lerp(0.4, 0.25, G.trapFactor) - pointerY * 0.14;
+        const vortexCenterZ = THREE.MathUtils.lerp(1.2, 0.15, G.trapFactor);
 
-        for (let i = 0; i < OUTER_DOC_COUNT; i++) {
-          const od = outerDocs[i];
-          od.angle += dt * od.speed * G.spinSpeed;
-          const hn = (od.heightNorm + elapsed * 0.05) % 1.0;
-          const r = od.radius * (0.45 + hn * 0.95);
-          const ox = Math.cos(od.angle) * r;
-          const oy = 0.45 + hn * 2.6;
-          const oz = -0.6 + Math.sin(od.angle) * r * 0.65;
+        const radiusScale = THREE.MathUtils.lerp(2.15, 0.42, G.trapFactor);
+        const funnelHeight = THREE.MathUtils.lerp(9.2, 2.45, G.trapFactor);
+        const pageScale = THREE.MathUtils.lerp(1.05, 0.44, G.trapFactor);
 
-          od.mesh.position.x = THREE.MathUtils.lerp(ox, od.studioTarget.x, G.clashProgress);
-          od.mesh.position.y = THREE.MathUtils.lerp(oy, od.studioTarget.y, G.clashProgress);
-          od.mesh.position.z = THREE.MathUtils.lerp(oz, od.studioTarget.z, G.clashProgress);
+        for (let i = 0; i < FULLSCREEN_PAGE_COUNT; i++) {
+          const p = fullScreenPages[i];
+          p.angle += dt * p.angularSpeed * G.spinSpeed;
+          p.heightNorm = (p.heightNorm + dt * p.verticalSpeed * G.spinSpeed) % 1.0;
 
-          od.mesh.rotation.x = THREE.MathUtils.lerp(0.28 + Math.sin(od.angle) * 0.35, 0, G.clashProgress);
-          od.mesh.rotation.y = THREE.MathUtils.lerp(-od.angle + Math.PI * 0.5, 0, G.clashProgress);
-          od.mesh.rotation.z = THREE.MathUtils.lerp(Math.cos(od.angle) * 0.25, 0, G.clashProgress);
-          od.mat.opacity = G.haloAlpha * G.vanishOpacity;
+          const localG = Math.max(0, Math.min(1, (g - p.spawnDelay * 0.4) / (1 - p.spawnDelay * 0.4)));
+          const smoothG = localG * localG * (3 - 2 * localG);
+
+          const hn = p.heightNorm;
+          const coneProfile = 0.30 + Math.pow(hn, 0.85) * 1.42;
+          const r = p.orbitRadius * coneProfile * radiusScale;
+
+          const torX = vortexCenterX + Math.cos(p.angle) * r;
+          const torY = vortexCenterY + (hn - 0.44) * funnelHeight;
+          const torZ = vortexCenterZ + Math.sin(p.angle) * r;
+
+          const cx = THREE.MathUtils.lerp(p.cornerOrigin.x, torX, smoothG);
+          const cy = THREE.MathUtils.lerp(p.cornerOrigin.y, torY, smoothG);
+          const cz = THREE.MathUtils.lerp(p.cornerOrigin.z, torZ, smoothG);
+
+          p.mesh.position.x = THREE.MathUtils.lerp(cx, p.studioTarget.x, G.clashProgress);
+          p.mesh.position.y = THREE.MathUtils.lerp(cy, p.studioTarget.y, G.clashProgress);
+          p.mesh.position.z = THREE.MathUtils.lerp(cz, p.studioTarget.z, G.clashProgress);
+
+          p.mesh.scale.setScalar(THREE.MathUtils.lerp(pageScale, 0.9, G.clashProgress));
+
+          const torRotX = 0.35 + Math.sin(p.angle) * 0.45;
+          const torRotY = -p.angle + Math.PI * 0.5;
+          const torRotZ = Math.cos(p.angle * 0.7) * 0.32;
+
+          p.mesh.rotation.x = THREE.MathUtils.lerp(torRotX, 0, G.clashProgress);
+          p.mesh.rotation.y = THREE.MathUtils.lerp(torRotY, 0, G.clashProgress);
+          p.mesh.rotation.z = THREE.MathUtils.lerp(torRotZ, 0, G.clashProgress);
+          p.mat.opacity = 0.96 * G.vanishOpacity;
         }
 
+        // 3. Update Minimized Photorealistic 3D Laptop & Camera (`outerCam`)
         const k = G.zoomOut;
+        laptopGroup.scale.setScalar(G.laptopScale);
+        laptopGroup.position.x = G.laptopShiftX;
+        laptopGroup.position.y = THREE.MathUtils.lerp(0, -0.35, k);
+        laptopGroup.rotation.y = THREE.MathUtils.lerp(0, -0.18 + pointerX * 0.10, k);
+        laptopGroup.rotation.x = THREE.MathUtils.lerp(0, 0.06 + pointerY * 0.04, k);
+
         const fovRad = THREE.MathUtils.degToRad(outerCam.fov);
-        const fitH = (SCREEN_H * 0.90) / (2 * Math.tan(fovRad / 2));
-        const fitW = (SCREEN_W * 0.90) / (2 * Math.tan(fovRad / 2) * outerCam.aspect);
-        const d0 = Math.min(fitH, fitW) * 0.90;
-        const dF = 6.45;
+        const fitH = (SCREEN_H * 0.88) / (2 * Math.tan(fovRad / 2));
+        const fitW = (SCREEN_W * 0.88) / (2 * Math.tan(fovRad / 2) * outerCam.aspect);
+        const d0 = Math.min(fitH, fitW) * 0.88; // Starts inside/filling the entire screen
+        const dF = 9.6;                         // Zooms out so the laptop is compact & minimized!
 
         const dist = THREE.MathUtils.lerp(d0, dF, k);
-        const yaw = THREE.MathUtils.lerp(0, -0.22 + pointerX * 0.08, k);
-        const pitch = THREE.MathUtils.lerp(0.01, 0.19 - pointerY * 0.05, k);
+        const yaw = THREE.MathUtils.lerp(0, -0.14 + pointerX * 0.06, k);
+        const pitch = THREE.MathUtils.lerp(0.01, 0.14 - pointerY * 0.04, k);
 
         const dir = screenNormal.clone();
         dir.applyAxisAngle(new THREE.Vector3(1, 0, 0), -pitch);
         dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
 
-        laptopGroup.position.x = G.laptopShiftX;
-        laptopGroup.position.y = THREE.MathUtils.lerp(0, -0.32, k);
-
-        const targetLook = screenCenterWorld.clone().add(
+        const targetLook = screenCenterWorld.clone().multiplyScalar(G.laptopScale).add(
           new THREE.Vector3(
             G.laptopShiftX * 0.5,
-            THREE.MathUtils.lerp(0, -0.38, k),
+            THREE.MathUtils.lerp(0, -0.15, k),
             0
           )
         );
