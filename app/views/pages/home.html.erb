@@ -9065,60 +9065,108 @@ window.qrcode = qrcode;
       const fgEl = document.getElementById("heroForegroundContent");
       const titleEl = document.getElementById("heroInkBleedTitle");
       const dispEl = document.getElementById("inkBleedDispMap");
+      const inkCanvas = document.getElementById("inkBleedCanvas");
       if (!fgEl) return;
 
-      // 1. Capture a pre-text snapshot canvas of the current hero background + 3D laptop canvas
-      //    so our Theme-Changer WebGL2 InkBleedEngine can dissolve from [Laptop-Only Scene] -> [Laptop + Hero Text]!
+      // 1. Run our exact Theme-Changer WebGL2 InkBleedEngine shader (`InkBleedEngine.drawFrame`)
+      //    capturing the pre-text [3D Laptop Only] viewport into `fromTex`, revealing the Hero Text DOM
+      //    underneath `#inkBleedCanvas`, and spreading organic Perlin + radial ink tendrils across the screen!
       try {
-        if (window.InkBleedEngine && window.InkBleedEngine.init()) {
-          const w = window.innerWidth;
-          const h = window.innerHeight;
-          const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
-          const snap = document.createElement("canvas");
-          snap.width = Math.max(1, Math.floor(w * dpr));
-          snap.height = Math.max(1, Math.floor(h * dpr));
-          const sctx = snap.getContext("2d");
-          sctx.scale(dpr, dpr);
+        if (inkCanvas && typeof InkBleedEngine !== "undefined" && InkBleedEngine.init()) {
+          if (InkBleedEngine.animId) cancelAnimationFrame(InkBleedEngine.animId);
+          if (InkBleedEngine.fadeId) cancelAnimationFrame(InkBleedEngine.fadeId);
 
-          const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-          sctx.fillStyle = isDark ? "#0B0D0C" : "#F6F4EF";
-          sctx.fillRect(0, 0, w, h);
+          const curTheme = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+          const scale = InkBleedEngine.resize(inkCanvas);
+          const snap = captureLiveThemeViewport(curTheme, scale);
 
-          // Composite the current 3D WebGL canvas (showing the zoomed-out laptop) into the pre-text snapshot
+          // Composite the live 3D Laptop WebGL canvas into the "from" snapshot (before text is visible)
           const threeCnv = document.getElementById("heroThreeCanvas");
           const stageSec = document.getElementById("heroStageSection");
-          if (threeCnv && stageSec) {
+          if (threeCnv && stageSec && snap && snap.canvas) {
+            const sctx = snap.canvas.getContext("2d");
             const rect = stageSec.getBoundingClientRect();
             try {
+              sctx.save();
+              sctx.scale(scale, scale);
               sctx.drawImage(threeCnv, rect.left, rect.top, rect.width, rect.height);
+              sctx.restore();
             } catch (_) {}
           }
 
-          window.InkBleedEngine.uploadSnapshot(snap);
-          window.InkBleedEngine.resize();
-          window.InkBleedEngine.canvas.style.opacity = "1";
+          InkBleedEngine.uploadSnapshot(snap);
 
-          // Reveal the DOM text & drop card underneath the InkBleedEngine canvas immediately
+          const vw = document.documentElement.clientWidth || window.innerWidth;
+          const vh = document.documentElement.clientHeight || window.innerHeight;
+          const center = {
+            x: (laptopScreenOriginNorm?.x ?? 0.36) * vw,
+            y: (laptopScreenOriginNorm?.y ?? 0.48) * vh
+          };
+          const maxDist = farthestViewportCorner(center);
+          const seed = randomInkSeed();
+
+          InkBleedEngine.drawFrame({
+            to: curTheme === "dark" ? "light" : "dark",
+            center,
+            progress: 0,
+            time: 0,
+            radius: 0,
+            cleanup: 0,
+            maxDist,
+            seed
+          });
+          inkCanvas.style.opacity = "1";
+          inkCanvas.classList.add("is-active");
+
+          // Reveal the hero text & transparent drop card underneath the WebGL2 ink-bleed canvas
           fgEl.classList.remove("hero-intro-hidden");
           fgEl.classList.add("hero-intro-revealed");
 
-          const ox = laptopScreenOriginNorm?.x ?? 0.48;
-          const oy = laptopScreenOriginNorm?.y ?? 0.48;
-          const dir = isDark ? 1.0 : -1.0;
-          const dur = 1150;
-          const t0 = performance.now();
+          const durationSec = 1.25;
+          const startMs = performance.now();
 
-          function tickInkShader(now) {
-            const raw = Math.min(1, (now - t0) / dur);
-            const eased = raw < 0.5 ? 2 * raw * raw : 1 - Math.pow(-2 * raw + 2, 2) / 2;
-            window.InkBleedEngine.render(eased, ox, oy, dir);
-            if (raw < 1) {
-              requestAnimationFrame(tickInkShader);
+          const tickSpread = (now) => {
+            const elapsedSec = (now - startMs) / 1000;
+            const linear = Math.min(1, elapsedSec / durationSec);
+            const progress = easePower3Out(linear);
+            const simTime = elapsedSec * (inkParams?.timeScale || 1.0);
+
+            const ramp = Math.max(0, (linear - INK_SPREAD.cleanupFrom) / (1 - INK_SPREAD.cleanupFrom));
+            const cleanup =
+              Math.pow(ramp, INK_SPREAD.cleanupPow) * maxDist * INK_SPREAD.cleanupReach +
+              Math.max(0, (linear - 0.97) / 0.03) * maxDist;
+            const radius = progress * maxDist * INK_SPREAD.growth;
+
+            InkBleedEngine.drawFrame({
+              to: curTheme === "dark" ? "light" : "dark",
+              center,
+              progress,
+              time: simTime,
+              radius,
+              cleanup,
+              maxDist,
+              seed
+            });
+
+            if (linear < 1) {
+              InkBleedEngine.animId = requestAnimationFrame(tickSpread);
             } else {
-              window.InkBleedEngine.canvas.style.opacity = "0";
+              const fadeStart = performance.now();
+              const tickFade = (fNow) => {
+                const ft = Math.min(1, (fNow - fadeStart) / 160);
+                inkCanvas.style.opacity = String(1 - ft);
+                if (ft < 1) {
+                  InkBleedEngine.fadeId = requestAnimationFrame(tickFade);
+                } else {
+                  inkCanvas.classList.remove("is-active");
+                  inkCanvas.style.opacity = "0";
+                }
+              };
+              InkBleedEngine.fadeId = requestAnimationFrame(tickFade);
             }
-          }
-          requestAnimationFrame(tickInkShader);
+          };
+
+          InkBleedEngine.animId = requestAnimationFrame(tickSpread);
         } else {
           fgEl.classList.remove("hero-intro-hidden");
           fgEl.classList.add("hero-intro-revealed");
@@ -9131,8 +9179,8 @@ window.qrcode = qrcode;
       // 2. Simultaneously run the per-word SVG feTurbulence + feDisplacementMap organic ink-bleed on the headline
       if (titleEl && typeof window.gsap !== "undefined") {
         const words = titleEl.querySelectorAll(".ink-word");
-        const filterState = { scale: 54, blur: 6 };
-        titleEl.style.filter = "url(#inkBleedTitleFilter) blur(6px)";
+        const filterState = { scale: 58, blur: 6.5 };
+        titleEl.style.filter = "url(#inkBleedTitleFilter) blur(6.5px)";
 
         window.gsap.fromTo(words,
           { opacity: 0, y: 18, filter: "blur(8px)" },
@@ -9140,8 +9188,8 @@ window.qrcode = qrcode;
             opacity: 1,
             y: 0,
             filter: "blur(0px)",
-            duration: 0.95,
-            stagger: 0.08,
+            duration: 0.98,
+            stagger: 0.085,
             ease: "power3.out"
           }
         );
@@ -9149,7 +9197,7 @@ window.qrcode = qrcode;
         window.gsap.to(filterState, {
           scale: 0,
           blur: 0,
-          duration: 1.35,
+          duration: 1.38,
           ease: "expo.out",
           onUpdate: () => {
             if (dispEl) dispEl.setAttribute("scale", filterState.scale.toFixed(1));
@@ -9165,7 +9213,7 @@ window.qrcode = qrcode;
       }
     }
 
-    function initHeroPaperTornadoThreeJs() {
+function initHeroPaperTornadoThreeJs() {
       const canvas = document.getElementById("heroThreeCanvas");
       const wrap = document.getElementById("heroThreeCanvasWrap");
       const fgEl = document.getElementById("heroForegroundContent");
@@ -9658,7 +9706,7 @@ window.qrcode = qrcode;
         spinSpeed: prefersReduced ? 0.58 : 0.32,
         zoomOut: prefersReduced ? 1 : 0,
         haloAlpha: prefersReduced ? 0.55 : 0,
-        laptopShiftX: prefersReduced ? 0.28 : 0,
+        laptopShiftX: prefersReduced ? -0.85 : 0,
         clashProgress: 0,
         vanishOpacity: 1
       };
@@ -9773,7 +9821,7 @@ window.qrcode = qrcode;
 
         introTimeline.to(G, {
           zoomOut: 1,
-          laptopShiftX: 0.28,
+          laptopShiftX: -0.85,
           duration: 2.05,
           ease: "expo.inOut"
         }, 2.65);
@@ -9928,8 +9976,8 @@ window.qrcode = qrcode;
         const fovRad = THREE.MathUtils.degToRad(outerCam.fov);
         const fitH = (SCREEN_H * 0.90) / (2 * Math.tan(fovRad / 2));
         const fitW = (SCREEN_W * 0.90) / (2 * Math.tan(fovRad / 2) * outerCam.aspect);
-        const d0 = Math.max(fitH, fitW);
-        const dF = 6.25;
+        const d0 = Math.min(fitH, fitW) * 0.90;
+        const dF = 6.45;
 
         const dist = THREE.MathUtils.lerp(d0, dF, k);
         const yaw = THREE.MathUtils.lerp(0, -0.22 + pointerX * 0.08, k);
