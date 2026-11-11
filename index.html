@@ -1122,99 +1122,107 @@
       </div>
 
       <!-- 3-Pane Studio Layout -->
-      <div class="studio-3pane">
-        <!-- LEFT PANE: Active Files List with Clear Filenames & Badges -->
-        <div class="studio-pane">
-          <div class="studio-pane-head">
-            <span class="mono" style="font-size:11.5px; font-weight:600;">1. YOUR FILES</span>
-            <button class="btn btn-secondary btn-tiny mono" style="padding:4px 10px; color:var(--brand);" onclick="document.getElementById('toolFileInput').click()">+ Add Files</button>
-          </div>
-          <div style="font-size:11.5px; color:var(--muted); margin-bottom:10px;" id="leftQueueModeHint">
-            Use ↑/↓ to reorder files or click + Add Files to drop more PDFs or photos.
-          </div>
-          <div class="file-list" id="toolFileList"></div>
-          <input type="file" id="toolFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" multiple style="display:none;" onchange="handleFileInputSelect(event)">
-        </div>
-
-        <!-- CENTER PANE: Real-Time Live Visual Page Preview (Updates immediately as options change!) -->
-        <div class="studio-pane">
-          <div class="studio-pane-head">
-            <div>
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span class="tool-card-num" id="centerToolNumBadge" style="padding:2px 8px; border:1px solid var(--border); border-radius:6px; background:var(--surface-sunk);">01</span>
-                <h1 class="title-md" id="toolPageTitle">Merge PDF</h1>
+            <!-- Modern Minimalist Studio Workspace: 2-Panel Layout (Spacious Visual Page Canvas + Clean Sticky Sidebar) -->
+      <div class="studio-workspace-layout">
+        <!-- MAIN CANVAS (Left / Center, ~72% width) -->
+        <div class="studio-canvas-pane">
+          <!-- Canvas Top Subbar: File Info, Quick Upload, Page Count & Interactive Zoom Controls -->
+          <div class="studio-canvas-topbar">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <span class="tool-card-num" id="centerToolNumBadge" style="padding:4px 10px; font-weight:700; border:1px solid var(--border); border-radius:8px; background:var(--surface-sunk); color:var(--brand);">01</span>
+              <div>
+                <h1 class="title-md" id="toolPageTitle" style="font-size:18px; margin:0;">Merge PDF</h1>
+                <div class="mono" style="font-size:11.5px; color:var(--muted); margin-top:2px;">
+                  <strong style="color:var(--ink);" id="canvasActiveFileName">Document.pdf</strong> · <span id="canvasPageCountBadge">1 Page</span> · <span id="canvasFileSizeBadge">0 KB</span>
+                </div>
               </div>
-              <p id="toolPageDesc" style="font-size:13px; color:var(--muted); margin-top:2px;">Combine multiple PDFs and scans into one file.</p>
             </div>
-            <span class="privacy-pill" style="padding:4px 10px; font-size:11px;">
-              <span class="privacy-dot"></span>
-              <span id="toolPrivacyPillText">✔ Stays on your device</span>
-            </span>
+
+            <!-- Canvas Quick Controls: Zoom Slider/Buttons, Page Selection, Rotate All, Add Pages -->
+            <div class="canvas-controls-group">
+              <div class="zoom-controls-pill">
+                <span class="mono" style="font-size:11px; color:var(--muted); margin-right:4px;">Zoom:</span>
+                <button type="button" class="zoom-btn" id="zoomBtnCompact" onclick="setStudioPageZoom('compact')" title="Compact View (See all pages)">Small</button>
+                <button type="button" class="zoom-btn active" id="zoomBtnNormal" onclick="setStudioPageZoom('normal')" title="Standard View (280px)">Medium</button>
+                <button type="button" class="zoom-btn" id="zoomBtnLarge" onclick="setStudioPageZoom('large')" title="Large Detail View (400px - see text and markings clearly)">Large</button>
+              </div>
+
+              <button type="button" class="btn btn-secondary btn-tiny" onclick="rotateAllPagesDeck(90)" title="Rotate all pages 90° clockwise">↻ Rotate All</button>
+              <button type="button" class="btn btn-secondary btn-tiny" onclick="document.getElementById('toolFileInput').click()">+ Add More Files</button>
+              <input type="file" id="toolFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" multiple style="display:none;" onchange="handleFileInputSelect(event)">
+            </div>
           </div>
 
-          <!-- REAL-TIME VISUAL PAGE PREVIEW STAGE -->
+          <!-- Page Selection Sub-Header -->
+          <div class="canvas-pages-meta-bar">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="live-badge-pulse"><span class="dot"></span> LIVE PAGE DECK</span>
+              <span style="font-size:12px; color:var(--muted);" id="livePreviewSubtext">All pages rendered — click page cards to select, or use ↻ / ✕ on any card</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button type="button" class="btn btn-ghost btn-tiny" onclick="toggleSelectAllPages(true)">Select All</button>
+              <button type="button" class="btn btn-ghost btn-tiny" onclick="toggleSelectAllPages(false)">Deselect All</button>
+              <span class="mono" id="selectedPagesCountBadge" style="font-size:11px; color:var(--brand); font-weight:600;"></span>
+            </div>
+          </div>
+
+          <!-- SPACIOUS VISUAL PAGE PREVIEW GRID (Renders ALL pages: 1, 2, 3 ... 20+) -->
           <div class="live-preview-stage" id="livePreviewStage">
-            <div class="live-preview-header">
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <span class="live-badge-pulse"><span class="dot"></span> LIVE PAGE PREVIEW</span>
-                <span style="font-size:12px; color:var(--muted);" id="livePreviewSubtext">Updates instantly as you change settings on the right</span>
-              </div>
-              <button type="button" class="btn btn-secondary btn-tiny" onclick="document.getElementById('toolFileInput').click()">+ Add More PDFs / Photos</button>
-            </div>
-
-            <!-- Actual rendered pages / scanned photos appear here -->
             <div class="live-preview-grid" id="livePagePreviewGrid"></div>
           </div>
-
-          <!-- Output Ready Banner (Shows after clicking Apply) -->
-          <div id="toolOutputInspector" style="display:none; margin-top:14px; padding:16px; background-color:var(--brand-soft); border:1.5px solid var(--brand); border-radius:12px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-              <div>
-                <div class="eyebrow" style="color:var(--brand);">✓ STEP APPLIED &amp; READY TO DOWNLOAD OR CHAIN</div>
-                <div class="title-md" id="inspectorOutputFilename" style="margin-top:2px;">merged.pdf</div>
-                <div class="mono" id="inspectorOutputMetrics" style="font-size:12px; color:var(--muted); margin-top:2px;"></div>
-              </div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button type="button" class="btn btn-success btn-tiny" onclick="downloadLastOutput()">⬇ Download Now</button>
-                <button type="button" class="btn btn-secondary btn-tiny" onclick="toggleCustomToolMenu(event)">Next: Pick Another Tool (Auto-Keeps Changes) →</button>
-              </div>
-            </div>
-            <div id="inspectorPagesPreview" style="display:none;"></div>
-          </div>
-
-          <!-- 8. SHAREABLE RESULT PROOF CARD -->
-          <div id="shareableResultCard" class="share-proof-card" style="display:none;">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
-              <span class="mono" style="font-size:11px; color:#4ADE80; font-weight:600;">★ SHAREABLE PRIVACY CARD</span>
-              <span class="mono" style="font-size:11px; color:#8A918E;" id="shareCardTimingLabel">Processed on your device · 0 B uploaded</span>
-            </div>
-            <input type="text" id="shareCardHeadline" readonly value="I edited my PDF on my device with 0 bytes uploaded on NoUploadPDF." style="width:100%; background:rgba(255,255,255,0.06); border:1px solid #2F855A; border-radius:8px; padding:10px 12px; font-size:13.5px; font-weight:600; color:#FFFFFF; margin-bottom:12px;" onclick="this.select()">
-            <div style="display:flex; flex-wrap:wrap; gap:8px;">
-              <button type="button" class="btn btn-success btn-tiny" onclick="selectShareableProofText()">📋 Copy Share Text</button>
-              <button type="button" class="btn btn-secondary btn-tiny" onclick="downloadShareableBadgePng()">🖼 Download Badge Image</button>
-            </div>
-          </div>
         </div>
 
-        <!-- RIGHT PANE: Tool Settings + Apply + Download -->
-        <div class="studio-pane">
-          <div class="studio-pane-head">
-            <span class="mono" style="font-size:11.5px; font-weight:600;">2. SETTINGS &amp; APPLY</span>
-            <span class="mono" style="font-size:10.5px; color:var(--brand);">LIVE PREVIEW</span>
+        <!-- RIGHT SIDEBAR: Tool Settings, Rename File, and One-Click Download -->
+        <aside class="studio-sidebar-pane">
+          <!-- Sidebar Header -->
+          <div class="studio-pane-head" style="margin-bottom:12px; padding-bottom:10px;">
+            <div style="display:flex; flex-direction:column;">
+              <span class="mono" style="font-size:11px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--brand);">SETTINGS &amp; DOWNLOAD</span>
+              <p id="toolPageDesc" style="font-size:12.5px; color:var(--muted); margin-top:2px;">Adjust settings and download your PDF.</p>
+            </div>
           </div>
 
+          <!-- Active Tool Settings Panel -->
           <div id="toolOptionsPanel" style="margin-bottom:16px;" oninput="scheduleLivePreviewUpdate()" onchange="scheduleLivePreviewUpdate()"></div>
 
-          <div id="toolActionBar" style="padding-top:12px; border-top:1px solid var(--border);">
-            <div style="margin-bottom:10px;">
-              <div class="mono" id="actionBarStatus" style="font-size:12.5px; color:var(--ink); font-weight:600;">Ready: merged.pdf</div>
-              <div class="mono" id="actionBarSubstatus" style="font-size:11.5px; color:var(--muted); margin-top:2px;">Changes preview live on the left</div>
+          <!-- Page Scope Selector (Allows applying tool page-wise or to all pages) -->
+          <div class="page-scope-card" id="pageScopeCard" style="margin-bottom:14px;">
+            <label class="field-label" for="toolPageScopeSelect">Apply Tool Changes To:</label>
+            <select id="toolPageScopeSelect" class="field-select" onchange="handleToolPageScopeChange(this.value)">
+              <option value="all" selected>All Pages</option>
+              <option value="selected">Selected Pages Only</option>
+            </select>
+          </div>
+
+          <!-- Rename Output File Field (Directly fulfills user request!) -->
+          <div class="rename-file-card" style="margin-bottom:16px; padding:12px; background:var(--surface-sunk); border:1.5px solid var(--border-strong); border-radius:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+              <label class="field-label" for="studioCustomFileName" style="margin:0;">Rename Download File</label>
+              <span class="mono" style="font-size:10.5px; color:var(--brand);">Custom Name</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="text" id="studioCustomFileName" class="field-input mono" style="font-weight:600; font-size:13.5px;" value="document.pdf" placeholder="document.pdf" oninput="handleStudioCustomFileNameChange(this.value)">
+            </div>
+            <div class="mono" style="font-size:10.5px; color:var(--muted); margin-top:4px;">Downloads with this exact filename.</div>
+          </div>
+
+          <!-- Primary Action Bar -->
+          <div id="toolActionBar" style="padding-top:8px;">
+            <div style="margin-bottom:12px;">
+              <div class="mono" id="actionBarStatus" style="font-size:13px; color:var(--ink); font-weight:700;">Ready</div>
+              <div class="mono" id="actionBarSubstatus" style="font-size:11.5px; color:var(--muted); margin-top:2px;">Processed locally on your device</div>
             </div>
             <div style="display:flex; flex-direction:column; gap:8px;" id="actionBarButtons">
-              <button class="btn btn-primary btn-magnetic" data-magnetic="true" style="width:100%;" id="primaryToolActionBtn" onclick="executeCurrentTool()">Apply &amp; Merge PDFs</button>
+              <button class="btn btn-success btn-magnetic" data-magnetic="true" style="width:100%; height:48px; font-size:15px; font-weight:600;" id="primaryToolActionBtn" onclick="executeCurrentTool()">Apply &amp; Download PDF</button>
             </div>
           </div>
-        </div>
+
+          <!-- Clean Privacy Assurance -->
+          <div style="margin-top:14px; padding:10px 12px; background:var(--brand-soft); border:1px solid var(--brand-border); border-radius:10px; font-size:11.5px; color:var(--brand); display:flex; align-items:center; gap:8px;">
+            <span class="privacy-dot"></span>
+            <span><strong>100% On-Device Privacy:</strong> 0 bytes uploaded to any server.</span>
+          </div>
+        </aside>
       </div>
 
       <div style="margin-top:36px; padding-top:24px; border-top:1px solid var(--border);">
@@ -2229,9 +2237,266 @@
       ctx.restore();
     }
 
+    
+    // =====================================================================
+    // MODERN MINIMALIST STUDIO ENGINE (All-Page Visual Deck, Zoom & Page Scope)
+    // =====================================================================
+    State.pageDeck = State.pageDeck || [];
+    State.selectedPages = new Set();
+    State.pageScope = "all";
+    State.zoomLevel = "normal";
+    State.customOutputName = "";
+
+    window.setStudioPageZoom = function(level) {
+      State.zoomLevel = level;
+      const root = document.documentElement;
+      const btnCompact = document.getElementById("zoomBtnCompact");
+      const btnNormal = document.getElementById("zoomBtnNormal");
+      const btnLarge = document.getElementById("zoomBtnLarge");
+      [btnCompact, btnNormal, btnLarge].forEach(b => b && b.classList.remove("active"));
+
+      if (level === "compact") {
+        root.style.setProperty("--studio-card-min-width", "190px");
+        root.style.setProperty("--studio-card-canvas-height", "250px");
+        if (btnCompact) btnCompact.classList.add("active");
+      } else if (level === "large") {
+        root.style.setProperty("--studio-card-min-width", "390px");
+        root.style.setProperty("--studio-card-canvas-height", "510px");
+        if (btnLarge) btnLarge.classList.add("active");
+      } else {
+        root.style.setProperty("--studio-card-min-width", "270px");
+        root.style.setProperty("--studio-card-canvas-height", "360px");
+        if (btnNormal) btnNormal.classList.add("active");
+      }
+      renderLiveVisualPreview();
+    };
+
+    window.togglePageSelection = function(idx) {
+      if (!State.selectedPages) State.selectedPages = new Set();
+      if (State.selectedPages.has(idx)) {
+        State.selectedPages.delete(idx);
+      } else {
+        State.selectedPages.add(idx);
+      }
+      updatePageSelectionCounters();
+      const card = document.getElementById(`live-card-${idx}`);
+      if (card) card.classList.toggle("selected-card", State.selectedPages.has(idx));
+    };
+
+    window.toggleSelectAllPages = function(selectAll) {
+      if (!State.selectedPages) State.selectedPages = new Set();
+      State.selectedPages.clear();
+      if (selectAll && State.pageDeck) {
+        for (let i = 0; i < State.pageDeck.length; i++) State.selectedPages.add(i);
+      }
+      updatePageSelectionCounters();
+      renderLiveVisualPreview();
+    };
+
+    function updatePageSelectionCounters() {
+      const badge = document.getElementById("selectedPagesCountBadge");
+      const selCount = State.selectedPages ? State.selectedPages.size : 0;
+      if (badge) badge.textContent = selCount > 0 ? `${selCount} Selected` : "";
+      document.querySelectorAll(".deck-selected-count").forEach(el => el.textContent = String(selCount));
+    }
+
+    window.handleToolPageScopeChange = function(scope) {
+      State.pageScope = scope;
+      renderLiveVisualPreview();
+    };
+
+    window.handleStudioCustomFileNameChange = function(val) {
+      State.customOutputName = (val || "").trim();
+      const btn = document.getElementById("primaryToolActionBtn");
+      const tool = TOOLS.find(t => t.id === State.activeToolId) || TOOLS[0];
+      if (btn && !btn.disabled) {
+        btn.textContent = `Apply & Download ${State.customOutputName || tool.out}`;
+      }
+    };
+
+    window.rotateAllPagesDeck = async function(deg = 90) {
+      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
+      pushUndoSnapshot();
+      for (const item of State.pageDeck) {
+        item.rotation = ((item.rotation || 0) + deg) % 360;
+      }
+      renderLiveVisualPreview();
+    };
+
+    window.moveDeckPage = async function(deckIdx, delta) {
+      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
+      const target = deckIdx + delta;
+      if (target < 0 || target >= State.pageDeck.length) return;
+      pushUndoSnapshot();
+      const tmp = State.pageDeck[deckIdx];
+      State.pageDeck[deckIdx] = State.pageDeck[target];
+      State.pageDeck[target] = tmp;
+      updateOrganizeInputFromDeck();
+      renderLiveVisualPreview();
+    };
+
+    window.rotateDeckPage = async function(deckIdx, deg = 90) {
+      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
+      if (!State.pageDeck[deckIdx]) return;
+      pushUndoSnapshot();
+      State.pageDeck[deckIdx].rotation = ((State.pageDeck[deckIdx].rotation || 0) + deg) % 360;
+      renderLiveVisualPreview();
+    };
+
+    window.deleteDeckPage = async function(deckIdx) {
+      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
+      if (State.pageDeck.length <= 1) {
+        alert("A PDF must have at least 1 page. To clear all files, click Clear All.");
+        return;
+      }
+      pushUndoSnapshot();
+      State.pageDeck.splice(deckIdx, 1);
+      updateOrganizeInputFromDeck();
+      renderLiveVisualPreview();
+    };
+
+    function updateOrganizeInputFromDeck() {
+      const inp = document.getElementById("optOrganizeSpec");
+      if (inp && State.pageDeck) {
+        inp.value = State.pageDeck.map((_, idx) => idx + 1).join(", ");
+      }
+    }
+
+    async function syncPageDeckFromFiles(preserveExistingEdits = false) {
+      if (preserveExistingEdits && State.pageDeck && State.pageDeck.length > 0) {
+        return;
+      }
+      const newDeck = [];
+      for (let fIdx = 0; fIdx < State.files.length; fIdx++) {
+        const f = State.files[fIdx];
+        let count = Math.max(1, f.pageCount || 1);
+        try {
+          const loaded = await PDFLib.PDFDocument.load(f.bytes, { ignoreEncryption: true });
+          count = loaded.getPageCount();
+          f.pageCount = count;
+        } catch {}
+        for (let p = 1; p <= count; p++) {
+          newDeck.push({
+            uid: "pg-" + f.id + "-" + p + "-" + Math.random().toString(36).slice(2, 6),
+            fileId: f.id,
+            fileName: f.name,
+            bytes: f.bytes,
+            srcPageIndex: p - 1,
+            srcPageNum: p,
+            rotation: 0,
+            imageBase64: (p === 1 && f.imageBase64) ? f.imageBase64 : null,
+            isScan: Boolean(f.isScan)
+          });
+        }
+      }
+      State.pageDeck = newDeck;
+      if (!State.selectedPages) State.selectedPages = new Set();
+    }
+
+    function drawLiveToolOverlayOnCanvas(ctx, w, h, pageNumber, totalPages, cfg, isTargeted) {
+      ctx.save();
+
+      // 1. Crop Margins: High-contrast shaded outer trim + bold neon green dashed boundary
+      if (cfg.toolId === "crop") {
+        const ratio = Math.min(0.35, Math.max(0.02, (cfg.cropMargin || 20) / 400));
+        const mx = Math.round(w * ratio);
+        const my = Math.round(h * ratio);
+
+        // Dark shaded outer trim area
+        ctx.fillStyle = "rgba(10, 10, 10, 0.45)";
+        ctx.fillRect(0, 0, w, my);
+        ctx.fillRect(0, h - my, w, my);
+        ctx.fillRect(0, my, mx, h - my * 2);
+        ctx.fillRect(w - mx, my, mx, h - my * 2);
+
+        // Bold neon green boundary box
+        ctx.strokeStyle = "#22C55E";
+        ctx.lineWidth = 3.5;
+        ctx.setLineDash([8, 6]);
+        ctx.strokeRect(mx, my, w - mx * 2, h - my * 2);
+        ctx.setLineDash([]);
+
+        // Clear margin label badge
+        ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+        ctx.fillRect(mx + 8, my + 8, 128, 24);
+        ctx.strokeStyle = "#22C55E";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(mx + 8, my + 8, 128, 24);
+        ctx.fillStyle = "#4ADE80";
+        ctx.font = "bold 11px monospace";
+        ctx.fillText(`CROP: ${cfg.cropMargin || 20}pt`, mx + 16, my + 24);
+      }
+
+      // 2. Redact / Blackout live region
+      if (cfg.toolId === "redact" && isTargeted) {
+        const by = cfg.redactZone === "header" ? h * 0.08 : (cfg.redactZone === "body" ? h * 0.42 : h * 0.76);
+        const bh = h * 0.14;
+        ctx.fillStyle = "#090A0A";
+        ctx.fillRect(w * 0.06, by, w * 0.88, bh);
+        ctx.strokeStyle = "#EF4444";
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(w * 0.06, by, w * 0.88, bh);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = `bold ${Math.max(12, Math.round(w * 0.045))}px monospace`;
+        ctx.fillText("████ REDACTED AREA ████", w * 0.12, by + bh * 0.62);
+      }
+
+      // 3. Watermark live text
+      if ((cfg.toolId === "watermark" || cfg.toolId === "workflow") && isTargeted) {
+        ctx.save();
+        ctx.translate(w / 2, h / 2);
+        ctx.rotate(-34 * Math.PI / 180);
+        ctx.globalAlpha = Math.min(0.85, Math.max(0.18, (cfg.wmOpacity || 0.3) + 0.15));
+        ctx.fillStyle = "#1F6F4A";
+        ctx.font = `bold ${Math.max(18, Math.round(w * 0.10))}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.fillText(cfg.wmText || "CONFIDENTIAL", 0, 0);
+        ctx.restore();
+      }
+
+      // 4. Page & Bates Numbers live footer stamp
+      if ((cfg.toolId === "pageNumbers" || cfg.toolId === "workflow") && isTargeted) {
+        const lbl = cfg.numFmt === "bates"
+          ? `${cfg.batesPrefix || "EXH-"}${String(pageNumber).padStart(4, "0")}`
+          : (cfg.numFmt === "n" ? `${pageNumber}` : `Page ${pageNumber} of ${totalPages}`);
+        ctx.fillStyle = "rgba(47, 133, 90, 0.18)";
+        ctx.fillRect(w * 0.08, h * 0.88, w * 0.84, h * 0.08);
+        ctx.strokeStyle = "#22C55E";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(w * 0.08, h * 0.88, w * 0.84, h * 0.08);
+        ctx.fillStyle = "#14532D";
+        ctx.font = `bold ${Math.max(11, Math.round(w * 0.045))}px monospace`;
+        ctx.textAlign = "center";
+        ctx.fillText(lbl, w / 2, h * 0.93);
+      }
+
+      // 5. Sign PDF live stamp
+      if (cfg.toolId === "fillSign" && isTargeted) {
+        const bw = w * 0.54;
+        const bh = h * 0.17;
+        const bx = cfg.signPos === "bottomLeft" ? w * 0.06 : (cfg.signPos === "center" ? (w - bw) / 2 : w - bw - w * 0.06);
+        const by = cfg.signPos === "center" ? (h - bh) / 2 : h - bh - h * 0.06;
+        ctx.fillStyle = "rgba(232, 245, 238, 0.96)";
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeStyle = "#2F855A";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(bx, by, bw, bh);
+        const sigCnv = document.getElementById("sigCanvas");
+        if (sigCnv) {
+          try { ctx.drawImage(sigCnv, bx + 6, by + 4, bw - 12, bh * 0.62); } catch {}
+        }
+        ctx.fillStyle = "#14532D";
+        ctx.font = `bold ${Math.max(9, Math.round(w * 0.038))}px sans-serif`;
+        ctx.fillText(cfg.signName || "Signed", bx + 8, by + bh - 6);
+      }
+
+      ctx.restore();
+    }
+
+    // Renders ALL pages in State.pageDeck with zero artificial truncation!
     async function renderLiveVisualPreview() {
-      const grid = document.getElementById('livePagePreviewGrid');
-      const sub = document.getElementById('livePreviewSubtext');
+      const grid = document.getElementById("livePagePreviewGrid");
+      const sub = document.getElementById("livePreviewSubtext");
       if (!grid) return;
 
       const token = ++livePreviewRenderToken;
@@ -2239,1050 +2504,292 @@
       const tool = TOOLS.find(t => t.id === cfg.toolId) || TOOLS[0];
 
       if (State.files.length === 0) {
+        State.pageDeck = [];
         grid.innerHTML = `
-          <div style="grid-column:1/-1; padding:32px; text-align:center; color:var(--muted);">
-            <div style="font-size:15px; font-weight:600; color:var(--ink); margin-bottom:6px;">No pages loaded yet</div>
-            <div style="font-size:13px; margin-bottom:12px;">Drop a PDF or photo, or load a sample document to see a live visual preview.</div>
-            <button type="button" class="btn btn-primary btn-tiny" onclick="addGeneratedSamplePDF()">+ Load Sample PDF</button>
+          <div style="grid-column:1/-1; padding:44px; text-align:center; color:var(--muted);">
+            <div style="font-size:16px; font-weight:600; color:var(--ink); margin-bottom:6px;">No document pages loaded yet</div>
+            <div style="font-size:13.5px; margin-bottom:16px;">Drop a PDF or photo, or load a sample document to start editing in Studio.</div>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+              <button type="button" class="btn btn-primary btn-tiny" onclick="document.getElementById('toolFileInput').click()">+ Select PDF File</button>
+              <button type="button" class="btn btn-secondary btn-tiny" onclick="addGeneratedSamplePDF()">+ Load Sample PDF</button>
+            </div>
           </div>
         `;
         return;
       }
 
-      // Build list of visual page items to preview (up to 6 cards for instant responsiveness)
-      const itemsToRender = [];
-      if (tool.multi || State.files.length > 1) {
-        State.files.slice(0, 6).forEach((f, idx) => {
-          itemsToRender.push({ file: f, pageNum: 1, cardIndex: idx + 1, label: f.name });
-        });
-      } else {
-        const primary = State.files[0];
-        const count = Math.min(6, Math.max(1, primary.pageCount || 1));
-        for (let p = 1; p <= count; p++) {
-          itemsToRender.push({ file: primary, pageNum: p, cardIndex: p, label: `${primary.name} · Page ${p}` });
-        }
+      if (!State.pageDeck || State.pageDeck.length === 0) {
+        await syncPageDeckFromFiles(false);
+      }
+
+      const totalPages = State.pageDeck.length;
+      const activeFile = State.files[0] || { name: "document.pdf", size: 0 };
+
+      // Update Header Badges
+      const fnLabel = document.getElementById("canvasActiveFileName");
+      const pcLabel = document.getElementById("canvasPageCountBadge");
+      const fsLabel = document.getElementById("canvasFileSizeBadge");
+      if (fnLabel) fnLabel.textContent = activeFile.name;
+      if (pcLabel) pcLabel.textContent = `${totalPages} Page${totalPages === 1 ? "" : "s"}`;
+      if (fsLabel) fsLabel.textContent = formatBytes(activeFile.size || 0);
+
+      document.querySelectorAll(".deck-total-count").forEach(el => el.textContent = String(totalPages));
+      updatePageSelectionCounters();
+
+      // Default the custom rename field if not yet customized
+      const nameInp = document.getElementById("studioCustomFileName");
+      if (nameInp && (!nameInp.value || nameInp.value === "document.pdf")) {
+        const base = activeFile.name.replace(/\.[^.]+$/i, "");
+        nameInp.value = `${base}-${tool.id}.pdf`;
+        State.customOutputName = nameInp.value;
+      }
+
+      // Update primary button text
+      const primaryBtn = document.getElementById("primaryToolActionBtn");
+      if (primaryBtn && !primaryBtn.disabled) {
+        primaryBtn.textContent = `Apply & Download ${State.customOutputName || tool.out}`;
       }
 
       if (sub) {
-        const stepInfo = State.editHistory.length > 0
-          ? `Showing live preview on your edited working file (${State.editHistory.length} tool change${State.editHistory.length > 1 ? 's' : ''} already applied)`
-          : `Live preview of ${tool.num} · ${tool.name} — adjust any setting on the right to see changes immediately`;
-        sub.textContent = stepInfo;
+        sub.textContent = `All ${totalPages} pages rendered — use ← → to reorder, ↻ to rotate, or ✕ to delete`;
       }
 
-      grid.innerHTML = itemsToRender.map((item, idx) => `
-        <div class="live-page-card" id="live-card-${idx}">
-          <div class="live-page-canvas-wrap">
-            <span class="live-change-pill" id="live-pill-${idx}">${escapeHtml(tool.name)}</span>
-            <canvas id="live-cnv-${idx}" width="220" height="300"></canvas>
+      // Render EVERY PAGE in the deck!
+      grid.innerHTML = State.pageDeck.map((item, idx) => {
+        const isSel = State.selectedPages && State.selectedPages.has(idx);
+        return `
+          <div class="live-page-card ${isSel ? "selected-card" : ""}" id="live-card-${idx}">
+            <div class="card-top-action-bar">
+              <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:600; font-size:12px;">
+                <input type="checkbox" ${isSel ? "checked" : ""} onchange="togglePageSelection(${idx})">
+                <span class="card-page-badge">Page ${idx + 1}</span>
+              </label>
+              <div class="card-actions-row">
+                <button type="button" class="card-action-icon-btn" onclick="moveDeckPage(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:0.3;cursor:default;"' : ''} title="Move page earlier">←</button>
+                <button type="button" class="card-action-icon-btn" onclick="moveDeckPage(${idx}, 1)" ${idx === totalPages - 1 ? 'disabled style="opacity:0.3;cursor:default;"' : ''} title="Move page later">→</button>
+                <button type="button" class="card-action-icon-btn" onclick="rotateDeckPage(${idx}, 90)" title="Rotate page 90°">↻</button>
+                <button type="button" class="card-action-icon-btn btn-del" onclick="deleteDeckPage(${idx})" title="Delete this page">✕</button>
+              </div>
+            </div>
+            <div class="live-page-canvas-wrap">
+              <canvas id="live-cnv-${idx}" width="280" height="380"></canvas>
+            </div>
+            <div class="live-page-meta">
+              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;" title="${escapeHtml(item.fileName)}">${escapeHtml(item.fileName)}</span>
+              <span class="mono" style="font-size:11px; color:var(--brand); font-weight:600;">#${String(idx + 1).padStart(2, "0")}${item.rotation ? " · " + item.rotation + "°" : ""}</span>
+            </div>
           </div>
-          <div class="live-page-meta">
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px;" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</span>
-            <span class="mono" style="font-size:10.5px; color:var(--brand);">#${String(item.cardIndex).padStart(2, '0')}</span>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join("");
 
-      for (let i = 0; i < itemsToRender.length; i++) {
+      // Render canvases with crisp scale (1.0)
+      for (let i = 0; i < totalPages; i++) {
         if (token !== livePreviewRenderToken) return;
-        const item = itemsToRender[i];
+        const item = State.pageDeck[i];
         const cnv = document.getElementById(`live-cnv-${i}`);
         if (!cnv) continue;
-        const ctx = cnv.getContext('2d');
+        const ctx = cnv.getContext("2d");
 
-        // Draw base page (either from scanned photo base64 or rendered PDF page)
         let baseCnv = null;
-        if (item.file.imageBase64 && item.pageNum === 1 && State.editHistory.length === 0) {
+        if (item.imageBase64 && item.srcPageNum === 1) {
           baseCnv = await new Promise((resolve) => {
             const img = new Image();
             img.onload = () => {
-              const off = document.createElement('canvas');
-              off.width = 240;
-              off.height = 320;
-              const octx = off.getContext('2d');
-              octx.fillStyle = '#ffffff';
+              const off = document.createElement("canvas");
+              off.width = 300; off.height = 420;
+              const octx = off.getContext("2d");
+              octx.fillStyle = "#ffffff";
               octx.fillRect(0, 0, off.width, off.height);
               const sc = Math.min(off.width / img.width, off.height / img.height);
               octx.drawImage(img, (off.width - img.width * sc) / 2, (off.height - img.height * sc) / 2, img.width * sc, img.height * sc);
               resolve(off);
             };
             img.onerror = () => resolve(null);
-            img.src = 'data:image/jpeg;base64,' + item.file.imageBase64;
+            img.src = "data:image/jpeg;base64," + item.imageBase64;
           });
         }
         if (!baseCnv) {
-          baseCnv = await renderPdfPageToCanvas(item.file.bytes, item.pageNum, 0.45);
+          baseCnv = await renderPdfPageToCanvas(item.bytes, item.srcPageNum, 1.0);
         }
 
         cnv.width = baseCnv.width;
         cnv.height = baseCnv.height;
         ctx.save();
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, cnv.width, cnv.height);
 
-        // Apply live rotation or flip transform on canvas if Rotate or Flip tool is active
-        if (cfg.toolId === 'rotate') {
+        const isTargeted = (State.pageScope !== "selected") || (State.selectedPages && State.selectedPages.has(i));
+        const totalRot = ((item.rotation || 0) + (cfg.toolId === "rotate" && isTargeted ? cfg.rotateDeg : 0)) % 360;
+
+        if (totalRot !== 0) {
           ctx.translate(cnv.width / 2, cnv.height / 2);
-          ctx.rotate((cfg.rotateDeg * Math.PI) / 180);
-          const scaleFit = (cfg.rotateDeg === 90 || cfg.rotateDeg === 270) ? 0.72 : 1;
+          ctx.rotate((totalRot * Math.PI) / 180);
+          const scaleFit = (totalRot === 90 || totalRot === 270) ? (cnv.width / cnv.height) : 1;
           ctx.scale(scaleFit, scaleFit);
           ctx.drawImage(baseCnv, -cnv.width / 2, -cnv.height / 2);
-        } else if (cfg.toolId === 'flip') {
-          ctx.translate(cfg.flipDir === 'horizontal' ? cnv.width : 0, cfg.flipDir === 'vertical' ? cnv.height : 0);
-          ctx.scale(cfg.flipDir === 'horizontal' ? -1 : 1, cfg.flipDir === 'vertical' ? -1 : 1);
+        } else if (cfg.toolId === "flip" && isTargeted) {
+          ctx.translate(cfg.flipDir === "horizontal" ? cnv.width : 0, cfg.flipDir === "vertical" ? cnv.height : 0);
+          ctx.scale(cfg.flipDir === "horizontal" ? -1 : 1, cfg.flipDir === "vertical" ? -1 : 1);
           ctx.drawImage(baseCnv, 0, 0);
         } else {
           ctx.drawImage(baseCnv, 0, 0);
         }
         ctx.restore();
 
-        // Draw live visual overlay for the active tool's current settings
-        drawLiveToolOverlayOnCanvas(ctx, cnv.width, cnv.height, i + 1, itemsToRender.length, cfg);
+        drawLiveToolOverlayOnCanvas(ctx, cnv.width, cnv.height, i + 1, totalPages, cfg, isTargeted);
       }
     }
 
-    function renderToolOptionsPanel(tool) {
-      const panel = document.getElementById('toolOptionsPanel');
-      if (!panel) return;
-
-      switch (tool.id) {
-        case 'split':
-        case 'extract':
-          panel.innerHTML = `
-            <div style="display:grid; grid-template-columns:1fr; gap:12px;">
-              <div>
-                <label class="field-label" for="optSplitMode">How to split</label>
-                <select id="optSplitMode" class="field-select">
-                  <option value="ranges">Keep selected page range (e.g. 1-2)</option>
-                  <option value="every">Save every page as a separate PDF (.zip)</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label" for="optPageRanges">Page Numbers (e.g. 1-2, 4)</label>
-                <input type="text" id="optPageRanges" class="field-input mono" value="1-2">
-              </div>
-            </div>`;
-          break;
-        case 'rotate':
-          panel.innerHTML = `
-            <div style="display:grid; grid-template-columns:1fr; gap:12px;">
-              <div>
-                <label class="field-label" for="optRotateDeg">Rotation Angle (See live preview on left)</label>
-                <select id="optRotateDeg" class="field-select">
-                  <option value="90">90° Clockwise (Right)</option>
-                  <option value="180">180° Upside Down</option>
-                  <option value="270">270° Counter-Clockwise (Left)</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label" for="optRotatePages">Which pages? (Leave blank for all)</label>
-                <input type="text" id="optRotatePages" class="field-input mono" value="" placeholder="All pages">
-              </div>
-            </div>`;
-          break;
-        case 'organize':
-          panel.innerHTML = `
-            <div>
-              <label class="field-label" for="optOrganizeSpec">New Page Order (e.g. 2, 1, 3 — leave out a number to delete that page)</label>
-              <input type="text" id="optOrganizeSpec" class="field-input mono" value="2, 1, 3">
-            </div>`;
-          break;
-        case 'alternate':
-          panel.innerHTML = `
-            <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; cursor:pointer;">
-              <input type="checkbox" id="optAlternateReverse" checked>
-              <span>Reverse page order of second scan stack</span>
-            </label>`;
-          break;
-        case 'splitText':
-          panel.innerHTML = `
-            <div>
-              <label class="field-label" for="optSplitPhrase">Start a new PDF whenever a page contains this text</label>
-              <input type="text" id="optSplitPhrase" class="field-input" value="Invoice No.">
-            </div>`;
-          break;
-        case 'splitHalf':
-          panel.innerHTML = `
-            <div>
-              <label class="field-label" for="optSplitHalfMode">Cut Direction (Dashed line shown on preview)</label>
-              <select id="optSplitHalfMode" class="field-select">
-                <option value="vertical">Vertical down the middle (Left | Right)</option>
-                <option value="horizontal">Horizontal across the middle (Top / Bottom)</option>
-              </select>
-            </div>`;
-          break;
-        case 'splitSize':
-          panel.innerHTML = `
-            <div>
-              <label class="field-label" for="optMaxSizeMB">Maximum size per part (MB)</label>
-              <input type="number" id="optMaxSizeMB" class="field-input mono" value="0.25" step="0.05" min="0.02">
-            </div>`;
-          break;
-        case 'nup':
-          panel.innerHTML = `
-            <div style="display:grid; grid-template-columns:1fr; gap:12px;">
-              <div>
-                <label class="field-label" for="optNupCount">Pages per sheet</label>
-                <select id="optNupCount" class="field-select">
-                  <option value="2">2 pages per sheet</option>
-                  <option value="4" selected>4 pages per sheet (2×2 grid)</option>
-                  <option value="6">6 pages per sheet (2×3 grid)</option>
-                  <option value="9">9 pages per sheet (3×3 grid)</option>
-                </select>
-              </div>
-              <div>
-                <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; cursor:pointer;">
-                  <input type="checkbox" id="optNupLines" checked>
-                  <span>Draw thin border around each page</span>
-                </label>
-              </div>
-            </div>`;
-          break;
-        case 'pageNumbers':
-          panel.innerHTML = `
-            <div style="display:grid; grid-template-columns:1fr; gap:12px;">
-              <div>
-                <label class="field-label" for="optNumPos">Number Position (Updates live on preview)</label>
-                <select id="optNumPos" class="field-select">
-                  <option value="center">Bottom Center</option>
-                  <option value="right">Bottom Right</option>
-                  <option value="left">Bottom Left</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label" for="optNumFmt">Number Style</label>
-                <select id="optNumFmt" class="field-select">
-                  <option value="of">Page 1 of N</option>
-                  <option value="bates">Legal Stamp (EXH-0001)</option>
-                  <option value="n">Simple (1, 2, 3)</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label" for="optBatesPrefix">Custom Prefix (for Legal Stamp)</label>
-                <input type="text" id="optBatesPrefix" class="field-input mono" value="EXH-">
-              </div>
-            </div>`;
-          break;
-        case 'watermark':
-          panel.innerHTML = `
-            <div style="display:grid; grid-template-columns:1fr; gap:12px;">
-              <div>
-                <label class="field-label" for="optWmText">Watermark Text (Type to see live on page)</label>
-                <input type="text" id="optWmText" class="field-input" value="CONFIDENTIAL">
-              </div>
-              <div>
-                <label class="field-label" for="optWmOpacity">Strength / Opacity</label>
-                <select id="optWmOpacity" class="field-select">
-                  <option value="0.18">Light (18%)</option>
-                  <option value="0.30" selected>Medium (30%)</option>
-                  <option value="0.45">Bold (45%)</option>
-                </select>
-              </div>
-            </div>`;
-          break;
-        case 'fillSign':
-          panel.innerHTML = `
-            <div style="display:grid; grid-template-columns:1fr; gap:12px;">
-              <div>
-                <label class="field-label" for="optSignName">Name or Label under Signature</label>
-                <input type="text" id="optSignName" class="field-input" value="Approved & Signed">
-                <div style="margin-top:10px;">
-                  <label class="field-label">Draw Your Signature Below</label>
-                  <canvas id="sigCanvas" width="320" height="90" style="background:#ffffff; border:1px solid var(--outline-strong); border-radius:8px; cursor:crosshair; width:100%; height:90px;"></canvas>
-                  <button type="button" class="btn btn-secondary btn-tiny" style="margin-top:6px;" onclick="clearSignatureCanvas(); scheduleLivePreviewUpdate();">Clear Signature Pad</button>
-                </div>
-              </div>
-              <div>
-                <label class="field-label" for="optSignPos">Where to place signature</label>
-                <select id="optSignPos" class="field-select">
-                  <option value="bottomRight">Bottom Right</option>
-                  <option value="bottomLeft">Bottom Left</option>
-                  <option value="center">Middle of Page</option>
-                </select>
-              </div>
-            </div>`;
-          setTimeout(initSignatureCanvas, 40);
-          break;
-        case 'redact':
-          panel.innerHTML = `
-            <div style="display:grid; grid-template-columns:1fr; gap:12px;">
-              <div>
-                <label class="field-label" for="optRedactZone">Area to Black Out (Previewed in black on left)</label>
-                <select id="optRedactZone" class="field-select">
-                  <option value="header">Top Header Area</option>
-                  <option value="body">Middle Paragraph Area</option>
-                  <option value="footer">Bottom Footer Area</option>
-                </select>
-              </div>
-              <div>
-                <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; cursor:pointer;">
-                  <input type="checkbox" id="optRedactScrubMeta" checked>
-                  <span>Also remove hidden author &amp; file details</span>
-                </label>
-              </div>
-            </div>`;
-          break;
-        case 'crop':
-          panel.innerHTML = `
-            <div>
-              <label class="field-label" for="optCropMargin">Trim Margin Size (Green dashed line on preview)</label>
-              <input type="number" id="optCropMargin" class="field-input mono" value="36" min="0" max="150">
-            </div>`;
-          break;
-        case 'flip':
-          panel.innerHTML = `
-            <div>
-              <label class="field-label" for="optFlipDir">Flip Direction (Updates live on preview)</label>
-              <select id="optFlipDir" class="field-select">
-                <option value="horizontal">Flip Left ↔ Right (Horizontal Mirror)</option>
-                <option value="vertical">Flip Top ↕ Bottom (Vertical Mirror)</option>
-              </select>
-            </div>`;
-          break;
-        case 'password':
-          panel.innerHTML = `
-            <div style="display:grid; grid-template-columns:1fr; gap:12px;">
-              <div>
-                <label class="field-label" for="optSecurityMode">Action</label>
-                <select id="optSecurityMode" class="field-select">
-                  <option value="unlock">Remove copying &amp; printing locks</option>
-                  <option value="aes256">Lock with a Password (.zip)</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label" for="optPassphrase">Password</label>
-                <input type="password" id="optPassphrase" class="field-input mono" value="NoUpload-2026!">
-              </div>
-            </div>`;
-          break;
-        case 'metadata':
-          panel.innerHTML = `
-            <div style="display:grid; grid-template-columns:1fr; gap:10px;">
-              <div>
-                <label class="field-label" for="optMetaTitle">Document Title (leave blank to clear)</label>
-                <input type="text" id="optMetaTitle" class="field-input" value="">
-              </div>
-              <div>
-                <label class="field-label" for="optMetaAuthor">Author Name (leave blank to clear)</label>
-                <input type="text" id="optMetaAuthor" class="field-input" value="">
-              </div>
-              <div>
-                <label class="field-label" for="optMetaSubject">Subject (leave blank to clear)</label>
-                <input type="text" id="optMetaSubject" class="field-input" value="">
-              </div>
-            </div>`;
-          break;
-        case 'workflow':
-          panel.innerHTML = `
-            <div>
-              <label class="field-label" for="optStudioMode">Multi-Step Mode</label>
-              <select id="optStudioMode" class="field-select">
-                <option value="pipeline">Combine + Add Watermark + Page Numbers + Compress</option>
-                <option value="compare">Compare First 2 PDFs Side-by-Side</option>
-              </select>
-            </div>`;
-          break;
-        default:
-          panel.innerHTML = `<div style="font-size:13px; color:var(--muted); line-height:1.5;">Ready to apply <strong>${escapeHtml(tool.name)}</strong> to your active files shown in the live preview.</div>`;
-          break;
+    // Build unified PDF from State.pageDeck respecting deletions, reordering, rotations, and page scope
+    async function buildBasePdfFromPageDeck() {
+      if (!State.pageDeck || State.pageDeck.length === 0) {
+        await syncPageDeckFromFiles(false);
       }
-    }
+      const outDoc = await PDFLib.PDFDocument.create();
+      const loadedCache = new Map();
 
-    function initSignatureCanvas() {
-      const canvas = document.getElementById('sigCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      ctx.strokeStyle = '#0a0a0a';
-      ctx.lineWidth = 2.4;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      ctx.moveTo(28, 60);
-      ctx.bezierCurveTo(60, 20, 90, 75, 130, 42);
-      ctx.bezierCurveTo(160, 22, 185, 70, 255, 46);
-      ctx.stroke();
-
-      let drawing = false;
-      canvas.addEventListener('pointerdown', e => {
-        drawing = true;
-        const r = canvas.getBoundingClientRect();
-        ctx.beginPath();
-        ctx.moveTo((e.clientX - r.left) * (canvas.width / r.width), (e.clientY - r.top) * (canvas.height / r.height));
-      });
-      canvas.addEventListener('pointermove', e => {
-        if (!drawing) return;
-        const r = canvas.getBoundingClientRect();
-        ctx.lineTo((e.clientX - r.left) * (canvas.width / r.width), (e.clientY - r.top) * (canvas.height / r.height));
-        ctx.stroke();
-      });
-      window.addEventListener('pointerup', () => {
-        if (drawing) {
-          drawing = false;
-          scheduleLivePreviewUpdate();
+      for (const item of State.pageDeck) {
+        let srcDoc = loadedCache.get(item.bytes);
+        if (!srcDoc) {
+          srcDoc = await PDFLib.PDFDocument.load(item.bytes, { ignoreEncryption: true });
+          loadedCache.set(item.bytes, srcDoc);
         }
-      });
-    }
-
-    function clearSignatureCanvas() {
-      const canvas = document.getElementById('sigCanvas');
-      if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    function handleDragOver(ev, zoneId) {
-      ev.preventDefault();
-      document.getElementById(zoneId)?.classList.add('drag-active');
-    }
-
-    function handleDragLeave(ev, zoneId) {
-      ev.preventDefault();
-      document.getElementById(zoneId)?.classList.remove('drag-active');
-    }
-
-    async function handleFileDrop(ev, zoneId) {
-      ev.preventDefault();
-      document.getElementById(zoneId)?.classList.remove('drag-active');
-      if (ev.dataTransfer?.files?.length) {
-        await ingestUploadedFiles(Array.from(ev.dataTransfer.files));
-        if (zoneId === 'heroDropZone') openToolWorkspace('merge');
-      }
-    }
-
-    async function handleFileInputSelect(ev) {
-      if (ev.target.files?.length) {
-        await ingestUploadedFiles(Array.from(ev.target.files));
-        if (document.getElementById('view-home').style.display !== 'none') {
-          openToolWorkspace('merge');
-        } else {
-          renderLiveVisualPreview();
+        const safeIdx = Math.min(Math.max(0, item.srcPageIndex), srcDoc.getPageCount() - 1);
+        const [copiedPage] = await outDoc.copyPages(srcDoc, [safeIdx]);
+        if (item.rotation) {
+          const curAngle = copiedPage.getRotation().angle || 0;
+          copiedPage.setRotation(PDFLib.degrees((curAngle + item.rotation) % 360));
         }
+        outDoc.addPage(copiedPage);
       }
+      return outDoc;
     }
 
-    async function ingestUploadedFiles(fileList) {
-    const incomingCheck = Array.from(fileList || []);
-    if (incomingCheck.length > 0 && State.files.length > 0 && State.files.every(f => String(f.id || "").startsWith("seed-"))) {
-      State.files = [];
-      State.pageDeck = [];
-    }
-      for (const file of fileList) {
-        const cleanName = sanitizeFilename(file.name);
-        const buf = new Uint8Array(await file.arrayBuffer());
-        const magic = verifyFileMagicBytes(buf);
-        if (!magic.valid) {
-          logStudioTerminal('BLOCKED', `Rejected "${cleanName}": ${magic.reason}`, '#ef4444');
-          continue;
-        }
-        const sha = await computeSha256Hex(buf);
-
-        if (magic.kind === 'png' || magic.kind === 'jpg' || magic.kind === 'webp' || file.type.startsWith('image/')) {
-          const pdfDoc = await PDFLib.PDFDocument.create();
-          const embedded = magic.kind === 'png' ? await pdfDoc.embedPng(buf) : await pdfDoc.embedJpg(buf);
-          const page = pdfDoc.addPage([595.28, 841.89]);
-          const scale = Math.min(520 / embedded.width, 760 / embedded.height);
-          page.drawImage(embedded, {
-            x: (595.28 - embedded.width * scale) / 2,
-            y: (841.89 - embedded.height * scale) / 2,
-            width: embedded.width * scale,
-            height: embedded.height * scale
-          });
-          const pdfBytes = await pdfDoc.save();
-          State.files.push({
-            id: 'img-' + Date.now() + Math.random(),
-            name: cleanName.replace(/\.[^.]+$/, '') + '.pdf',
-            bytes: pdfBytes,
-            size: pdfBytes.byteLength,
-            sha256: sha,
-            pageCount: 1,
-            textPreview: ['Imported image (' + cleanName + ')']
-          });
-        } else {
-          let pageCount = 1;
-          try {
-            const loaded = await PDFLib.PDFDocument.load(buf, { ignoreEncryption: true });
-            pageCount = loaded.getPageCount();
-          } catch {}
-          State.files.push({
-            id: 'pdf-' + Date.now() + Math.random(),
-            name: cleanName,
-            bytes: buf,
-            size: buf.byteLength,
-            sha256: sha,
-            pageCount: pageCount,
-            textPreview: ['Local PDF (' + cleanName + ')']
-          });
-        }
-      }
-      snapshotOriginalFilesIfNeeded(true);
-      updateStudioChainBanner();
-      renderFileRows();
-      renderLiveVisualPreview();
-    }
-
-    // Scanner -> Studio Handoff (IndexedDB + BroadcastChannel)
-    const STUDIO_DB_NAME = 'NoUploadPDFStudioDB';
-    const STUDIO_STORE_NAME = 'scanned_handoff';
-    const STUDIO_CHANNEL = 'nouploadpdf-studio';
-
-    function initStudioHandoff() {
-      const params = new URLSearchParams(location.search);
-      if (params.get('from') === 'scanner') {
-        const requestedTool = params.get('tool') || 'merge';
-        openToolWorkspace(requestedTool !== 'studio_home' ? requestedTool : 'merge');
-        loadScannedBatchFromIndexedDB(requestedTool);
-      }
-      if (typeof BroadcastChannel === 'function') {
-        const channel = new BroadcastChannel(STUDIO_CHANNEL);
-        channel.onmessage = async (event) => {
-          const msg = event.data || {};
-          if (msg.type === 'handoff-request') {
-            channel.postMessage({ type: 'handoff-ready', id: msg.id });
-          } else if (msg.type === 'handoff-batch' && Array.isArray(msg.files)) {
-            await ingestScannedBatchArray(msg.files, msg.tool);
-          }
-        };
-      }
-    }
-
-    function loadScannedBatchFromIndexedDB(requestedTool) {
-      try {
-        const req = indexedDB.open(STUDIO_DB_NAME, 1);
-        req.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(STUDIO_STORE_NAME)) {
-            db.createObjectStore(STUDIO_STORE_NAME, { keyPath: 'id' });
-          }
-        };
-        req.onsuccess = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(STUDIO_STORE_NAME)) return;
-          const tx = db.transaction(STUDIO_STORE_NAME, 'readonly');
-          const getReq = tx.objectStore(STUDIO_STORE_NAME).get('latest_scan_batch');
-          getReq.onsuccess = async () => {
-            const record = getReq.result;
-            if (record && Array.isArray(record.files) && record.files.length > 0) {
-              await ingestScannedBatchArray(record.files, requestedTool || record.tool);
-            }
-            db.close();
-          };
-        };
-      } catch {}
-    }
-
-    async function ingestScannedBatchArray(batchFiles, targetTool) {
-      State.files = [];
-      State.editHistory = [];
-      const thumbs = [];
-      for (const item of batchFiles) {
-        const u8 = item.bytes instanceof Uint8Array ? item.bytes : new Uint8Array(item.bytes);
-        const sha = await computeSha256Hex(u8);
-        State.files.push({
-          id: 'scan-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-          name: sanitizeFilename(item.name || 'Scanned-Page.pdf'),
-          bytes: u8,
-          size: u8.byteLength,
-          sha256: sha,
-          imageBase64: item.imageBase64 || null,
-          isScan: true,
-          pageCount: item.pageCount || 1,
-          textPreview: item.textPreview || ['Scanned page']
-        });
-        if (item.imageBase64) thumbs.push({ name: item.name, base64: item.imageBase64, filter: item.filter || 'Auto-Flat' });
-      }
-      snapshotOriginalFilesIfNeeded(true);
-      renderFileRows();
-      showScannedStudioNotice(`${batchFiles.length} scanned photo(s)`, thumbs);
-      // ALWAYS open the 3-Pane Studio Workspace when coming from the Phone Scanner!
-      const resolvedTool = (targetTool && targetTool !== 'studio_home' && TOOLS.some(t => t.id === targetTool)) ? targetTool : 'merge';
-      openToolWorkspace(resolvedTool);
-    }
-
-    function showScannedStudioNotice(labelName, thumbs) {
-      const notice = document.getElementById('studioImportNotice');
-      if (!notice) return;
-      const label = notice.querySelector('[data-import-name]');
-      if (label) label.textContent = labelName;
-      const thumbBox = document.getElementById('studioImportThumbs');
-      if (thumbBox) {
-        thumbBox.innerHTML = (thumbs || []).map(t => `
-          <div style="display:flex;align-items:center;gap:8px;background:#ffffff;border:1px solid var(--outline);border-radius:6px;padding:5px 8px;flex:none;">
-            <img src="data:image/jpeg;base64,${t.base64}" alt="Scan" style="width:28px;height:36px;object-fit:cover;border-radius:3px;">
-            <span class="mono" style="font-size:11px;">${escapeHtml(t.name)}</span>
-          </div>
-        `).join('');
-      }
-      notice.hidden = false;
-    }
-
-    async function simulatePhoneScanIntoStudio() {
-      const scanNum = State.files.filter(f => f.isScan).length + 1;
-      const canvas = document.createElement('canvas');
-      canvas.width = 800;
-      canvas.height = 1130;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = '#00875a';
-      ctx.lineWidth = 4;
-      ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
-      ctx.fillStyle = '#0a0a0a';
-      ctx.font = 'bold 32px Helvetica, sans-serif';
-      ctx.fillText('PHONE SCAN #0' + scanNum, 72, 120);
-      ctx.fillStyle = '#52525b';
-      ctx.font = '22px Helvetica, sans-serif';
-      ctx.fillText('Invoice No. ' + (3000 + scanNum) + ' — Captured from Phone Camera', 72, 180);
-      ctx.fillStyle = '#18181b';
-      ctx.font = '18px Helvetica, sans-serif';
-      ctx.fillText('Party: Acme Industrial Corp. · Amount Due: $2,450.00', 72, 260);
-      ctx.fillText('Confidential Reference: INV-' + (3000 + scanNum) + '-PRIVATE', 72, 310);
-
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      const b64 = dataUrl.split(',')[1];
-      const jpgBytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-
-      const doc = await PDFLib.PDFDocument.create();
-      const emb = await doc.embedJpg(jpgBytes);
-      const page = doc.addPage([595.28, 841.89]);
-      page.drawImage(emb, { x: 0, y: 0, width: 595.28, height: 841.89 });
-      const pdfBytes = await doc.save();
-      const sha = await computeSha256Hex(pdfBytes);
-      const scanName = 'Phone-Scan-0' + scanNum + '.pdf';
-
-      State.files.unshift({
-        id: 'sim-scan-' + Date.now(),
-        name: scanName,
-        bytes: pdfBytes,
-        size: pdfBytes.byteLength,
-        sha256: sha,
-        imageBase64: b64,
-        isScan: true,
-        pageCount: 1,
-        textPreview: ['Phone Scan #0' + scanNum]
-      });
-      snapshotOriginalFilesIfNeeded(true);
-      updateStudioChainBanner();
-      renderFileRows();
-      renderLiveVisualPreview();
-      showScannedStudioNotice(scanName, [{ name: scanName, base64: b64, filter: 'Auto-Flat' }]);
-      logStudioTerminal('SCAN', `Loaded ${scanName} into Studio queue`, '#22c55e');
-    }
-
-    async function seedInitialWorkspacePDFs() {
-      if (new URLSearchParams(location.search).get('from') === 'scanner') return;
-      if (State.files.length > 0) return;
-
-      const specs = [
-        { name: 'Service-Agreement.pdf', title: 'Master Service Agreement', pages: ['Page 1 — Invoice No. 1042 — Acme Industrial Corp.', 'Page 2 — Scope of Work & Confidentiality Terms.'] },
-        { name: 'Q4-Summary.pdf', title: 'Q4 Financial Summary', pages: ['Page 1 — Quarterly Balance Sheet & Totals ($24,500).'] }
-      ];
-
-      for (const spec of specs) {
-        const doc = await PDFLib.PDFDocument.create();
-        const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
-        const bold = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-        for (let i = 0; i < spec.pages.length; i++) {
-          const page = doc.addPage([595.28, 841.89]);
-          page.drawText(spec.title, { x: 52, y: 760, size: 22, font: bold });
-          page.drawText(spec.pages[i], { x: 52, y: 715, size: 14, font });
-          page.drawText('Prepared locally on your device · Zero cloud uploads.', { x: 52, y: 675, size: 12, font });
-        }
-        const bytes = await doc.save();
-        State.files.push({
-          id: 'seed-' + Math.random().toString(36).slice(2, 7),
-          name: spec.name,
-          bytes: bytes,
-          size: bytes.byteLength,
-          pageCount: spec.pages.length,
-          textPreview: spec.pages
-        });
-      }
-      snapshotOriginalFilesIfNeeded(true);
-      updateHeroCounter();
-      renderFileRows();
-    }
-
-    async function addGeneratedSamplePDF() {
-      const idx = State.files.length + 1;
-      const doc = await PDFLib.PDFDocument.create();
-      const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
-      const bold = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-      for (let p = 1; p <= 2; p++) {
-        const page = doc.addPage([595.28, 841.89]);
-        page.drawText(`Sample Document #${idx} — Page ${p}`, { x: 52, y: 760, size: 20, font: bold });
-        page.drawText(`Invoice No. ${1000 + idx * 10 + p} · Ready for live editing in Studio.`, { x: 52, y: 720, size: 13, font });
-      }
-      const bytes = await doc.save();
-      State.files.push({
-        id: 'sample-' + Date.now(),
-        name: `Sample-Document-${idx}.pdf`,
-        bytes: bytes,
-        size: bytes.byteLength,
-        pageCount: 2,
-        textPreview: [`Page 1 of Sample-Document-${idx}`, `Page 2 of Sample-Document-${idx}`]
-      });
-      snapshotOriginalFilesIfNeeded(true);
-      updateStudioChainBanner();
-      renderFileRows();
-      renderLiveVisualPreview();
-    }
-
-    function parsePageRanges(rangeStr, totalPages) {
-      const raw = (rangeStr || '').trim();
-      if (!raw) return Array.from({ length: totalPages }, (_, i) => i);
-      const indices = [];
-      for (const part of raw.split(',')) {
-        const tok = part.trim();
-        if (!tok) continue;
-        if (tok.includes('-')) {
-          const [aStr, bStr] = tok.split('-');
-          const start = Math.max(1, parseInt(aStr, 10) || 1);
-          const end = bStr.trim() === '' ? totalPages : Math.min(totalPages, parseInt(bStr, 10) || totalPages);
-          for (let p = start; p <= end; p++) indices.push(p - 1);
-        } else {
-          const p = parseInt(tok, 10);
-          if (p >= 1 && p <= totalPages) indices.push(p - 1);
-        }
-      }
-      return indices.length ? Array.from(new Set(indices)) : [0];
-    }
-
-    async function extractPdfTextPerPage(uint8, fallbackArr) {
-      if (window.pdfjsLib) {
-        try {
-          const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(uint8) }).promise;
-          const out = [];
-          for (let p = 1; p <= pdf.numPages; p++) {
-            const page = await pdf.getPage(p);
-            const tc = await page.getTextContent();
-            out.push(tc.items.map(i => i.str).join(' ').trim() || `Page ${p}`);
-          }
-          return out;
-        } catch {}
-      }
-      return fallbackArr && fallbackArr.length ? fallbackArr : ['Extracted local page text'];
-    }
-
-    async function renderPdfPageToCanvas(uint8, pageNum, scale = 1.6) {
-      const canvas = document.createElement('canvas');
-      if (window.pdfjsLib) {
-        try {
-          const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(uint8) }).promise;
-          const safePage = Math.min(Math.max(1, pageNum), pdf.numPages);
-          const page = await pdf.getPage(safePage);
-          const vp = page.getViewport({ scale });
-          canvas.width = Math.round(vp.width);
-          canvas.height = Math.round(vp.height);
-          const ctx = canvas.getContext('2d');
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          await page.render({ canvasContext: ctx, viewport: vp }).promise;
-          return canvas;
-        } catch {}
-      }
-      canvas.width = Math.round(595 * scale);
-      canvas.height = Math.round(842 * scale);
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = '#d4d4d8';
-      ctx.strokeRect(16, 16, canvas.width - 32, canvas.height - 32);
-      ctx.fillStyle = '#18181b';
-      ctx.font = `bold ${Math.max(12, Math.round(18 * scale))}px sans-serif`;
-      ctx.fillText(`Document Page ${pageNum}`, 32, 56);
-      return canvas;
-    }
-
-    
-    // Multi-pass Adaptive Target-Size PDF Compression Engine (from lib/target_compress.js)
-    const TARGET_COMPRESS_SCALES = [2, 1.5, 1.2, 1, 0.8, 0.6];
-    const TARGET_COMPRESS_OVERHEAD_PER_PAGE = 1200;
-    const canvasToJpegBlob = (canvas, q) => new Promise((res) => canvas.toBlob(res, "image/jpeg", q));
-
-    async function compressPdfToTargetBytes(pdfBytes, targetBytes, onProgress = () => {}) {
-      if (!window.pdfjsLib || !window.PDFLib) throw new Error("PDF libraries not loaded");
-      const src = await window.pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
-      const numPages = src.numPages;
-      let best = null;
-
-      for (const [si, scale] of TARGET_COMPRESS_SCALES.entries()) {
-        const canvases = [];
-        for (let p = 1; p <= numPages; p++) {
-          const page = await src.getPage(p);
-          const base = page.getViewport({ scale: 1 });
-          const vp = page.getViewport({ scale });
-          const c = document.createElement("canvas");
-          c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
-          const ctx = c.getContext("2d");
-          ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
-          await page.render({ canvasContext: ctx, viewport: vp }).promise;
-          canvases.push({ c, w: base.width, h: base.height });
-          onProgress({ stage: "render", scale, page: p, pages: numPages, step: si + 1, totalSteps: TARGET_COMPRESS_SCALES.length });
-        }
-
-        const sizeAtQuality = async (q) => {
-          let total = numPages * TARGET_COMPRESS_OVERHEAD_PER_PAGE;
-          const blobs = [];
-          for (const { c } of canvases) {
-            const b = await canvasToJpegBlob(c, q);
-            blobs.push(b);
-            total += b.size;
-          }
-          return { total, blobs };
-        };
-
-        let lo = 0.25, hi = 0.90, fit = null;
-        const floor = await sizeAtQuality(lo);
-        if (floor.total <= targetBytes) {
-          fit = { q: lo, ...floor };
-          for (let i = 0; i < 6; i++) {
-            const mid = (lo + hi) / 2;
-            const t = await sizeAtQuality(mid);
-            if (t.total <= targetBytes) {
-              fit = { q: mid, ...t };
-              lo = mid;
-            } else {
-              hi = mid;
-            }
-            onProgress({ stage: "tune", quality: mid });
-          }
-        } else if (!best || floor.total < best.total) {
-          best = { q: lo, scale, ...floor, dims: canvases.map(({ w, h }) => ({ w, h })) };
-        }
-
-        if (fit) {
-          best = { ...fit, scale, dims: canvases.map(({ w, h }) => ({ w, h })), reached: true };
-          break; // Highest scale (sharpest readability) that fits under targetBytes wins
-        }
-      }
-
-      const outDoc = await window.PDFLib.PDFDocument.create();
-      for (let i = 0; i < best.blobs.length; i++) {
-        const img = await outDoc.embedJpg(new Uint8Array(await best.blobs[i].arrayBuffer()));
-        const { w, h } = best.dims[i];
-        outDoc.addPage([w, h]).drawImage(img, { x: 0, y: 0, width: w, height: h });
-      }
-      outDoc.setTitle(""); outDoc.setAuthor(""); outDoc.setProducer("NoUploadPDF"); outDoc.setCreator("");
-      const bytes = await outDoc.save();
-      return { bytes, size: bytes.length, reached: !!best.reached && bytes.length <= targetBytes, quality: best.q, scale: best.scale };
-    }
-
+    // Complete, rock-solid executeCurrentTool with custom file rename, page scope, auto-download, and zero UI bloat!
     async function executeCurrentTool() {
+      const t0 = performance.now();
       const tool = TOOLS.find(t => t.id === State.activeToolId) || TOOLS[0];
       if (State.files.length === 0) await addGeneratedSamplePDF();
+      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
       snapshotOriginalFilesIfNeeded(false);
+      pushUndoSnapshot();
 
-      const statusEl = document.getElementById('actionBarStatus');
-      const subEl = document.getElementById('actionBarSubstatus');
-      const btnsEl = document.getElementById('actionBarButtons');
-      statusEl.textContent = `Applying ${tool.name}…`;
-      btnsEl.innerHTML = `<button class="btn btn-disabled" style="width:100%;" disabled>Applying changes…</button>`;
+      const inputBytes = State.files.reduce((acc, f) => acc + (f.size || 0), 0);
+      const statusEl = document.getElementById("actionBarStatus");
+      const subEl = document.getElementById("actionBarSubstatus");
+      const btnsEl = document.getElementById("actionBarButtons");
+
+      // Custom File Rename
+      let chosenName = (document.getElementById("studioCustomFileName")?.value || State.customOutputName || tool.out).trim();
+      if (!chosenName) chosenName = tool.out;
+      if (!chosenName.toLowerCase().endsWith(".pdf") && tool.out.endsWith(".pdf")) {
+        chosenName += ".pdf";
+      }
+
+      if (statusEl) statusEl.textContent = `Applying ${tool.name}…`;
+      if (btnsEl) btnsEl.innerHTML = `<button class="btn btn-disabled" style="width:100%; height:48px;" disabled>Processing ${escapeHtml(chosenName)}…</button>`;
 
       try {
-        const primaryFile = State.files[0];
+        const unifiedDoc = await buildBasePdfFromPageDeck();
+        const unifiedBytes = await unifiedDoc.save();
+        const totalDeckPages = unifiedDoc.getPageCount();
+
         let outputBlob = null;
-        let outputFilename = tool.out;
-        let outputPageCount = 1;
+        let outputFilename = chosenName;
+        let outputPageCount = totalDeckPages;
         let producedPdfBytes = null;
 
-        if (tool.id === 'pdfToMarkdown') {
-          const pagesText = await extractPdfTextPerPage(primaryFile.bytes, primaryFile.textPreview);
-          outputPageCount = pagesText.length;
-          const md = [`# ${primaryFile.name.replace(/\.pdf$/i, '')}`, ''];
-          pagesText.forEach((t, i) => {
-            md.push(`## Page ${i + 1}`, t, '');
+        if (tool.id === "compress") {
+          const targetBytes = (State.targetCompressKB || 200) * 1024;
+          const res = await compressPdfToTargetBytes(unifiedBytes, targetBytes, (p) => {
+            if (statusEl) statusEl.textContent = p.stage === "render" ? `Rendering page ${p.page}/${p.pages}…` : `Optimizing quality (${Math.round(p.quality * 100)}%)…`;
           });
-          outputBlob = new Blob([md.join('\n')], { type: 'text/markdown;charset=utf-8' });
-          outputFilename = primaryFile.name.replace(/\.pdf$/i, '') + '.md';
+          producedPdfBytes = res.bytes;
+          outputBlob = new Blob([producedPdfBytes], { type: "application/pdf" });
+          outputFilename = chosenName;
 
-        } else if (tool.id === 'pdfToDocx') {
-          const pagesText = await extractPdfTextPerPage(primaryFile.bytes, primaryFile.textPreview);
+        } else if (tool.id === "pdfToMarkdown") {
+          const pagesText = await extractPdfTextPerPage(unifiedBytes, ["Page 1"]);
           outputPageCount = pagesText.length;
-          const zip = new JSZip();
-          zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
-          zip.folder('_rels').file('.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
-          const bodyXml = pagesText.map((t, i) => `<w:p><w:r><w:t>[Page ${i + 1}] ${escapeHtml(t)}</w:t></w:r></w:p>`).join('');
-          zip.folder('word').file('document.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${bodyXml}</w:body></w:document>`);
-          outputBlob = await zip.generateAsync({ type: 'blob' });
-          outputFilename = primaryFile.name.replace(/\.pdf$/i, '') + '.docx';
+          const md = [`# ${chosenName.replace(/\.pdf$/i, "")}`, ""];
+          pagesText.forEach((t, i) => md.push(`## Page ${i + 1}`, t, ""));
+          outputBlob = new Blob([md.join('\n')], { type: "text/markdown;charset=utf-8" });
+          outputFilename = chosenName.replace(/\.pdf$/i, "") + ".md";
 
-        } else if (tool.id === 'pdfToImages') {
-          const srcDoc = await PDFLib.PDFDocument.load(primaryFile.bytes, { ignoreEncryption: true });
-          outputPageCount = srcDoc.getPageCount();
+        } else if (tool.id === "pdfToImages") {
           const zip = new JSZip();
-          for (let i = 1; i <= outputPageCount; i++) {
-            const cnv = await renderPdfPageToCanvas(primaryFile.bytes, i, 2.0);
-            const b64 = cnv.toDataURL('image/png').split(',')[1];
-            const name = `page-${String(i).padStart(2, '0')}.png`;
-            zip.file(name, b64, { base64: true });
+          for (let i = 1; i <= totalDeckPages; i++) {
+            const cnv = await renderPdfPageToCanvas(unifiedBytes, i, 2.0);
+            const b64 = cnv.toDataURL("image/png").split(",")[1];
+            zip.file(`page-${String(i).padStart(2, "0")}.png`, b64, { base64: true });
           }
-          outputBlob = await zip.generateAsync({ type: 'blob' });
-          outputFilename = 'pages-images.zip';
-
-        } else if (tool.id === 'split' || tool.id === 'splitText' || tool.id === 'splitBookmarks' || tool.id === 'splitSize' || tool.id === 'zip') {
-          const zip = new JSZip();
-          const srcDoc = await PDFLib.PDFDocument.load(primaryFile.bytes, { ignoreEncryption: true });
-          const total = srcDoc.getPageCount();
-          outputPageCount = total;
-          if (tool.id === 'zip') {
-            State.files.forEach((f, i) => zip.file(`${i + 1}-${f.name}`, f.bytes));
-          } else {
-            for (let i = 0; i < total; i++) {
-              const single = await PDFLib.PDFDocument.create();
-              const [cp] = await single.copyPages(srcDoc, [i]);
-              single.addPage(cp);
-              const b = await single.save();
-              const entry = `page-${String(i + 1).padStart(2, '0')}.pdf`;
-              zip.file(entry, b);
-            }
-          }
-          outputBlob = await zip.generateAsync({ type: 'blob' });
-          outputFilename = tool.out;
-
-        } else if (tool.id === 'password' && document.getElementById('optSecurityMode')?.value === 'aes256') {
-          const pass = document.getElementById('optPassphrase')?.value || 'NoUpload-2026!';
-          const enc = new TextEncoder();
-          const salt = window.crypto.getRandomValues(new Uint8Array(16));
-          const iv = window.crypto.getRandomValues(new Uint8Array(12));
-          const keyMat = await window.crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
-          const key = await window.crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMat, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
-          const cipher = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, primaryFile.bytes);
-          const zip = new JSZip();
-          zip.file(primaryFile.name + '.aes256.enc', new Uint8Array(cipher));
-          outputBlob = await zip.generateAsync({ type: 'blob' });
-          outputFilename = 'protected-aes256.zip';
+          outputBlob = await zip.generateAsync({ type: "blob" });
+          outputFilename = chosenName.replace(/\.pdf$/i, "") + "-images.zip";
 
         } else {
+          // Standard PDF transforms respecting pageScope (All Pages vs Selected Pages)
           const outDoc = await PDFLib.PDFDocument.create();
-          const font = await outDoc.embedFont(PDFLib.StandardFonts.Helvetica);
           const bold = await outDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+          const regular = await outDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
-          if (tool.id === 'merge' || tool.id === 'imagesToPdf') {
-            for (const f of State.files) {
-              const src = await PDFLib.PDFDocument.load(f.bytes, { ignoreEncryption: true });
-              const copied = await outDoc.copyPages(src, src.getPageIndices());
-              copied.forEach(p => outDoc.addPage(p));
-            }
-          } else if (tool.id === 'extract') {
-            const src = await PDFLib.PDFDocument.load(primaryFile.bytes, { ignoreEncryption: true });
-            const indices = parsePageRanges(document.getElementById('optPageRanges')?.value || '1-2', src.getPageCount());
-            const copied = await outDoc.copyPages(src, indices);
-            copied.forEach(p => outDoc.addPage(p));
-          } else if (tool.id === 'organize') {
-            const src = await PDFLib.PDFDocument.load(primaryFile.bytes, { ignoreEncryption: true });
-            const total = src.getPageCount();
-            const order = (document.getElementById('optOrganizeSpec')?.value || '1').split(',').map(s => parseInt(s.trim(), 10) - 1).filter(i => i >= 0 && i < total);
-            const copied = await outDoc.copyPages(src, order.length ? order : src.getPageIndices());
-            copied.forEach(p => outDoc.addPage(p));
-          } else if (tool.id === 'splitHalf') {
-            const src = await PDFLib.PDFDocument.load(primaryFile.bytes, { ignoreEncryption: true });
-            for (const sp of src.getPages()) {
-              const { width, height } = sp.getSize();
-              const lEmb = await outDoc.embedPage(sp, { left: 0, bottom: 0, right: width / 2, top: height });
-              const rEmb = await outDoc.embedPage(sp, { left: width / 2, bottom: 0, right: width, top: height });
-              outDoc.addPage([width / 2, height]).drawPage(lEmb, { x: 0, y: 0, width: width / 2, height });
-              outDoc.addPage([width / 2, height]).drawPage(rEmb, { x: 0, y: 0, width: width / 2, height });
-            }
-          } else if (tool.id === 'nup') {
-            const src = await PDFLib.PDFDocument.load(primaryFile.bytes, { ignoreEncryption: true });
-            const n = parseInt(document.getElementById('optNupCount')?.value || '4', 10);
-            const cols = n === 2 ? 1 : (n === 9 ? 3 : 2);
-            const rows = Math.ceil(n / cols);
-            const embs = await outDoc.embedPages(src.getPages());
-            const W = 595.28, H = 841.89, cW = W / cols, cH = H / rows;
-            for (let i = 0; i < embs.length; i += n) {
-              const sh = outDoc.addPage([W, H]);
-              for (let k = 0; k < n && (i + k) < embs.length; k++) {
-                const e = embs[i + k], c = k % cols, r = Math.floor(k / cols);
-                const sc = Math.min((cW - 24) / e.width, (cH - 24) / e.height);
-                sh.drawPage(e, { x: c * cW + (cW - e.width * sc) / 2, y: H - (r + 1) * cH + (cH - e.height * sc) / 2, width: e.width * sc, height: e.height * sc });
-              }
-            }
-          } else if (tool.id === 'redact') {
-            const src = await PDFLib.PDFDocument.load(primaryFile.bytes, { ignoreEncryption: true });
-            const zone = document.getElementById('optRedactZone')?.value || 'header';
-            for (let pIdx = 1; pIdx <= src.getPageCount(); pIdx++) {
-              const cnv = await renderPdfPageToCanvas(primaryFile.bytes, pIdx, 2.0);
-              const ctx = cnv.getContext('2d');
-              ctx.fillStyle = '#000000';
-              const by = zone === 'header' ? cnv.height * 0.08 : (zone === 'body' ? cnv.height * 0.42 : cnv.height * 0.76);
-              ctx.fillRect(cnv.width * 0.07, by, cnv.width * 0.86, cnv.height * 0.12);
-              const jpg = Uint8Array.from(atob(cnv.toDataURL('image/jpeg', 0.90).split(',')[1]), c => c.charCodeAt(0));
-              const emb = await outDoc.embedJpg(jpg);
-              outDoc.addPage([595.28, 841.89]).drawImage(emb, { x: 0, y: 0, width: 595.28, height: 841.89 });
-            }
-            outDoc.setTitle(''); outDoc.setAuthor(''); outDoc.setSubject('');
-          } else {
-            const src = await PDFLib.PDFDocument.load(primaryFile.bytes, { ignoreEncryption: true });
-            const copied = await outDoc.copyPages(src, src.getPageIndices());
-            copied.forEach(p => outDoc.addPage(p));
-          }
-
+          const copied = await outDoc.copyPages(unifiedDoc, unifiedDoc.getPageIndices());
+          copied.forEach(p => outDoc.addPage(p));
           const pages = outDoc.getPages();
-          if (tool.id === 'rotate') {
-            const deg = parseInt(document.getElementById('optRotateDeg')?.value || '90', 10);
-            pages.forEach(p => p.setRotation(PDFLib.degrees((p.getRotation().angle + deg) % 360)));
-          }
-          if (tool.id === 'watermark' || tool.id === 'workflow') {
-            const wm = document.getElementById('optWmText')?.value || 'CONFIDENTIAL';
-            const op = parseFloat(document.getElementById('optWmOpacity')?.value || '0.30');
-            pages.forEach(p => {
-              const { width, height } = p.getSize();
-              p.drawText(wm, { x: width * 0.16, y: height * 0.42, size: 32, font: bold, rotate: PDFLib.degrees(38), opacity: op });
-            });
-          }
-          if (tool.id === 'pageNumbers' || tool.id === 'workflow') {
-            const fmt = document.getElementById('optNumFmt')?.value || 'of';
-            const prefix = document.getElementById('optBatesPrefix')?.value || 'EXH-';
-            pages.forEach((p, idx) => {
-              const { width } = p.getSize();
-              const lbl = fmt === 'bates' ? `${prefix}${String(idx + 1).padStart(4, '0')}` : (fmt === 'n' ? `${idx + 1}` : `Page ${idx + 1} of ${pages.length}`);
-              p.drawText(lbl, { x: width / 2 - 28, y: 24, size: 10, font: bold });
-            });
-          }
-          if (tool.id === 'fillSign') {
-            const signer = document.getElementById('optSignName')?.value || 'Signed Locally';
-            const last = pages[pages.length - 1];
-            last.drawRectangle({ x: 320, y: 55, width: 220, height: 64, borderColor: PDFLib.rgb(0, 0.53, 0.35), borderWidth: 1, color: PDFLib.rgb(0.98, 0.99, 0.98) });
-            const sigCnv = document.getElementById('sigCanvas');
-            if (sigCnv) {
-              try {
-                const png = Uint8Array.from(atob(sigCnv.toDataURL('image/png').split(',')[1]), c => c.charCodeAt(0));
-                const sigImg = await outDoc.embedPng(png);
-                last.drawImage(sigImg, { x: 330, y: 80, width: 120, height: 34 });
-              } catch {}
+
+          pages.forEach((p, pIdx) => {
+            const isTargeted = (State.pageScope !== "selected") || (State.selectedPages && State.selectedPages.has(pIdx));
+            const { width, height } = p.getSize();
+
+            if (tool.id === "crop" && isTargeted) {
+              const m = parseFloat(document.getElementById("optCropMargin")?.value || "36");
+              p.setCropBox(m, m, Math.max(80, width - m * 2), Math.max(80, height - m * 2));
             }
-            last.drawText(signer, { x: 330, y: 64, size: 9.5, font: bold });
-          }
-          if (tool.id === 'crop') {
-            const m = parseFloat(document.getElementById('optCropMargin')?.value || '36');
-            pages.forEach(p => {
-              const { width, height } = p.getSize();
-              p.setCropBox(m, m, Math.max(100, width - m * 2), Math.max(100, height - m * 2));
-            });
-          }
-          if (tool.id === 'ocr') {
-            const texts = await extractPdfTextPerPage(primaryFile.bytes, primaryFile.textPreview);
-            const idxP = outDoc.addPage([595.28, 841.89]);
-            idxP.drawText('Searchable OCR Text Index', { x: 48, y: 780, size: 16, font: bold });
-            texts.forEach((line, i) => idxP.drawText(`[Page ${i + 1}] ${(line || '').slice(0, 80)}`, { x: 48, y: 740 - i * 22, size: 10, font }));
-          }
-          if (tool.id === 'metadata') {
-            outDoc.setTitle(document.getElementById('optMetaTitle')?.value || '');
-            outDoc.setAuthor(document.getElementById('optMetaAuthor')?.value || '');
-            outDoc.setSubject(document.getElementById('optMetaSubject')?.value || '');
+            if (tool.id === "rotate" && isTargeted) {
+              const deg = parseInt(document.getElementById("optRotateDeg")?.value || "90", 10);
+              p.setRotation(PDFLib.degrees((p.getRotation().angle + deg) % 360));
+            }
+            if ((tool.id === "watermark" || tool.id === "workflow") && isTargeted) {
+              const wm = document.getElementById("optWmText")?.value || "CONFIDENTIAL";
+              const op = parseFloat(document.getElementById("optWmOpacity")?.value || "0.30");
+              p.drawText(wm, { x: width * 0.16, y: height * 0.42, size: 34, font: bold, rotate: PDFLib.degrees(38), opacity: op });
+            }
+            if ((tool.id === "pageNumbers" || tool.id === "workflow") && isTargeted) {
+              const fmt = document.getElementById("optNumFmt")?.value || "of";
+              const prefix = document.getElementById("optBatesPrefix")?.value || "EXH-";
+              const lbl = fmt === "bates" ? `${prefix}${String(pIdx + 1).padStart(4, "0")}` : (fmt === "n" ? `${pIdx + 1}` : `Page ${pIdx + 1} of ${pages.length}`);
+              p.drawText(lbl, { x: width / 2 - 28, y: 24, size: 10, font: bold });
+            }
+            if (tool.id === "fillSign" && isTargeted) {
+              const signer = document.getElementById("optSignName")?.value || "Signed Locally";
+              p.drawRectangle({ x: width - 240, y: 55, width: 200, height: 60, borderColor: PDFLib.rgb(0, 0.53, 0.35), borderWidth: 1.5, color: PDFLib.rgb(0.98, 0.99, 0.98) });
+              const sigCnv = document.getElementById("sigCanvas");
+              if (sigCnv) {
+                try {
+                  const png = Uint8Array.from(atob(sigCnv.toDataURL("image/png").split(",")[1]), c => c.charCodeAt(0));
+                  outDoc.embedPng(png).then(img => {
+                    p.drawImage(img, { x: width - 230, y: 78, width: 110, height: 32 });
+                  });
+                } catch {}
+              }
+              p.drawText(signer, { x: width - 230, y: 64, size: 9.5, font: bold });
+            }
+          });
+
+          if (tool.id === "metadata") {
+            outDoc.setTitle(document.getElementById("optMetaTitle")?.value || "");
+            outDoc.setAuthor(document.getElementById("optMetaAuthor")?.value || "");
+            outDoc.setSubject(document.getElementById("optMetaSubject")?.value || "");
           }
 
           producedPdfBytes = await outDoc.save({ useObjectStreams: true });
-          outputBlob = new Blob([producedPdfBytes], { type: 'application/pdf' });
-          outputPageCount = outDoc.getPageCount();
+          outputBlob = new Blob([producedPdfBytes], { type: "application/pdf" });
+          outputFilename = chosenName;
         }
 
         State.lastOutputBlob = outputBlob;
         State.lastOutputName = outputFilename;
 
-        // AUTOMATIC MULTI-TOOL CHAINING:
-        // If this tool produced a PDF, automatically promote it to the active working file
-        // so switching to a 2nd tool immediately keeps Tool 1's changes!
-        if (producedPdfBytes && outputFilename.endsWith('.pdf')) {
+        if (producedPdfBytes && outputFilename.endsWith(".pdf")) {
           State.editHistory.push({
             toolId: tool.id,
             toolNum: tool.num,
@@ -3290,7 +2797,7 @@
             outName: outputFilename
           });
           State.files = [{
-            id: 'chained-' + Date.now(),
+            id: "chained-" + Date.now(),
             name: outputFilename,
             bytes: new Uint8Array(producedPdfBytes),
             size: producedPdfBytes.byteLength,
@@ -3298,44 +2805,43 @@
             isChainedOutput: true,
             textPreview: [`Edited with ${tool.name}`]
           }];
+          await syncPageDeckFromFiles(false);
         }
 
-        statusEl.textContent = `✓ Step ${State.editHistory.length || 1} Applied (${outputFilename})`;
-        subEl.textContent = `${formatBytes(outputBlob.size)} · Automatically active if you pick a 2nd tool`;
-        btnsEl.innerHTML = `
-          <button class="btn btn-success" style="width:100%;" onclick="downloadLastOutput()">⬇ Download ${escapeHtml(outputFilename)}</button>
-          <button class="btn btn-secondary" style="width:100%;" onclick="toggleCustomToolMenu(event)">Continue to Next Tool (Keeps Changes) →</button>
-          <button class="btn btn-ghost btn-tiny" style="width:100%;" onclick="executeCurrentTool()">↻ Re-Apply ${escapeHtml(tool.name)}</button>
-        `;
+        const elapsed = Math.max(12, Math.round(performance.now() - t0));
+        if (statusEl) statusEl.textContent = `✓ Downloaded ${outputFilename}!`;
+        if (subEl) subEl.textContent = `${formatBytes(outputBlob.size)} · ${outputPageCount} pages · 0 bytes uploaded`;
 
-        const inspector = document.getElementById('toolOutputInspector');
-        inspector.style.display = 'block';
-        document.getElementById('inspectorOutputFilename').textContent = `${outputFilename} (${outputPageCount} page${outputPageCount > 1 ? 's' : ''}, ${formatBytes(outputBlob.size)})`;
-        document.getElementById('inspectorOutputMetrics').textContent = `✓ Changes applied! Pick any next tool from the top menu to continue editing this file, or click Download Now.`;
+        if (btnsEl) {
+          btnsEl.innerHTML = `
+            <button class="btn btn-success" style="width:100%; height:46px; font-size:14.5px; font-weight:600;" onclick="downloadLastOutput()">⬇ Download ${escapeHtml(outputFilename)} Again</button>
+            <button class="btn btn-secondary" style="width:100%; margin-top:6px;" onclick="toggleCustomToolMenu(event)">Next Tool (Auto-Keeps Changes) →</button>
+          `;
+        }
 
         updateStudioChainBanner();
-        renderFileRows();
-        renderCustomToolMenuItems('');
+        renderCustomToolMenuItems("");
         renderMoreTools(tool.id);
         await renderLiveVisualPreview();
 
-        // Mark preview cards with green "✓ Applied" badge
-        document.querySelectorAll('#livePagePreviewGrid .live-page-card').forEach(card => {
-          card.classList.add('applied-flash');
-        });
-        document.querySelectorAll('#livePagePreviewGrid .live-change-pill').forEach(pill => {
-          pill.textContent = `✓ ${tool.name} Applied`;
-        });
-      } catch (err) {
-        statusEl.textContent = 'Could not process this file.';
-        subEl.textContent = err.message || 'Please check the file and try again.';
-        btnsEl.innerHTML = `<button class="btn btn-primary" style="width:100%;" onclick="executeCurrentTool()">Try Again</button>`;
-      }
-    }
+        // 1-Click Instant Download
+        const dlUrl = URL.createObjectURL(outputBlob);
+        const a = document.createElement("a");
+        a.href = dlUrl;
+        a.download = outputFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(dlUrl), 4000);
 
-    async function useLastOutputAsNewInput() {
-      toggleCustomToolMenu();
-    }
+      } catch (err) {
+        console.error("[Studio] Tool execution error:", err);
+        if (statusEl) statusEl.textContent = "Could not process this file.";
+        if (subEl) subEl.textContent = err.message || "Please check the settings and try again.";
+        if (btnsEl) btnsEl.innerHTML = `<button class="btn btn-primary" style="width:100%;" onclick="executeCurrentTool()">Try Again</button>`;
+      }
+    };
+
 
     function downloadLastOutput() {
       if (!State.lastOutputBlob) return;
@@ -7378,617 +6884,6 @@ window.qrcode = qrcode;
 
 
     // =====================================================================
-    // ILOVEPDF-STYLE UNIFIED PAGE DECK & REAL PDF ENGINE OVERRIDES
-    // =====================================================================
-    // Every page of every uploaded/scanned PDF is represented in `State.pageDeck`
-    // so users can visually reorder (← / →), rotate (↻ 90°), or delete (✕) ANY page
-    // across ANY tool, and clicking the main action button immediately builds AND
-    // downloads a single combined PDF (or custom range / zip only when explicitly requested).
-    State.pageDeck = [];
-    State.scannerPages = [];
-    State.p2pPeer = null;
-    State.p2pConn = null;
-    State.p2pRoomId = null;
-    State.scannerLiveStream = null;
-
-    // Synchronize State.pageDeck from State.files whenever new files are added or reset
-    async function syncPageDeckFromFiles(preserveExistingEdits = false) {
-      if (preserveExistingEdits && State.pageDeck && State.pageDeck.length > 0) {
-        return;
-      }
-      const newDeck = [];
-      for (let fIdx = 0; fIdx < State.files.length; fIdx++) {
-        const f = State.files[fIdx];
-        let count = Math.max(1, f.pageCount || 1);
-        try {
-          const loaded = await PDFLib.PDFDocument.load(f.bytes, { ignoreEncryption: true });
-          count = loaded.getPageCount();
-          f.pageCount = count;
-        } catch {}
-        for (let p = 1; p <= count; p++) {
-          newDeck.push({
-            uid: 'pg-' + f.id + '-' + p + '-' + Math.random().toString(36).slice(2, 6),
-            fileId: f.id,
-            fileName: f.name,
-            bytes: f.bytes,
-            srcPageIndex: p - 1, // 0-indexed page in f.bytes
-            srcPageNum: p,       // 1-indexed page in f.bytes
-            rotation: 0,         // additional rotation in degrees (0, 90, 180, 270)
-            imageBase64: (p === 1 && f.imageBase64) ? f.imageBase64 : null,
-            isScan: Boolean(f.isScan)
-          });
-        }
-      }
-      State.pageDeck = newDeck;
-    }
-
-    // Interactive per-page controls (iLovePDF style: Move Left, Move Right, Rotate 90°, Delete Page)
-    window.moveDeckPage = async function(deckIdx, delta) {
-      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
-      const target = deckIdx + delta;
-      if (target < 0 || target >= State.pageDeck.length) return;
-      pushUndoSnapshot();
-      const tmp = State.pageDeck[deckIdx];
-      State.pageDeck[deckIdx] = State.pageDeck[target];
-      State.pageDeck[target] = tmp;
-      updateOrganizeInputFromDeck();
-      await renderLiveVisualPreview();
-    };
-
-    window.rotateDeckPage = async function(deckIdx, deg = 90) {
-      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
-      if (!State.pageDeck[deckIdx]) return;
-      pushUndoSnapshot();
-      State.pageDeck[deckIdx].rotation = ((State.pageDeck[deckIdx].rotation || 0) + deg) % 360;
-      await renderLiveVisualPreview();
-    };
-
-    window.deleteDeckPage = async function(deckIdx) {
-      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
-      if (State.pageDeck.length <= 1) {
-        alert('A PDF must have at least 1 page. To clear all files, click "Clear All".');
-        return;
-      }
-      pushUndoSnapshot();
-      State.pageDeck.splice(deckIdx, 1);
-      updateOrganizeInputFromDeck();
-      await renderLiveVisualPreview();
-    };
-
-    function updateOrganizeInputFromDeck() {
-      const inp = document.getElementById('optOrganizeSpec');
-      if (inp && State.pageDeck) {
-        inp.value = State.pageDeck.map((_, idx) => idx + 1).join(', ');
-      }
-    }
-
-    // Override moveFileRow and removeFileRow so left-pane file actions also sync the visual page deck!
-    window.moveFileRow = async function(index, delta) {
-      const target = index + delta;
-      if (target < 0 || target >= State.files.length) return;
-      pushUndoSnapshot();
-      const temp = State.files[index];
-      State.files[index] = State.files[target];
-      State.files[target] = temp;
-      await syncPageDeckFromFiles(false);
-      renderFileRows();
-      await renderLiveVisualPreview();
-    };
-
-    window.removeFileRow = async function(index) {
-      pushUndoSnapshot();
-      const removed = State.files.splice(index, 1)[0];
-      if (removed && State.pageDeck) {
-        State.pageDeck = State.pageDeck.filter(p => p.fileId !== removed.id);
-      }
-      if (State.files.length > 0 && (!State.pageDeck || State.pageDeck.length === 0)) {
-        await syncPageDeckFromFiles(false);
-      }
-      renderFileRows();
-      await renderLiveVisualPreview();
-    };
-
-    // Upgrade renderLiveVisualPreview to render ALL pages from State.pageDeck with interactive buttons!
-    window.renderLiveVisualPreview = async function() {
-      const grid = document.getElementById('livePagePreviewGrid');
-      const sub = document.getElementById('livePreviewSubtext');
-      if (!grid) return;
-
-      const token = ++livePreviewRenderToken;
-      const cfg = collectCurrentToolPreviewSettings();
-      const tool = TOOLS.find(t => t.id === cfg.toolId) || TOOLS[0];
-
-      if (State.files.length === 0) {
-        State.pageDeck = [];
-        grid.innerHTML = `
-          <div style="grid-column:1/-1; padding:32px; text-align:center; color:var(--muted);">
-            <div style="font-size:15px; font-weight:600; color:var(--ink); margin-bottom:6px;">No PDF or scan pages loaded yet</div>
-            <div style="font-size:13px; margin-bottom:12px;">Drop PDFs or photos here, scan from your phone, or load a sample document.</div>
-            <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-              <button type="button" class="btn btn-primary btn-tiny" onclick="document.getElementById('toolFileInput').click()">+ Select PDF / Photos</button>
-              <button type="button" class="btn btn-secondary btn-tiny" onclick="addGeneratedSamplePDF()">+ Load Sample PDF</button>
-              <button type="button" class="btn btn-secondary btn-tiny" onclick="openScanner(event)">📱 Scan with Phone</button>
-            </div>
-          </div>
-        `;
-        return;
-      }
-
-      if (!State.pageDeck || State.pageDeck.length === 0) {
-        await syncPageDeckFromFiles(false);
-      }
-
-      const totalPages = State.pageDeck.length;
-      const itemsToRender = State.pageDeck.slice(0, 24); // Render up to 24 pages interactively
-
-      if (sub) {
-        sub.textContent = `Showing ${itemsToRender.length} of ${totalPages} page${totalPages === 1 ? '' : 's'} across ${State.files.length} file${State.files.length === 1 ? '' : 's'} — use ← → to reorder, ↻ to rotate, or ✕ to delete any page`;
-      }
-
-      grid.innerHTML = itemsToRender.map((item, idx) => `
-        <div class="live-page-card" id="live-card-${idx}" style="position:relative;">
-          <div class="live-page-canvas-wrap">
-            <span class="live-change-pill" id="live-pill-${idx}">Page ${idx + 1}</span>
-            <canvas id="live-cnv-${idx}" width="220" height="300"></canvas>
-          </div>
-          <div class="live-page-meta" style="margin-top:2px;">
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:115px;" title="${escapeHtml(item.fileName)} (Page ${item.srcPageNum})">${escapeHtml(item.fileName)}</span>
-            <span class="mono" style="font-size:10.5px; color:var(--brand);">p.${item.srcPageNum}${item.rotation ? ' · ' + item.rotation + '°' : ''}</span>
-          </div>
-          <div class="thumb-action-row">
-            <button type="button" class="thumb-btn" onclick="moveDeckPage(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:0.35;cursor:default;"' : ''} title="Move page left">←</button>
-            <button type="button" class="thumb-btn" onclick="moveDeckPage(${idx}, 1)" ${idx === itemsToRender.length - 1 ? 'disabled style="opacity:0.35;cursor:default;"' : ''} title="Move page right">→</button>
-            <button type="button" class="thumb-btn" onclick="rotateDeckPage(${idx}, 90)" title="Rotate this page 90°">↻</button>
-            <button type="button" class="thumb-btn" style="color:var(--danger);" onclick="deleteDeckPage(${idx})" title="Delete this page">✕</button>
-          </div>
-        </div>
-      `).join('');
-
-      for (let i = 0; i < itemsToRender.length; i++) {
-        if (token !== livePreviewRenderToken) return;
-        const item = itemsToRender[i];
-        const cnv = document.getElementById(`live-cnv-${i}`);
-        if (!cnv) continue;
-        const ctx = cnv.getContext('2d');
-
-        let baseCnv = null;
-        if (item.imageBase64 && item.srcPageNum === 1) {
-          baseCnv = await new Promise((resolve) => {
-            const img = new Image();
-            img.onload = () => {
-              const off = document.createElement('canvas');
-              off.width = 240;
-              off.height = 320;
-              const octx = off.getContext('2d');
-              octx.fillStyle = '#ffffff';
-              octx.fillRect(0, 0, off.width, off.height);
-              const sc = Math.min(off.width / img.width, off.height / img.height);
-              octx.drawImage(img, (off.width - img.width * sc) / 2, (off.height - img.height * sc) / 2, img.width * sc, img.height * sc);
-              resolve(off);
-            };
-            img.onerror = () => resolve(null);
-            img.src = 'data:image/jpeg;base64,' + item.imageBase64;
-          });
-        }
-        if (!baseCnv) {
-          baseCnv = await renderPdfPageToCanvas(item.bytes, item.srcPageNum, 0.45);
-        }
-
-        cnv.width = baseCnv.width;
-        cnv.height = baseCnv.height;
-        ctx.save();
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, cnv.width, cnv.height);
-
-        const totalRot = ((item.rotation || 0) + (cfg.toolId === 'rotate' ? cfg.rotateDeg : 0)) % 360;
-        if (totalRot !== 0) {
-          ctx.translate(cnv.width / 2, cnv.height / 2);
-          ctx.rotate((totalRot * Math.PI) / 180);
-          const scaleFit = (totalRot === 90 || totalRot === 270) ? 0.72 : 1;
-          ctx.scale(scaleFit, scaleFit);
-          ctx.drawImage(baseCnv, -cnv.width / 2, -cnv.height / 2);
-        } else if (cfg.toolId === 'flip') {
-          ctx.translate(cfg.flipDir === 'horizontal' ? cnv.width : 0, cfg.flipDir === 'vertical' ? cnv.height : 0);
-          ctx.scale(cfg.flipDir === 'horizontal' ? -1 : 1, cfg.flipDir === 'vertical' ? -1 : 1);
-          ctx.drawImage(baseCnv, 0, 0);
-        } else {
-          ctx.drawImage(baseCnv, 0, 0);
-        }
-        ctx.restore();
-
-        drawLiveToolOverlayOnCanvas(ctx, cnv.width, cnv.height, i + 1, itemsToRender.length, cfg);
-      }
-    };
-
-    // Compile the current interactive `State.pageDeck` into a single unified PDFLib.PDFDocument
-    // Respects all user page deletions, page reorderings, and per-page rotations!
-    async function buildBasePdfFromPageDeck() {
-      if (!State.pageDeck || State.pageDeck.length === 0) {
-        await syncPageDeckFromFiles(false);
-      }
-      const outDoc = await PDFLib.PDFDocument.create();
-      const loadedCache = new Map();
-
-      for (const item of State.pageDeck) {
-        let srcDoc = loadedCache.get(item.bytes);
-        if (!srcDoc) {
-          srcDoc = await PDFLib.PDFDocument.load(item.bytes, { ignoreEncryption: true });
-          loadedCache.set(item.bytes, srcDoc);
-        }
-        const safeIdx = Math.min(Math.max(0, item.srcPageIndex), srcDoc.getPageCount() - 1);
-        const [copiedPage] = await outDoc.copyPages(srcDoc, [safeIdx]);
-        if (item.rotation) {
-          const curAngle = copiedPage.getRotation().angle || 0;
-          copiedPage.setRotation(PDFLib.degrees((curAngle + item.rotation) % 360));
-        }
-        outDoc.addPage(copiedPage);
-      }
-      return outDoc;
-    }
-
-    // Complete, rock-solid override of executeCurrentTool():
-    // - Always merges & respects `State.pageDeck` (reordered, rotated, or deleted pages)
-    // - Split / Extract outputs a single PDF of the selected range by default (only ZIP when "every" is explicitly chosen)
-    // - Compress genuinely re-encodes pages to target KB limit
-    // - Automatically triggers browser download immediately (just like iLovePDF!)
-    window.executeCurrentTool = async function() {
-      const t0 = performance.now();
-      const tool = TOOLS.find(t => t.id === State.activeToolId) || TOOLS[0];
-      if (State.files.length === 0) await addGeneratedSamplePDF();
-      if (!State.pageDeck || State.pageDeck.length === 0) await syncPageDeckFromFiles(false);
-      snapshotOriginalFilesIfNeeded(false);
-      pushUndoSnapshot();
-
-      const inputBytes = State.files.reduce((acc, f) => acc + (f.size || 0), 0);
-      const statusEl = document.getElementById('actionBarStatus');
-      const subEl = document.getElementById('actionBarSubstatus');
-      const btnsEl = document.getElementById('actionBarButtons');
-      if (statusEl) statusEl.textContent = `Processing ${tool.name}…`;
-      if (btnsEl) btnsEl.innerHTML = `<button class="btn btn-disabled" style="width:100%;" disabled>Processing…</button>`;
-
-      try {
-        // First build a unified PDF document from the user's current visual page deck
-        const unifiedDoc = await buildBasePdfFromPageDeck();
-        const unifiedBytes = await unifiedDoc.save();
-        const totalDeckPages = unifiedDoc.getPageCount();
-
-        let outputBlob = null;
-        let outputFilename = tool.out;
-        let outputPageCount = totalDeckPages;
-        let producedPdfBytes = null;
-
-        if (tool.id === 'pdfToMarkdown') {
-          const pagesText = await extractPdfTextPerPage(unifiedBytes, ['Extracted page text']);
-          outputPageCount = pagesText.length;
-          const md = [`# Document Export`, ''];
-          pagesText.forEach((t, i) => md.push(`## Page ${i + 1}`, t, ''));
-          outputBlob = new Blob([md.join('\n')], { type: 'text/markdown;charset=utf-8' });
-          outputFilename = 'document.md';
-
-        } else if (tool.id === 'pdfToDocx') {
-          const pagesText = await extractPdfTextPerPage(unifiedBytes, ['Extracted page text']);
-          outputPageCount = pagesText.length;
-          const zip = new JSZip();
-          zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
-          zip.folder('_rels').file('.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
-          const bodyXml = pagesText.map((t, i) => `<w:p><w:r><w:t>[Page ${i + 1}] ${escapeHtml(t)}</w:t></w:r></w:p>`).join('');
-          zip.folder('word').file('document.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${bodyXml}</w:body></w:document>`);
-          outputBlob = await zip.generateAsync({ type: 'blob' });
-          outputFilename = 'document.docx';
-
-        } else if (tool.id === 'pdfToImages') {
-          const zip = new JSZip();
-          for (let i = 1; i <= totalDeckPages; i++) {
-            const cnv = await renderPdfPageToCanvas(unifiedBytes, i, 2.0);
-            const b64 = cnv.toDataURL('image/png').split(',')[1];
-            zip.file(`page-${String(i).padStart(2, '0')}.png`, b64, { base64: true });
-          }
-          outputBlob = await zip.generateAsync({ type: 'blob' });
-          outputFilename = 'pages-images.zip';
-
-        } else if (tool.id === 'zip') {
-          const zip = new JSZip();
-          State.files.forEach((f, i) => zip.file(`${i + 1}-${f.name}`, f.bytes));
-          outputBlob = await zip.generateAsync({ type: 'blob' });
-          outputFilename = 'documents.zip';
-
-        } else if ((tool.id === 'split' || tool.id === 'extract') && document.getElementById('optSplitMode')?.value === 'every') {
-          // Only burst into a ZIP if the user explicitly chose "Save every page as a separate PDF (.zip)"
-          const zip = new JSZip();
-          for (let i = 0; i < totalDeckPages; i++) {
-            const single = await PDFLib.PDFDocument.create();
-            const [cp] = await single.copyPages(unifiedDoc, [i]);
-            single.addPage(cp);
-            const b = await single.save();
-            zip.file(`page-${String(i + 1).padStart(2, '0')}.pdf`, b);
-          }
-          outputBlob = await zip.generateAsync({ type: 'blob' });
-          outputFilename = 'split-pages.zip';
-
-        } else if (tool.id === 'password' && document.getElementById('optSecurityMode')?.value === 'aes256') {
-          const pass = document.getElementById('optPassphrase')?.value || 'NoUpload-2026!';
-          const enc = new TextEncoder();
-          const salt = window.crypto.getRandomValues(new Uint8Array(16));
-          const iv = window.crypto.getRandomValues(new Uint8Array(12));
-          const keyMat = await window.crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
-          const key = await window.crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMat, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
-          const cipher = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, unifiedBytes);
-          const zip = new JSZip();
-          zip.file('document.pdf.aes256.enc', new Uint8Array(cipher));
-          outputBlob = await zip.generateAsync({ type: 'blob' });
-          outputFilename = 'protected-aes256.zip';
-
-        } else {
-          // SINGLE WHOLE PDF OUTPUT (Default for Merge, Split Range, Extract, Organize, Rotate, Redact, Sign, Compress, etc.)
-          let outDoc = await PDFLib.PDFDocument.create();
-          const font = await outDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-          const bold = await outDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-
-          if (tool.id === 'split' || tool.id === 'extract') {
-            const indices = parsePageRanges(document.getElementById('optPageRanges')?.value || `1-${totalDeckPages}`, totalDeckPages);
-            const copied = await outDoc.copyPages(unifiedDoc, indices);
-            copied.forEach(p => outDoc.addPage(p));
-            outputFilename = tool.id === 'split' ? 'split-selection.pdf' : 'extracted.pdf';
-
-          } else if (tool.id === 'organize') {
-            const specVal = (document.getElementById('optOrganizeSpec')?.value || '').trim();
-            const order = specVal
-              ? specVal.split(',').map(s => parseInt(s.trim(), 10) - 1).filter(i => i >= 0 && i < totalDeckPages)
-              : unifiedDoc.getPageIndices();
-            const copied = await outDoc.copyPages(unifiedDoc, order.length ? order : unifiedDoc.getPageIndices());
-            copied.forEach(p => outDoc.addPage(p));
-            outputFilename = 'organized.pdf';
-
-          } else if (tool.id === 'alternate') {
-            if (State.files.length >= 2) {
-              const docA = await PDFLib.PDFDocument.load(State.files[0].bytes, { ignoreEncryption: true });
-              const docB = await PDFLib.PDFDocument.load(State.files[1].bytes, { ignoreEncryption: true });
-              const rev = document.getElementById('optAlternateReverse')?.checked !== false;
-              const idxA = docA.getPageIndices();
-              const idxB = rev ? docB.getPageIndices().reverse() : docB.getPageIndices();
-              const maxLen = Math.max(idxA.length, idxB.length);
-              for (let i = 0; i < maxLen; i++) {
-                if (i < idxA.length) {
-                  const [pA] = await outDoc.copyPages(docA, [idxA[i]]);
-                  outDoc.addPage(pA);
-                }
-                if (i < idxB.length) {
-                  const [pB] = await outDoc.copyPages(docB, [idxB[i]]);
-                  outDoc.addPage(pB);
-                }
-              }
-            } else {
-              const copied = await outDoc.copyPages(unifiedDoc, unifiedDoc.getPageIndices());
-              copied.forEach(p => outDoc.addPage(p));
-            }
-            outputFilename = 'mixed.pdf';
-
-          } else if (tool.id === 'splitHalf') {
-            const mode = document.getElementById('optSplitHalfMode')?.value || 'vertical';
-            for (const sp of unifiedDoc.getPages()) {
-              const { width, height } = sp.getSize();
-              if (mode === 'horizontal') {
-                const tEmb = await outDoc.embedPage(sp, { left: 0, bottom: height / 2, right: width, top: height });
-                const bEmb = await outDoc.embedPage(sp, { left: 0, bottom: 0, right: width, top: height / 2 });
-                outDoc.addPage([width, height / 2]).drawPage(tEmb, { x: 0, y: 0, width, height: height / 2 });
-                outDoc.addPage([width, height / 2]).drawPage(bEmb, { x: 0, y: 0, width, height: height / 2 });
-              } else {
-                const lEmb = await outDoc.embedPage(sp, { left: 0, bottom: 0, right: width / 2, top: height });
-                const rEmb = await outDoc.embedPage(sp, { left: width / 2, bottom: 0, right: width, top: height });
-                outDoc.addPage([width / 2, height]).drawPage(lEmb, { x: 0, y: 0, width: width / 2, height });
-                outDoc.addPage([width / 2, height]).drawPage(rEmb, { x: 0, y: 0, width: width / 2, height });
-              }
-            }
-            outputFilename = 'halved.pdf';
-
-          } else if (tool.id === 'nup') {
-            const n = parseInt(document.getElementById('optNupCount')?.value || '4', 10);
-            const cols = n === 2 ? 1 : (n === 9 ? 3 : 2);
-            const rows = Math.ceil(n / cols);
-            const embs = await outDoc.embedPages(unifiedDoc.getPages());
-            const W = 595.28, H = 841.89, cW = W / cols, cH = H / rows;
-            for (let i = 0; i < embs.length; i += n) {
-              const sh = outDoc.addPage([W, H]);
-              for (let k = 0; k < n && (i + k) < embs.length; k++) {
-                const e = embs[i + k], c = k % cols, r = Math.floor(k / cols);
-                const sc = Math.min((cW - 24) / e.width, (cH - 24) / e.height);
-                sh.drawPage(e, { x: c * cW + (cW - e.width * sc) / 2, y: H - (r + 1) * cH + (cH - e.height * sc) / 2, width: e.width * sc, height: e.height * sc });
-              }
-            }
-            outputFilename = 'n-up.pdf';
-
-          } else if (tool.id === 'redact') {
-            const zone = document.getElementById('optRedactZone')?.value || 'header';
-            for (let pIdx = 1; pIdx <= totalDeckPages; pIdx++) {
-              const cnv = await renderPdfPageToCanvas(unifiedBytes, pIdx, 2.0);
-              const ctx = cnv.getContext('2d');
-              ctx.fillStyle = '#000000';
-              const by = zone === 'header' ? cnv.height * 0.08 : (zone === 'body' ? cnv.height * 0.42 : cnv.height * 0.76);
-              ctx.fillRect(cnv.width * 0.07, by, cnv.width * 0.86, cnv.height * 0.12);
-              const jpg = Uint8Array.from(atob(cnv.toDataURL('image/jpeg', 0.90).split(',')[1]), c => c.charCodeAt(0));
-              const emb = await outDoc.embedJpg(jpg);
-              outDoc.addPage([595.28, 841.89]).drawImage(emb, { x: 0, y: 0, width: 595.28, height: 841.89 });
-            }
-            outDoc.setTitle(''); outDoc.setAuthor(''); outDoc.setSubject('');
-            outputFilename = 'redacted.pdf';
-
-          } else if (tool.id === 'compress') {
-            // Multi-pass Adaptive Target-Size Compression (from lib/target_compress.js)
-            const targetBytes = (State.targetCompressKB || 200) * 1024;
-            const res = await compressPdfToTargetBytes(unifiedBytes, targetBytes, (p) => {
-              if (statusEl) statusEl.textContent = p.stage === "render" ? `Rendering page ${p.page}/${p.pages} (scale ${p.scale}x)…` : `Tuning quality (${Math.round(p.quality * 100)}%)…`;
-            });
-            producedPdfBytes = res.bytes;
-            outputBlob = new Blob([producedPdfBytes], { type: "application/pdf" });
-            outputFilename = "compressed.pdf";
-
-          } else {
-            const copied = await outDoc.copyPages(unifiedDoc, unifiedDoc.getPageIndices());
-            copied.forEach(p => outDoc.addPage(p));
-            outputFilename = tool.out.endsWith('.pdf') ? tool.out : 'output.pdf';
-          }
-
-          const pages = outDoc.getPages();
-          if (tool.id === 'rotate') {
-            const deg = parseInt(document.getElementById('optRotateDeg')?.value || '90', 10);
-            pages.forEach(p => p.setRotation(PDFLib.degrees((p.getRotation().angle + deg) % 360)));
-          }
-          if (tool.id === 'watermark' || tool.id === 'workflow') {
-            const wm = document.getElementById('optWmText')?.value || 'CONFIDENTIAL';
-            const op = parseFloat(document.getElementById('optWmOpacity')?.value || '0.30');
-            pages.forEach(p => {
-              const { width, height } = p.getSize();
-              p.drawText(wm, { x: width * 0.16, y: height * 0.42, size: 32, font: bold, rotate: PDFLib.degrees(38), opacity: op });
-            });
-          }
-          if (tool.id === 'pageNumbers' || tool.id === 'workflow') {
-            const fmt = document.getElementById('optNumFmt')?.value || 'of';
-            const prefix = document.getElementById('optBatesPrefix')?.value || 'EXH-';
-            pages.forEach((p, idx) => {
-              const { width } = p.getSize();
-              const lbl = fmt === 'bates' ? `${prefix}${String(idx + 1).padStart(4, '0')}` : (fmt === 'n' ? `${idx + 1}` : `Page ${idx + 1} of ${pages.length}`);
-              p.drawText(lbl, { x: width / 2 - 28, y: 24, size: 10, font: bold });
-            });
-          }
-          if (tool.id === 'fillSign') {
-            const signer = document.getElementById('optSignName')?.value || 'Signed Locally';
-            const last = pages[pages.length - 1];
-            last.drawRectangle({ x: 320, y: 55, width: 220, height: 64, borderColor: PDFLib.rgb(0, 0.53, 0.35), borderWidth: 1, color: PDFLib.rgb(0.98, 0.99, 0.98) });
-            const sigCnv = document.getElementById('sigCanvas');
-            if (sigCnv) {
-              try {
-                const png = Uint8Array.from(atob(sigCnv.toDataURL('image/png').split(',')[1]), c => c.charCodeAt(0));
-                const sigImg = await outDoc.embedPng(png);
-                last.drawImage(sigImg, { x: 330, y: 80, width: 120, height: 34 });
-              } catch {}
-            }
-            last.drawText(signer, { x: 330, y: 64, size: 9.5, font: bold });
-          }
-          if (tool.id === 'crop') {
-            const m = parseFloat(document.getElementById('optCropMargin')?.value || '36');
-            pages.forEach(p => {
-              const { width, height } = p.getSize();
-              p.setCropBox(m, m, Math.max(100, width - m * 2), Math.max(100, height - m * 2));
-            });
-          }
-          if (tool.id === 'ocr') {
-            const texts = await extractPdfTextPerPage(unifiedBytes, ['Extracted page text']);
-            const idxP = outDoc.addPage([595.28, 841.89]);
-            idxP.drawText('Searchable OCR Text Index', { x: 48, y: 780, size: 16, font: bold });
-            texts.forEach((line, i) => idxP.drawText(`[Page ${i + 1}] ${(line || '').slice(0, 80)}`, { x: 48, y: 740 - i * 22, size: 10, font }));
-          }
-          if (tool.id === 'metadata') {
-            outDoc.setTitle(document.getElementById('optMetaTitle')?.value || '');
-            outDoc.setAuthor(document.getElementById('optMetaAuthor')?.value || '');
-            outDoc.setSubject(document.getElementById('optMetaSubject')?.value || '');
-          }
-
-          producedPdfBytes = await outDoc.save({ useObjectStreams: true });
-          outputBlob = new Blob([producedPdfBytes], { type: 'application/pdf' });
-          outputPageCount = outDoc.getPageCount();
-        }
-
-        State.lastOutputBlob = outputBlob;
-        State.lastOutputName = outputFilename;
-
-        if (producedPdfBytes && outputFilename.endsWith('.pdf')) {
-          State.editHistory.push({
-            toolId: tool.id,
-            toolNum: tool.num,
-            toolName: tool.name,
-            outName: outputFilename
-          });
-          State.files = [{
-            id: 'chained-' + Date.now(),
-            name: outputFilename,
-            bytes: new Uint8Array(producedPdfBytes),
-            size: producedPdfBytes.byteLength,
-            pageCount: outputPageCount,
-            isChainedOutput: true,
-            textPreview: [`Edited with ${tool.name} (${outputPageCount} pages)`]
-          }];
-          await syncPageDeckFromFiles(false);
-        }
-
-        const elapsed = Math.max(12, Math.round(performance.now() - t0));
-        if (statusEl) statusEl.textContent = `✓ Done! Downloaded ${outputFilename} (${outputPageCount} page${outputPageCount === 1 ? '' : 's'})`;
-        if (subEl) subEl.textContent = `${formatBytes(outputBlob.size)} · Processed in ${elapsed} ms · 0 bytes uploaded`;
-        if (btnsEl) {
-          btnsEl.innerHTML = `
-            <button class="btn btn-success" style="width:100%;" onclick="downloadLastOutput()">⬇ Download ${escapeHtml(outputFilename)} Again (${formatBytes(outputBlob.size)})</button>
-            <button class="btn btn-secondary" style="width:100%;" onclick="toggleCustomToolMenu(event)">Continue Editing in Next Tool →</button>
-          `;
-        }
-
-        const inspector = document.getElementById('toolOutputInspector');
-        if (inspector) {
-          inspector.style.display = 'block';
-          document.getElementById('inspectorOutputFilename').textContent = `${outputFilename} (${outputPageCount} page${outputPageCount > 1 ? 's' : ''}, ${formatBytes(outputBlob.size)})`;
-          document.getElementById('inspectorOutputMetrics').textContent = `✓ Your combined file has been downloaded automatically! You can also pick another tool to keep editing.`;
-        }
-
-        updateStudioChainBanner();
-        renderFileRows();
-        renderCustomToolMenuItems('');
-        renderMoreTools(tool.id);
-        await renderLiveVisualPreview();
-
-        ImmersiveState.toolsExecutedCount += 1;
-        ImmersiveState.bytesProcessedTotal += outputBlob.size;
-        markQuickWinDone(2);
-        playUiSound('chime');
-        updateDeviceVsCloudDiagram(`Applied ${tool.name} (${outputPageCount}p) in ${elapsed} ms`);
-        showShareableResultCard(tool, inputBytes, outputBlob.size, elapsed);
-
-        // Automatically trigger the file download right away (iLovePDF 1-click flow)
-        const dlUrl = URL.createObjectURL(outputBlob);
-        const a = document.createElement('a');
-        a.href = dlUrl;
-        a.download = outputFilename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(dlUrl), 4000);
-
-      } catch (err) {
-        console.error('[Studio] Tool execution error:', err);
-        if (statusEl) statusEl.textContent = 'Could not process this file.';
-        if (subEl) subEl.textContent = err.message || 'Please check the file and try again.';
-        if (btnsEl) btnsEl.innerHTML = `<button class="btn btn-primary" style="width:100%;" onclick="executeCurrentTool()">Try Again</button>`;
-      }
-    };
-
-    // Ensure ingestUploadedFiles and addGeneratedSamplePDF sync the page deck
-    const baseIngestUploadedFiles = window.ingestUploadedFiles;
-    window.ingestUploadedFiles = async function(fileList) {
-      if (typeof baseIngestUploadedFiles === 'function') {
-        await baseIngestUploadedFiles(fileList);
-      }
-      await syncPageDeckFromFiles(false);
-      updateOrganizeInputFromDeck();
-      await renderLiveVisualPreview();
-    };
-
-    const baseAddGeneratedSamplePDF = window.addGeneratedSamplePDF;
-    window.addGeneratedSamplePDF = async function() {
-      if (typeof baseAddGeneratedSamplePDF === 'function') {
-        await baseAddGeneratedSamplePDF();
-      }
-      await syncPageDeckFromFiles(false);
-      updateOrganizeInputFromDeck();
-      await renderLiveVisualPreview();
-    };
-
-    const baseResetToOriginalFiles = window.resetToOriginalFiles;
-    window.resetToOriginalFiles = async function() {
-      if (typeof baseResetToOriginalFiles === 'function') {
-        baseResetToOriginalFiles();
-      }
-      await syncPageDeckFromFiles(false);
-      updateOrganizeInputFromDeck();
-      await renderLiveVisualPreview();
-    };
-
     // =====================================================================
     // DIRECT WEBRTC PEER-TO-PEER + QR GENERATOR + WEB BLUETOOTH PHONE SCANNER
     // (100% Static / Vercel / Offline Compatible — NEVER asks for ./bin/dev!)
