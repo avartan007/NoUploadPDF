@@ -2991,6 +2991,80 @@
       return canvas;
     }
 
+    
+    // Multi-pass Adaptive Target-Size PDF Compression Engine (from lib/target_compress.js)
+    const TARGET_COMPRESS_SCALES = [2, 1.5, 1.2, 1, 0.8, 0.6];
+    const TARGET_COMPRESS_OVERHEAD_PER_PAGE = 1200;
+    const canvasToJpegBlob = (canvas, q) => new Promise((res) => canvas.toBlob(res, "image/jpeg", q));
+
+    async function compressPdfToTargetBytes(pdfBytes, targetBytes, onProgress = () => {}) {
+      if (!window.pdfjsLib || !window.PDFLib) throw new Error("PDF libraries not loaded");
+      const src = await window.pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
+      const numPages = src.numPages;
+      let best = null;
+
+      for (const [si, scale] of TARGET_COMPRESS_SCALES.entries()) {
+        const canvases = [];
+        for (let p = 1; p <= numPages; p++) {
+          const page = await src.getPage(p);
+          const base = page.getViewport({ scale: 1 });
+          const vp = page.getViewport({ scale });
+          const c = document.createElement("canvas");
+          c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+          const ctx = c.getContext("2d");
+          ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+          await page.render({ canvasContext: ctx, viewport: vp }).promise;
+          canvases.push({ c, w: base.width, h: base.height });
+          onProgress({ stage: "render", scale, page: p, pages: numPages, step: si + 1, totalSteps: TARGET_COMPRESS_SCALES.length });
+        }
+
+        const sizeAtQuality = async (q) => {
+          let total = numPages * TARGET_COMPRESS_OVERHEAD_PER_PAGE;
+          const blobs = [];
+          for (const { c } of canvases) {
+            const b = await canvasToJpegBlob(c, q);
+            blobs.push(b);
+            total += b.size;
+          }
+          return { total, blobs };
+        };
+
+        let lo = 0.25, hi = 0.90, fit = null;
+        const floor = await sizeAtQuality(lo);
+        if (floor.total <= targetBytes) {
+          fit = { q: lo, ...floor };
+          for (let i = 0; i < 6; i++) {
+            const mid = (lo + hi) / 2;
+            const t = await sizeAtQuality(mid);
+            if (t.total <= targetBytes) {
+              fit = { q: mid, ...t };
+              lo = mid;
+            } else {
+              hi = mid;
+            }
+            onProgress({ stage: "tune", quality: mid });
+          }
+        } else if (!best || floor.total < best.total) {
+          best = { q: lo, scale, ...floor, dims: canvases.map(({ w, h }) => ({ w, h })) };
+        }
+
+        if (fit) {
+          best = { ...fit, scale, dims: canvases.map(({ w, h }) => ({ w, h })), reached: true };
+          break; // Highest scale (sharpest readability) that fits under targetBytes wins
+        }
+      }
+
+      const outDoc = await window.PDFLib.PDFDocument.create();
+      for (let i = 0; i < best.blobs.length; i++) {
+        const img = await outDoc.embedJpg(new Uint8Array(await best.blobs[i].arrayBuffer()));
+        const { w, h } = best.dims[i];
+        outDoc.addPage([w, h]).drawImage(img, { x: 0, y: 0, width: w, height: h });
+      }
+      outDoc.setTitle(""); outDoc.setAuthor(""); outDoc.setProducer("NoUploadPDF"); outDoc.setCreator("");
+      const bytes = await outDoc.save();
+      return { bytes, size: bytes.length, reached: !!best.reached && bytes.length <= targetBytes, quality: best.q, scale: best.scale };
+    }
+
     async function executeCurrentTool() {
       const tool = TOOLS.find(t => t.id === State.activeToolId) || TOOLS[0];
       if (State.files.length === 0) await addGeneratedSamplePDF();
@@ -4724,21 +4798,32 @@ void main() {
     }
 
     (function installRealNetworkHooks() {
+      function getBodyByteSize(body) {
+        if (!body) return 0;
+        if (typeof body === "string") return new Blob([body]).size;
+        if (body instanceof Blob) return body.size;
+        if (body instanceof ArrayBuffer) return body.byteLength;
+        if (ArrayBuffer.isView(body)) return body.byteLength;
+        if (typeof URLSearchParams !== "undefined" && body instanceof URLSearchParams) return body.toString().length;
+        if (typeof FormData !== "undefined" && body instanceof FormData) {
+          let n = 0;
+          for (const [, v] of body) n += v instanceof Blob ? v.size : String(v).length;
+          return n;
+        }
+        return 1;
+      }
+
       if (typeof window.fetch === 'function') {
         const origFetch = window.fetch.bind(window);
         window.fetch = async function(input, init) {
           const url = typeof input === 'string' ? input : (input?.url || '');
           const method = init?.method || (typeof input === 'object' && input?.method) || 'GET';
-          let bodyLen = 0;
-          if (init?.body) {
-            if (typeof init.body === 'string') bodyLen = init.body.length;
-            else if (init.body.byteLength !== undefined) bodyLen = init.body.byteLength;
-            else if (init.body.size !== undefined) bodyLen = init.body.size;
-          }
-          recordNetworkRequest('fetch()', method, url, bodyLen);
+          const bodyBytes = getBodyByteSize(init?.body || (typeof input === 'object' ? input?.body : null));
+          recordNetworkRequest('fetch()', method, url, bodyBytes);
           return origFetch(input, init);
         };
       }
+
       if (typeof window.XMLHttpRequest === 'function') {
         const origOpen = XMLHttpRequest.prototype.open;
         const origSend = XMLHttpRequest.prototype.send;
@@ -4748,16 +4833,27 @@ void main() {
           return origOpen.call(this, method, url, ...rest);
         };
         XMLHttpRequest.prototype.send = function(body) {
-          let len = 0;
-          if (body) {
-            if (typeof body === 'string') len = body.length;
-            else if (body.byteLength !== undefined) len = body.byteLength;
-            else if (body.size !== undefined) len = body.size;
-          }
-          recordNetworkRequest('XHR', this._nuMethod || 'GET', this._nuUrl || '', len);
+          recordNetworkRequest('XHR', this._nuMethod || 'GET', this._nuUrl || '', getBodyByteSize(body));
           return origSend.call(this, body);
         };
       }
+
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        const _beacon = navigator.sendBeacon.bind(navigator);
+        navigator.sendBeacon = (url, data) => {
+          recordNetworkRequest('beacon', 'POST', url, getBodyByteSize(data));
+          return _beacon(url, data);
+        };
+      }
+
+      if (typeof WebSocket !== 'undefined' && WebSocket.prototype && WebSocket.prototype.send) {
+        const _wsSend = WebSocket.prototype.send;
+        WebSocket.prototype.send = function(d) {
+          recordNetworkRequest('websocket', 'SEND', this.url || 'ws://', getBodyByteSize(d));
+          return _wsSend.apply(this, arguments);
+        };
+      }
+
       if (typeof window.PerformanceObserver === 'function') {
         try {
           const obs = new PerformanceObserver((list) => {
@@ -7717,20 +7813,14 @@ window.qrcode = qrcode;
             outputFilename = 'redacted.pdf';
 
           } else if (tool.id === 'compress') {
-            // Target-size compression: re-encode pages at tuned scale & JPEG quality so output meets State.targetCompressKB
+            // Multi-pass Adaptive Target-Size Compression (from lib/target_compress.js)
             const targetBytes = (State.targetCompressKB || 200) * 1024;
-            const perPageBudget = targetBytes / Math.max(1, totalDeckPages);
-            const renderScale = perPageBudget < 45000 ? 0.95 : (perPageBudget < 95000 ? 1.25 : 1.55);
-            const jpgQual = perPageBudget < 45000 ? 0.52 : (perPageBudget < 95000 ? 0.68 : 0.80);
-
-            for (let pIdx = 1; pIdx <= totalDeckPages; pIdx++) {
-              const cnv = await renderPdfPageToCanvas(unifiedBytes, pIdx, renderScale);
-              const jpg = Uint8Array.from(atob(cnv.toDataURL('image/jpeg', jpgQual).split(',')[1]), c => c.charCodeAt(0));
-              const emb = await outDoc.embedJpg(jpg);
-              outDoc.addPage([595.28, 841.89]).drawImage(emb, { x: 0, y: 0, width: 595.28, height: 841.89 });
-            }
-            outDoc.setTitle(''); outDoc.setAuthor('');
-            outputFilename = 'compressed.pdf';
+            const res = await compressPdfToTargetBytes(unifiedBytes, targetBytes, (p) => {
+              if (statusEl) statusEl.textContent = p.stage === "render" ? `Rendering page ${p.page}/${p.pages} (scale ${p.scale}x)…` : `Tuning quality (${Math.round(p.quality * 100)}%)…`;
+            });
+            producedPdfBytes = res.bytes;
+            outputBlob = new Blob([producedPdfBytes], { type: "application/pdf" });
+            outputFilename = "compressed.pdf";
 
           } else {
             const copied = await outDoc.copyPages(unifiedDoc, unifiedDoc.getPageIndices());
