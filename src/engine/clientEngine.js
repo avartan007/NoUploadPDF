@@ -1650,65 +1650,53 @@ if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
       logStudioTerminal('SCAN', `Loaded ${scanName} into Studio queue`, '#22c55e');
     }
 
-    async function seedInitialWorkspacePDFs(manualLoad = false) {
-      if (!manualLoad) { updateHeroCounter(); return; }
-      if (new URLSearchParams(location.search).get('from') === 'scanner') return;
-      if (State.files.length >0) return;
-
-      const specs = [
-        { name: 'Service-Agreement.pdf', title: 'Master Service Agreement', pages: ['Page 1 — Invoice No. 1042 — Acme Industrial Corp.', 'Page 2 — Scope of Work & Confidentiality Terms.'] },
-        { name: 'Q4-Summary.pdf', title: 'Q4 Financial Summary', pages: ['Page 1 — Quarterly Balance Sheet & Totals ($24,500).'] }
-      ];
-
-      for (const spec of specs) {
-        const doc = await PDFLib.PDFDocument.create();
-        const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
-        const bold = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-        for (let i = 0; i < spec.pages.length; i++) {
-          const page = doc.addPage([595.28, 841.89]);
-          page.drawText(spec.title, { x: 52, y: 760, size: 22, font: bold });
-          page.drawText(spec.pages[i], { x: 52, y: 715, size: 14, font });
-          page.drawText('Prepared locally on your device · Zero cloud uploads.', { x: 52, y: 675, size: 12, font });
-        }
-        const bytes = await doc.save();
-        State.files.push({
-          id: 'seed-' + Math.random().toString(36).slice(2, 7),
-          name: spec.name,
-          bytes: bytes,
-          size: bytes.byteLength,
-          pageCount: spec.pages.length,
-          textPreview: spec.pages
-        });
-      }
-      snapshotOriginalFilesIfNeeded(true);
-      updateHeroCounter();
-      renderFileRows();
-    }
-
-    async function addGeneratedSamplePDF() {
-      const idx = State.files.length + 1;
+    async function loadSingleDemoPDF(openCompressAfter = false) {
       const doc = await PDFLib.PDFDocument.create();
       const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
       const bold = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+
       for (let p = 1; p <= 2; p++) {
         const page = doc.addPage([595.28, 841.89]);
-        page.drawText(`Sample Document #${idx} — Page ${p}`, { x: 52, y: 760, size: 20, font: bold });
-        page.drawText(`Invoice No. ${1000 + idx * 10 + p} · Ready for live editing in Studio.`, { x: 52, y: 720, size: 13, font });
+        page.drawText("NoUploadPDF — Demo Document", { x: 52, y: 770, size: 22, font: bold });
+        page.drawText(`Page ${p} of 2 · Invoice No. 4021 · Total: $24,500.00`, { x: 52, y: 730, size: 13, font });
+        page.drawText("Contact: billing@acmecorp.example · Prepared locally in browser RAM.", { x: 52, y: 700, size: 11, font });
+        page.drawText("Use this single demo PDF to test Merge, Redact, Sign, Split, or Compress.", { x: 52, y: 660, size: 11, font });
       }
-      const bytes = await doc.save();
-      State.files.push({
-        id: 'sample-' + Date.now(),
-        name: `Sample-Document-${idx}.pdf`,
-        bytes: bytes,
+
+      const bytes = await doc.save({ useObjectStreams: false });
+      const demoFile = {
+        id: "demo-pdf-single",
+        name: "Demo-Document.pdf",
+        bytes: new Uint8Array(bytes),
         size: bytes.byteLength,
         pageCount: 2,
-        textPreview: [`Page 1 of Sample-Document-${idx}`, `Page 2 of Sample-Document-${idx}`]
-      });
+        textPreview: [
+          "Page 1 — Invoice No. 4021 — Total: $24,500.00",
+          "Page 2 — Summary & Confidentiality Terms"
+        ]
+      };
+
+      State.files = [demoFile];
+      State.editHistory = [];
       snapshotOriginalFilesIfNeeded(true);
+      updateHeroCounter();
       await syncPageDeckFromFiles(false);
       updateStudioChainBanner();
       renderFileRows();
-      await renderLiveVisualPreview();
+      triggerVaultIngestAnimation(`${demoFile.name} (${formatBytes(demoFile.size)})`);
+      if (openCompressAfter) openToolWorkspace("compress");
+      else await renderLiveVisualPreview();
+    }
+
+    async function seedInitialWorkspacePDFs(manualLoad = false) {
+      if (!manualLoad) { updateHeroCounter(); return; }
+      if (new URLSearchParams(location.search).get("from") === "scanner") return;
+      if (State.files.length > 0) return;
+      await loadSingleDemoPDF(false);
+    }
+
+    async function addGeneratedSamplePDF() {
+      await loadSingleDemoPDF(false);
     }
 
     function parsePageRanges(rangeStr, totalPages) {
@@ -3673,57 +3661,7 @@ void main() {
     }
 
     async function loadRealisticMultiMbSample(openCompressAfter = true) {
-      const doc = await PDFLib.PDFDocument.create();
-      const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
-      for (let p = 1; p <= 3; p++) {
-        const cnv = document.createElement('canvas');
-        cnv.width = 1200;
-        cnv.height = 1700;
-        const ctx = cnv.getContext('2d');
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, cnv.width, cnv.height);
-        ctx.fillStyle = '#0F291E';
-        ctx.fillRect(60, 60, cnv.width - 120, 140);
-        ctx.fillStyle = '#4ADE80';
-        ctx.font = 'bold 26px monospace';
-        ctx.fillText(`NOUPLOADPDF HIGH-RESOLUTION SAMPLE · PAGE 0${p} OF 03`, 92, 118);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 38px sans-serif';
-        ctx.fillText(`Quarterly Operations & Architecture Brief — Section ${p}`, 92, 168);
-        for (let r = 0; r < 20; r++) {
-          for (let c = 0; c < 16; c++) {
-            const hue = (p * 47 + r * 19 + c * 13) % 360;
-            ctx.fillStyle = `hsl(${hue}, 55%, ${68 + ((r + c) % 18)}%)`;
-            ctx.fillRect(80 + c * 64, 250 + r * 40, 54, 30);
-          }
-        }
-        ctx.fillStyle = '#0A0A0A';
-        ctx.font = 'bold 26px sans-serif';
-        ctx.fillText(`Invoice No. ${4020 + p} · Reference Code: REG-9928-441${p} · Total: $24,500.00`, 80, 1120);
-        const pngDataUrl = cnv.toDataURL('image/png');
-        const pngBytes = Uint8Array.from(atob(pngDataUrl.split(',')[1]), ch =>ch.charCodeAt(0));
-        const embPng = await doc.embedPng(pngBytes);
-        const page = doc.addPage([595.28, 841.89]);
-        page.drawImage(embPng, { x: 0, y: 0, width: 595.28, height: 841.89 });
-        page.drawText(`Page ${p} — Invoice No. ${4020 + p} — billing@acmecorp.example`, { x: 40, y: 20, size: 9, font });
-      }
-      const pdfBytes = await doc.save({ useObjectStreams: false });
-      const sampleFile = {
-        id: 'realistic-mb-' + Date.now(),
-        name: 'HighRes-Portfolio-Sample-3Pages.pdf',
-        bytes: new Uint8Array(pdfBytes),
-        size: pdfBytes.byteLength,
-        pageCount: 3,
-        textPreview: ['Page 1 — Invoice No. 4021', 'Page 2 — Operations Brief', 'Page 3 — Summary']
-      };
-      State.files = [sampleFile];
-      State.editHistory = [];
-      snapshotOriginalFilesIfNeeded(true);
-      updateStudioChainBanner();
-      renderFileRows();
-      triggerVaultIngestAnimation(`${sampleFile.name} (${formatBytes(sampleFile.size)})`);
-      if (openCompressAfter) openToolWorkspace('compress');
-      else renderLiveVisualPreview();
+      await loadSingleDemoPDF(openCompressAfter);
     }
 
     function setTargetCompressPreset(kb, btnEl) {
