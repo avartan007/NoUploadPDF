@@ -136,16 +136,12 @@
       <!-- Three.js Dual-Scene RTT: Realistic Laptop Screen -> Document Tornado -> Zoom Out -> Ink-Bleed Text -->
       <div class="hero-three-canvas-wrap" id="heroThreeCanvasWrap" aria-hidden="true">
         <canvas id="heroThreeCanvas"></canvas>
-        <div class="three-telemetry-tag three-telemetry-server" id="tornadoPhaseBadge">
-          <span class="privacy-dot"></span>
-          <span id="tornadoPhaseText">01 / ON-DEVICE DISPLAY · LOCAL SANDBOX ACTIVE</span>
-        </div>
         <div class="three-telemetry-tag three-telemetry-local">
           <svg class="ui-icon" viewBox="0 0 24 24" style="color:var(--brand);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <span id="threeTelemetryStatus">LOCAL DEVICE VAULT ACTIVE · 0 BYTES LEAVE YOUR LAPTOP</span>
         </div>
         <div class="hero-intro-caption mono" id="heroIntroCaption">01 / ON-DEVICE DISPLAY · DOCUMENTS LOAD INTO LOCAL RAM</div>
-        <button type="button" class="hero-skip-intro-btn mono" id="heroSkipIntroBtn" onclick="skipOrReplayHeroIntro()">Skip intro →</button>
+        <button type="button" class="hero-skip-intro-btn mono" id="heroSkipIntroBtn" onclick="skipHeroIntroToEnd()">Skip intro →</button>
       </div>
 
       <div class="hero-subtracted-inner hero-intro-hidden" id="heroForegroundContent">
@@ -9051,13 +9047,10 @@ window.qrcode = qrcode;
       }
     };
 
-    window.skipOrReplayHeroIntro = function() {
-      if (HeroTornadoController.isIntroDone) {
-        if (typeof HeroTornadoController.replay === "function") HeroTornadoController.replay();
-      } else {
-        if (typeof HeroTornadoController.skipToEnd === "function") HeroTornadoController.skipToEnd();
-      }
+    window.skipHeroIntroToEnd = function() {
+      if (typeof HeroTornadoController.skipToEnd === "function") HeroTornadoController.skipToEnd();
     };
+    window.skipOrReplayHeroIntro = window.skipHeroIntroToEnd;
 
     window.triggerTornadoDropToStudioClash = function(onOpenStudioCallback) {
       if (typeof HeroTornadoController.clashIntoStudio === "function") {
@@ -9783,6 +9776,7 @@ window.qrcode = qrcode;
         const cap = document.getElementById("heroIntroCaption");
         if (!cap) return;
         if (text) cap.textContent = text;
+        cap.style.display = visible ? "block" : "none";
         cap.style.opacity = visible ? "1" : "0";
       }
 
@@ -9813,7 +9807,7 @@ window.qrcode = qrcode;
             fgEl.classList.add("hero-intro-revealed");
           }
           setCaption("", false);
-          if (skipBtn) skipBtn.textContent = "↻ Replay intro";
+          if (skipBtn) skipBtn.classList.add("is-hidden");
           return;
         }
 
@@ -9832,7 +9826,7 @@ window.qrcode = qrcode;
           fgEl.classList.remove("hero-intro-revealed");
           fgEl.classList.add("hero-intro-hidden");
         }
-        if (skipBtn) skipBtn.textContent = "Skip intro →";
+        if (skipBtn) { skipBtn.classList.remove("is-hidden"); skipBtn.textContent = "Skip intro →"; }
 
         G.gather = 0;
         G.spinSpeed = 0.45;
@@ -9850,7 +9844,7 @@ window.qrcode = qrcode;
         introTimeline = window.gsap.timeline({
           onComplete: () => {
             HeroTornadoController.isIntroDone = true;
-            if (skipBtn) skipBtn.textContent = "↻ Replay intro";
+            if (skipBtn) skipBtn.classList.add("is-hidden");
           }
         });
 
@@ -9915,7 +9909,7 @@ window.qrcode = qrcode;
         setCaption("", false);
         setPhaseText("LOCAL DEVICE VAULT ACTIVE · 0 BYTES LEAVE YOUR LAPTOP");
         const skipBtn = document.getElementById("heroSkipIntroBtn");
-        if (skipBtn) skipBtn.textContent = "↻ Replay intro";
+        if (skipBtn) skipBtn.classList.add("is-hidden");
         runHeadlineInkBleedReveal({ x: 0.46, y: 0.48 });
       }
 

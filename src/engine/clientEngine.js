@@ -7502,13 +7502,10 @@ window.qrcode = qrcode;
       }
     };
 
-    window.skipOrReplayHeroIntro = function() {
-      if (HeroTornadoController.isIntroDone) {
-        if (typeof HeroTornadoController.replay === "function") HeroTornadoController.replay();
-      } else {
-        if (typeof HeroTornadoController.skipToEnd === "function") HeroTornadoController.skipToEnd();
-      }
+    window.skipHeroIntroToEnd = function() {
+      if (typeof HeroTornadoController.skipToEnd === "function") HeroTornadoController.skipToEnd();
     };
+    window.skipOrReplayHeroIntro = window.skipHeroIntroToEnd;
 
     window.triggerTornadoDropToStudioClash = function(onOpenStudioCallback) {
       if (typeof HeroTornadoController.clashIntoStudio === "function") {
@@ -8234,6 +8231,7 @@ window.qrcode = qrcode;
         const cap = document.getElementById("heroIntroCaption");
         if (!cap) return;
         if (text) cap.textContent = text;
+        cap.style.display = visible ? "block" : "none";
         cap.style.opacity = visible ? "1" : "0";
       }
 
@@ -8264,7 +8262,7 @@ window.qrcode = qrcode;
             fgEl.classList.add("hero-intro-revealed");
           }
           setCaption("", false);
-          if (skipBtn) skipBtn.textContent = "↻ Replay intro";
+          if (skipBtn) skipBtn.classList.add("is-hidden");
           return;
         }
 
@@ -8283,7 +8281,7 @@ window.qrcode = qrcode;
           fgEl.classList.remove("hero-intro-revealed");
           fgEl.classList.add("hero-intro-hidden");
         }
-        if (skipBtn) skipBtn.textContent = "Skip intro →";
+        if (skipBtn) { skipBtn.classList.remove("is-hidden"); skipBtn.textContent = "Skip intro →"; }
 
         G.gather = 0;
         G.spinSpeed = 0.45;
@@ -8301,7 +8299,7 @@ window.qrcode = qrcode;
         introTimeline = window.gsap.timeline({
           onComplete: () => {
             HeroTornadoController.isIntroDone = true;
-            if (skipBtn) skipBtn.textContent = "↻ Replay intro";
+            if (skipBtn) skipBtn.classList.add("is-hidden");
           }
         });
 
@@ -8366,7 +8364,7 @@ window.qrcode = qrcode;
         setCaption("", false);
         setPhaseText("LOCAL DEVICE VAULT ACTIVE · 0 BYTES LEAVE YOUR LAPTOP");
         const skipBtn = document.getElementById("heroSkipIntroBtn");
-        if (skipBtn) skipBtn.textContent = "↻ Replay intro";
+        if (skipBtn) skipBtn.classList.add("is-hidden");
         runHeadlineInkBleedReveal({ x: 0.46, y: 0.48 });
       }
 
