@@ -2076,21 +2076,45 @@ p {
   transition: transform 200ms ease;
 }
 
-/* Clean 4-Column Footer */
+/* Clean 4-Column Footer with Generous Spacing + Giant Faded Wordmark */
 .site-footer {
   border-top: 1px solid var(--border);
   background: var(--surface);
-  padding: 44px 0 32px;
+  padding: 76px 0 0;
   margin-top: auto;
   color: var(--muted);
   font-size: 13.5px;
+  overflow: hidden;
 }
 
 .footer-grid {
   display: grid;
   grid-template-columns: 1.5fr 1fr 1fr 1fr;
-  gap: 28px;
-  margin-bottom: 28px;
+  gap: 40px;
+  margin-bottom: 44px;
+}
+
+.footer-giant-wordmark {
+  width: 100%;
+  margin-top: 44px;
+  padding: 0 12px;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: clamp(44px, 12.2vw, 178px);
+  font-weight: 800;
+  line-height: 0.84;
+  letter-spacing: -0.045em;
+  color: color-mix(in srgb, var(--ink) 10%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 18%, rgba(0, 0, 0, 0.48) 62%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 18%, rgba(0, 0, 0, 0.48) 62%, rgba(0, 0, 0, 0) 100%);
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.footer-giant-wordmark .wordmark-accent {
+  color: color-mix(in srgb, var(--brand) 18%, transparent);
 }
 
 .footer-col h4 {
