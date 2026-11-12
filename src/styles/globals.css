@@ -3225,7 +3225,8 @@ html.theme-fade *::after {
   gap: 0;
 }
 
-.segmented-pill-indicator {
+.segmented-pill-indicator,
+.segmented-pill {
   position: absolute;
   top: 4px;
   bottom: 4px;
@@ -3235,7 +3236,7 @@ html.theme-fade *::after {
   border: 1px solid var(--line);
   border-radius: 9px;
   box-shadow: var(--shadow-1);
-  transition: transform var(--t-med) var(--ease);
+  transition: transform var(--t-med) var(--ease), width var(--t-med) var(--ease);
   pointer-events: none;
   z-index: 0;
 }
@@ -3371,7 +3372,7 @@ html.theme-fade *::after {
   .bento-span-7, .bento-span-5, .bento-span-4 { grid-column: span 12; }
   .big-numbers-strip { grid-template-columns: 1fr; }
   .segmented-control { display: flex; flex-wrap: wrap; }
-  .segmented-pill-indicator { display: none; }
+  .segmented-pill-indicator, .segmented-pill { display: none; }
 }
 
 /* ==========================================================================

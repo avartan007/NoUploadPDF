@@ -1,9 +1,6 @@
-// NoUploadPDF Offline Service Worker (PWA — v5 Network-First Navigation)
-const CACHE_NAME = 'nouploadpdf-v5';
+// NoUploadPDF Offline Service Worker (PWA — v6 No-Store HTML/CSS Network-First)
+const CACHE_NAME = 'nouploadpdf-v6';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/styles.css',
   '/manifest.json',
   '/demo-preview.svg',
   'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js',
@@ -33,16 +30,18 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
 
   const accept = req.headers.get('accept') || '';
-  const isHtmlOrCss =
+  const url = new URL(req.url);
+  const isHtmlCssOrSameOrigin =
     req.mode === 'navigate' ||
     accept.includes('text/html') ||
-    req.url.endsWith('.css') ||
-    req.url.endsWith('/');
+    url.pathname.endsWith('.css') ||
+    url.pathname.endsWith('.html') ||
+    url.pathname === '/';
 
-  // Network-First for HTML navigation and CSS so 2-finger back/forward never serves a stale interface
-  if (isHtmlOrCss) {
+  // Always bypass HTTP cache for HTML & CSS so normal opens and Cmd+R always show the latest animation & layout
+  if (isHtmlCssOrSameOrigin) {
     event.respondWith(
-      fetch(req)
+      fetch(new Request(req, { cache: 'no-store' }))
         .then((res) => {
           if (res && res.status === 200 && res.type !== 'opaque') {
             const clone = res.clone();

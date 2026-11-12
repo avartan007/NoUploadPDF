@@ -3342,7 +3342,7 @@ void main() {
     // SMART ASSISTANTS CONTROLLERS
     // =====================================================================
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((reg) => { try { reg.update(); } catch {} }).catch(() => {});
     }
 
     function switchPowerTab(tabId) {
@@ -7744,11 +7744,23 @@ window.qrcode = qrcode;
       }
     }
 
+    let _heroThreeBootRetries = 0;
+    window.addEventListener("pageshow", (ev) => {
+      if (ev && ev.persisted && typeof window.replayHeroTornadoSequence === "function") {
+        window.replayHeroTornadoSequence();
+      }
+    });
+
     function initHeroPaperTornadoThreeJs() {
       const canvas = document.getElementById("heroThreeCanvas");
       const wrap = document.getElementById("heroThreeCanvasWrap");
       const fgEl = document.getElementById("heroForegroundContent");
       const hdrEl = document.getElementById("mainSiteHeader");
+      if (canvas && wrap && (typeof window.THREE === "undefined" || typeof window.gsap === "undefined") && _heroThreeBootRetries < 60) {
+        _heroThreeBootRetries++;
+        setTimeout(initHeroPaperTornadoThreeJs, 50);
+        return;
+      }
       if (!canvas || !wrap || typeof window.THREE === "undefined") {
         if (hdrEl) {
           hdrEl.classList.remove("header-intro-hidden");
