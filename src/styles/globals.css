@@ -4142,3 +4142,37 @@ html, body {
 #faqSection .faq-btn:hover span:first-child {
   color: var(--brand);
 }
+
+/* Live Handwriting Signature Animation in Interactive Preview (4. Sign) */
+.demo-sign-svg .sign-stroke.s1 {
+  stroke-dasharray: 460;
+  stroke-dashoffset: 460;
+  animation: signStrokeDraw1 1.65s cubic-bezier(0.32, 0.08, 0.24, 1) forwards;
+}
+
+.demo-sign-svg .sign-stroke.s2 {
+  stroke-dasharray: 240;
+  stroke-dashoffset: 240;
+  animation: signStrokeDraw2 0.7s cubic-bezier(0.22, 1, 0.36, 1) 1.45s forwards;
+}
+
+.demo-sign-stamp {
+  opacity: 0;
+  transform: translateY(4px);
+  animation: signStampFadeIn 0.45s ease 1.95s forwards;
+}
+
+@keyframes signStrokeDraw1 {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes signStrokeDraw2 {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes signStampFadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
