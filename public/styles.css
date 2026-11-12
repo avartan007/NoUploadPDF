@@ -4132,3 +4132,13 @@ html, body {
     box-shadow: var(--shadow-1) !important;
   }
 }
+
+/* Green brand accent on FAQ toggles & question hover */
+#faqSection .faq-toggle {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+#faqSection .faq-btn:hover span:first-child {
+  color: var(--brand);
+}
