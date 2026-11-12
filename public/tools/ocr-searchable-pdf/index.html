@@ -3158,7 +3158,7 @@
       if (thumbBox) {
         thumbBox.innerHTML = (thumbs || []).map(t => `
           <div style="display:flex;align-items:center;gap:8px;background:#ffffff;border:1px solid var(--outline);border-radius:6px;padding:5px 8px;flex:none;">
-            <img src="data:image/jpeg;base64,${t.base64}" alt="Scan" style="width:28px;height:36px;object-fit:cover;border-radius:3px;">
+            <img src="data:image/jpeg;base64,${String(t.base64 || '').replace(/[^A-Za-z0-9+/=]/g, '')}" alt="Scan" style="width:28px;height:36px;object-fit:cover;border-radius:3px;">
             <span class="mono" style="font-size:11px;">${escapeHtml(t.name)}</span>
           </div>
         `).join('');
@@ -4389,23 +4389,71 @@ void main() {
       banner.textContent = status;
     }
 
+    function zeroFillBuffer(buf) {
+      try {
+        if (buf instanceof Uint8Array) buf.fill(0);
+        else if (buf && buf.buffer instanceof ArrayBuffer) new Uint8Array(buf.buffer).fill(0);
+      } catch {}
+    }
+
     function purgeTemporaryIndexedDb() {
       try {
-        if (typeof indexedDB !== 'undefined') {
+        if (typeof indexedDB !== "undefined") {
           indexedDB.deleteDatabase(STUDIO_DB_NAME);
+        }
+      } catch {}
+      try {
+        if (typeof sessionStorage !== "undefined") {
+          sessionStorage.clear();
+        }
+      } catch {}
+      try {
+        if (typeof localStorage !== "undefined") {
+          const allowedKeys = new Set(["nouploadpdf_theme", "nouploadpdf_peer_cfg"]);
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const k = localStorage.key(i);
+            if (k && !allowedKeys.has(k)) localStorage.removeItem(k);
+          }
         }
       } catch {}
     }
 
-    window.addEventListener('pagehide', () => {
-      if (!location.search.includes('from=scanner')) {
+    function zeroizeAllMemoryBuffers() {
+      try {
+        (State.files || []).forEach(f => { if (f && f.bytes) zeroFillBuffer(f.bytes); });
+        (State.originalFiles || []).forEach(f => { if (f && f.bytes) zeroFillBuffer(f.bytes); });
+        (State.originalFilesSnapshot || []).forEach(f => { if (f && f.bytes) zeroFillBuffer(f.bytes); });
+        (State.undoStack || []).forEach(snap => {
+          (snap?.files || []).forEach(f => { if (f && f.bytes) zeroFillBuffer(f.bytes); });
+        });
+        if (State.scannerLiveStream) {
+          State.scannerLiveStream.getTracks().forEach(t => { try { t.stop(); } catch {} });
+          State.scannerLiveStream = null;
+        }
+        State.scannerPages = [];
+        State.p2pQuarantinedPages = [];
+      } catch {}
+    }
+
+    window.addEventListener("pagehide", () => {
+      if (!location.search.includes("from=scanner")) {
+        zeroizeAllMemoryBuffers();
+        purgeTemporaryIndexedDb();
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (!location.search.includes("from=scanner")) {
         purgeTemporaryIndexedDb();
       }
     });
 
     function wipeStudioSession() {
+      zeroizeAllMemoryBuffers();
       State.files = [];
       State.originalFiles = [];
+      State.originalFilesSnapshot = [];
+      State.undoStack = [];
       State.pageDeck = [];
       State.editHistory = [];
       State.lastOutputBlob = null;
@@ -4413,9 +4461,9 @@ void main() {
       updateStudioChainBanner();
       renderFileRows();
       renderLiveVisualPreview();
-      const insp = document.getElementById('toolOutputInspector');
-      if (insp) insp.style.display = 'none';
-      logStudioTerminal('CLEAR', 'Cleared all files from browser RAM and purged IndexedDB.', '#f59e0b');
+      const insp = document.getElementById("toolOutputInspector");
+      if (insp) insp.style.display = "none";
+      logStudioTerminal("CLEAR", "Zero-filled all RAM buffers and purged IndexedDB & sessionStorage.", "#f59e0b");
     }
 
     const DEMO_SCENES = {
@@ -8549,7 +8597,11 @@ window.qrcode = qrcode;
               if (data.type === 'hello') {
                 State.p2pPendingDeviceName = data.device || 'Phone Camera';
                 promptDesktopSasApproval(State.p2pPendingDeviceName, data.sas || State.p2pSasCode);
-              } else if (data.type === 'scan_page' && data.image) {
+              } else if (data.type === 'scan_page' && typeof data.image === 'string') {
+                if (data.image.length > 34 * 1024 * 1024) {
+                  console.warn('[Security] Rejected oversized scan_page (>25MB)');
+                  return;
+                }
                 if (!hasValidImageMagicBytes(data.image)) {
                   console.warn('[Security] Rejected scan_page with invalid magic bytes');
                   return;
