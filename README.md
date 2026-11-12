@@ -85,41 +85,58 @@ sequenceDiagram
 
 Found a vulnerability? See [SECURITY.md](SECURITY.md) and report privately.
 
-## 🚀 Run locally
+## 🚀 Run locally (Next.js + React + Node.js/Express)
 
-```bash
-git clone https://github.com/avartan007/NoUploadPDF.git
-cd NoUploadPDF
-npx serve .            # or: python3 -m http.server 3005
-# open the printed URL
-```
+1. Open the `NoUploadPDF` repository directory in your terminal.
+2. Sync React components and start the Node.js + Express development server (with HTTP 403 Upload Guard & CSP headers):
+   - `npm run dev` (starts `http://localhost:3000`)
+   - `npm test` (runs the automated Node.js test suite)
 
-No build step is required unless you add one. Camera access on a phone needs **HTTPS**, so test the scanner on the deployed site or through a local HTTPS tunnel.
+*(Note: A complete archive of the legacy Ruby on Rails prototype is preserved in `ror-backup-nouploadpdf.zip` in the project root.)*
 
-## 🗂️ Project structure
+## 🗂️ Project structure (Next.js + React + Node.js/Express)
 
-```
+```text
 .
-├── index.html                 # app shell
-├── assets/
-│   ├── css/                   # tokens, layout, components
-│   └── js/
-│       ├── core/              # state, storage, file verification
-│       ├── tools/             # one module per tool (01–28)
-│       ├── scanner/           # WebRTC phone bridge
-│       └── ui/                # studio, command palette, monitor
-├── vendor/                    # pdf-lib, PDF.js, JSZip, qrcode-generator, PeerJS (self-hosted)
-├── tools/<slug>/index.html    # SEO guide pages
-├── docs/                      # demo.gif, architecture, privacy model, design guide
+├── package.json                       # Next.js, React, Express, Three.js, GSAP, PDF-Lib
+├── next.config.mjs                    # Next.js configuration & security headers
+├── server/
+│   ├── index.js                       # Node.js + Express server with SPA routing & CSP headers
+│   └── middleware/
+│       └── noUploadGuard.js           # Express middleware rejecting file uploads with HTTP 403
+├── src/
+│   ├── pages/                         # Next.js Routes (/, /studio, /tools, /tools/[slug], /scanner, /compare, /about)
+│   ├── components/                    # Modular Reusable React Components
+│   │   ├── AppShell.jsx               # Master React shell & router coordinator
+│   │   ├── Navbar.jsx                 # Sticky glass header, mobile sheet & WebGL2 ink-bleed toggle
+│   │   ├── SvgFilters.jsx             # SVG feTurbulence ink-bleed & liquid ripple filters
+│   │   ├── HeroThreeTornado.jsx       # Three.js + GSAP 3D tornado -> laptop -> ink-bleed hero
+│   │   ├── InteractivePreview.jsx     # Interactive live tool preview
+│   │   ├── PeaceOfMindSection.jsx     # 3-pillar privacy proof & live network monitor
+│   │   ├── ToolsCatalog.jsx           # 28-tool filterable catalog & Smart Document Helpers
+│   │   ├── ComparisonSection.jsx      # Side-by-side comparison table & FAQ
+│   │   ├── StudioWorkspace.jsx        # 3-pane PDF Studio workspace
+│   │   ├── PhoneScanner.jsx           # WebRTC P2P QR phone camera scanner + SAS gate
+│   │   ├── AboutSection.jsx           # About & security architecture view
+│   │   └── Footer.jsx                 # Verifiable build footer & guide links
+│   ├── data/
+│   │   └── toolCatalog.js             # Canonical 28-tool definitions, slugs & CSP headers
+│   ├── engine/
+│   │   └── clientEngine.js            # Client-side PDF-Lib, PDF.js, Three.js, GSAP & WebGL2 engine
+│   └── styles/
+│       └── globals.css                # Paper-and-ink design system + mobile-responsive layout
+├── scripts/
+│   └── sync-static.mjs                # Static HTML/CSS bundle generator from React components
 ├── tests/
-├── .github/                   # workflows, issue templates, FUNDING.yml
-├── vercel.json                # headers (CSP etc.) and clean URLs
-└── LICENSE · SECURITY.md · CONTRIBUTING.md · CHANGELOG.md
+│   └── zeroUploadGuard.test.mjs       # Automated Node.js test suite
+├── public/                            # Static assets, Service Worker (sw.js v5) & pre-rendered routes
+├── ror-backup-nouploadpdf.zip         # Archived backup of the legacy Ruby on Rails codebase
+└── vercel.json                        # Vercel cleanUrls, rewrites & strict security headers
 ```
 
 ## 🧰 Built with
 
-[pdf-lib](https://pdf-lib.js.org/) · [PDF.js](https://mozilla.github.io/pdf.js/) · [JSZip](https://stuk.github.io/jszip/) · [PeerJS](https://peerjs.com/) · [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) · WebCrypto · Canvas · IndexedDB · Service Worker · Vercel
+[Next.js](https://nextjs.org/) · [React](https://react.dev/) · [Node.js](https://nodejs.org/) · [Express](https://expressjs.com/) · [Three.js](https://threejs.org/) · [GSAP](https://gsap.com/) · [WebGL2](https://www.khronos.org/webgl/) · [pdf-lib](https://pdf-lib.js.org/) · [PDF.js](https://mozilla.github.io/pdf.js/) · [JSZip](https://stuk.github.io/jszip/) · [PeerJS](https://peerjs.com/) · [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) · WebCrypto · Canvas · IndexedDB · Service Worker · Vercel
 
 ## 🗺️ Roadmap
 
