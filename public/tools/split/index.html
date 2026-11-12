@@ -38,7 +38,7 @@
     <div class="window-drop-veil-card glass">
       <svg class="ui-icon-lg" viewBox="0 0 24 24" style="width:36px;height:36px;color:var(--brand);margin-bottom:10px;"><path d="M12 5v14M5 12h14"/></svg>
       <div style="font-size:20px; font-weight:700; letter-spacing:-0.02em; color:var(--ink);">Release to open in Studio</div>
-      <div class="mono" style="font-size:12px; color:var(--brand); margin-top:6px;">Processed in browser memory · 0 bytes uploaded</div>
+      <div class="mono" style="font-size:12px; color:var(--brand); margin-top:6px;">Processed in browser memory</div>
     </div>
   </div>
 
@@ -825,7 +825,7 @@
               <button type="button" class="demo-tab power-tab" data-power-tab="detective" onclick="switchPowerTab('detective')">3. Clean Metadata</button>
               <button type="button" class="demo-tab power-tab" data-power-tab="recipe" onclick="switchPowerTab('recipe')">4. Multi-Step</button>
             </div>
-            <span class="mono" style="font-size:11px; color:var(--brand);" id="ai-engine-status">● Runs 100% on your device</span>
+            <span class="mono" style="font-size:11px; color:var(--brand);" id="ai-engine-status">● Browser-only</span>
           </div>
 
           <div style="padding:24px;">
@@ -1179,16 +1179,7 @@
               <div class="mono" id="actionBarStatus" style="font-size:13px; color:var(--ink); font-weight:700;">Ready</div>
               <div class="mono" id="actionBarSubstatus" style="font-size:11.5px; color:var(--muted); margin-top:2px;">Processed locally on your device</div>
             </div>
-            <div style="display:flex; flex-direction:column; gap:8px;" id="actionBarButtons">
-              <button class="btn btn-success btn-magnetic" data-magnetic="true" style="width:100%; height:48px; font-size:15px; font-weight:600;" id="primaryToolActionBtn" onclick="executeCurrentTool()">Apply &amp; Download PDF</button>
-            </div>
-          </div>
-
-          <!-- Clean Privacy Assurance -->
-          <div style="margin-top:14px; padding:10px 12px; background:var(--brand-soft); border:1px solid var(--brand-border); border-radius:10px; font-size:11.5px; color:var(--brand); display:flex; align-items:center; gap:8px;">
-            <span class="privacy-dot"></span>
-            <span><strong>100% On-Device Privacy:</strong>0 bytes uploaded to any server.</span>
-          </div>
+            
         </aside>
       </div>
 
@@ -1499,10 +1490,10 @@
             </svg>
             <span style="font-size:16px; font-weight:700; color:var(--ink);">NoUpload<span style="color:var(--brand);">PDF</span></span>
           </div>
-          <p class="footer-tagline">The private PDF toolkit and wireless phone scanner that runs 100% on your device. No sign-ups, no cloud uploads, and no hidden limits.
+          <p class="footer-tagline">The private PDF toolkit and wireless phone scanner that runs locally in your browser. No sign-ups, no cloud uploads, and no hidden limits.
           </p>
           <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
-            <span class="popular-ribbon">100% On-Device Privacy</span>
+            <span class="popular-ribbon">Runs Locally</span>
             <span class="popular-ribbon">Works Offline</span>
             <span class="popular-ribbon">MIT Open Source</span>
           </div>
@@ -1544,7 +1535,7 @@
 
       <div class="footer-proof-strip" style="padding:12px 16px; margin-bottom:16px; background:var(--surface-sunk); border:1px solid var(--border); border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:13px;">
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; color:var(--muted);">
-          <span style="color:var(--brand); font-weight:700;">● 100% On-Device</span>
+          <span style="color:var(--brand); font-weight:700;">● Local-First</span>
           <span>Your PDFs are processed locally in your browser and never leave your device.</span>
         </div>
         <a href="https://github.com/avartan007/NoUploadPDF" target="_blank" rel="noopener" style="color:var(--brand); font-weight:600; text-decoration:none;">View source on GitHub ↗</a>
@@ -4661,7 +4652,7 @@ void main() {
       const title = document.getElementById('vaultOverlayTitle');
       const sub = document.getElementById('vaultOverlaySub');
       if (title) title.textContent = `READY ON YOUR DEVICE: ${filenameLabel || 'Document.pdf'}`;
-      if (sub) sub.textContent = ' File verified locally · 0 Bytes Uploaded';
+      if (sub) sub.textContent = ' File loaded locally';
       if (overlay) {
         overlay.classList.add('active');
         setTimeout(() =>overlay.classList.remove('active'), 850);
@@ -4859,7 +4850,7 @@ void main() {
 
       ctx.fillStyle = '#8A918E';
       ctx.font = '18px monospace';
-      ctx.fillText(' 100% On Your Device    Works Offline    0 Bytes Uploaded', 56, 365);
+      ctx.fillText(' Processed Locally  ·  Works Offline', 56, 365);
 
       const url = cnv.toDataURL('image/png');
       const a = document.createElement('a');
@@ -4955,7 +4946,7 @@ void main() {
       const { file, pages } = await getActiveDocumentText();
       const joined = pages.join(' ');
       const nums = (joined.match(/\b\d{4}\b|\$[\d,.]+/g) || ['1042', '$24,500.00']).slice(0, 5);
-      appendAiMsg('assistant', `<strong>Key Info Found in ${escapeHtml(file.name)}:</strong><br>• <strong>Numbers &amp; Totals:</strong> ${escapeHtml(nums.join(', '))}<br>• <strong>Privacy:</strong>Checked 100% on your device.`);
+      appendAiMsg('assistant', `<strong>Key Info Found in ${escapeHtml(file.name)}:</strong><br>• <strong>Numbers &amp; Totals:</strong> ${escapeHtml(nums.join(', '))}<br>• <strong>Privacy:</strong>Checked locally in your browser.`);
     }
 
     function enableTransformersWebGPU() {
@@ -8179,7 +8170,7 @@ window.qrcode = qrcode;
 
         const elapsed = Math.max(12, Math.round(performance.now() - t0));
         if (statusEl) statusEl.textContent = ` Done! Downloaded ${outputFilename} (${outputPageCount} page${outputPageCount === 1 ? '' : 's'})`;
-        if (subEl) subEl.textContent = `${formatBytes(outputBlob.size)} · Processed in ${elapsed} ms · 0 bytes uploaded`;
+        if (subEl) subEl.textContent = `${formatBytes(outputBlob.size)} · Processed in ${elapsed} ms`;
         if (btnsEl) {
           btnsEl.innerHTML = `
             <button class="btn btn-success" style="width:100%;" onclick="downloadLastOutput()">⬇ Download ${escapeHtml(outputFilename)} Again (${formatBytes(outputBlob.size)})</button>

@@ -3116,7 +3116,7 @@ void main() {
       const title = document.getElementById('vaultOverlayTitle');
       const sub = document.getElementById('vaultOverlaySub');
       if (title) title.textContent = `READY ON YOUR DEVICE: ${filenameLabel || 'Document.pdf'}`;
-      if (sub) sub.textContent = ' File verified locally · 0 Bytes Uploaded';
+      if (sub) sub.textContent = ' File loaded locally';
       if (overlay) {
         overlay.classList.add('active');
         setTimeout(() =>overlay.classList.remove('active'), 850);
@@ -3314,7 +3314,7 @@ void main() {
 
       ctx.fillStyle = '#8A918E';
       ctx.font = '18px monospace';
-      ctx.fillText(' 100% On Your Device    Works Offline    0 Bytes Uploaded', 56, 365);
+      ctx.fillText(' Processed Locally  ·  Works Offline', 56, 365);
 
       const url = cnv.toDataURL('image/png');
       const a = document.createElement('a');
@@ -3410,7 +3410,7 @@ void main() {
       const { file, pages } = await getActiveDocumentText();
       const joined = pages.join(' ');
       const nums = (joined.match(/\b\d{4}\b|\$[\d,.]+/g) || ['1042', '$24,500.00']).slice(0, 5);
-      appendAiMsg('assistant', `<strong>Key Info Found in ${escapeHtml(file.name)}:</strong><br>• <strong>Numbers &amp; Totals:</strong> ${escapeHtml(nums.join(', '))}<br>• <strong>Privacy:</strong>Checked 100% on your device.`);
+      appendAiMsg('assistant', `<strong>Key Info Found in ${escapeHtml(file.name)}:</strong><br>• <strong>Numbers &amp; Totals:</strong> ${escapeHtml(nums.join(', '))}<br>• <strong>Privacy:</strong>Checked locally in your browser.`);
     }
 
     function enableTransformersWebGPU() {
@@ -6634,7 +6634,7 @@ window.qrcode = qrcode;
 
         const elapsed = Math.max(12, Math.round(performance.now() - t0));
         if (statusEl) statusEl.textContent = ` Done! Downloaded ${outputFilename} (${outputPageCount} page${outputPageCount === 1 ? '' : 's'})`;
-        if (subEl) subEl.textContent = `${formatBytes(outputBlob.size)} · Processed in ${elapsed} ms · 0 bytes uploaded`;
+        if (subEl) subEl.textContent = `${formatBytes(outputBlob.size)} · Processed in ${elapsed} ms`;
         if (btnsEl) {
           btnsEl.innerHTML = `
             <button class="btn btn-success" style="width:100%;" onclick="downloadLastOutput()">⬇ Download ${escapeHtml(outputFilename)} Again (${formatBytes(outputBlob.size)})</button>
