@@ -1,4 +1,4 @@
-name: NoUploadPDF CI (Unit + Playwright E2E)
+name: NoUploadPDF CI (Next.js + React + Node.js)
 
 on:
   push:
@@ -13,16 +13,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          ruby-version: '3.3'
+          node-version: '20'
 
-      - name: Run Ruby Minitest ToolCatalog Suite
-        run: ruby -Itest test/models/tool_catalog_test.rb
+      - name: Verify Static Bundle Sync
+        run: node scripts/sync-static.mjs
 
-      - name: Verify All 28 Static SEO Tool Pages Exist
+      - name: Run Node.js Test Suite (28 Tools, HTTP 403 Upload Guard & React Components)
+        run: node --test tests/zeroUploadGuard.test.mjs
+
+      - name: Verify Static Route & Tool Pages Exist
         run: |
+          test -f public/index.html
+          test -f public/styles.css
           test -f public/tools/merge-pdf/index.html
           test -f public/tools/compress-pdf/index.html
           test -f public/tools/redact-pdf/index.html
