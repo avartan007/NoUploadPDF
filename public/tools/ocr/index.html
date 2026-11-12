@@ -3558,13 +3558,14 @@
         }
 
         const elapsed = Math.max(12, Math.round(performance.now() - t0));
-        if (statusEl) statusEl.textContent = ` Downloaded ${outputFilename}!`;
-        if (subEl) subEl.textContent = `${formatBytes(outputBlob.size)} · ${outputPageCount} pages · 0 bytes uploaded`;
+        if (statusEl) statusEl.textContent = `✓ Applied ${tool.name} (${outputFilename})`;
+        if (subEl) subEl.textContent = `${formatBytes(outputBlob.size)} · ${outputPageCount} pages · Ready for more edits or download`;
 
         if (btnsEl) {
           btnsEl.innerHTML = `
-            <button class="btn btn-success" style="width:100%; height:46px; font-size:14.5px; font-weight:600;" onclick="downloadLastOutput()">⬇ Download ${escapeHtml(outputFilename)} Again</button>
-            <button class="btn btn-secondary" style="width:100%; margin-top:6px;" onclick="toggleCustomToolMenu(event)">Next Tool (Auto-Keeps Changes) →</button>
+            <button class="btn btn-success" style="width:100%; height:46px; font-size:14.5px; font-weight:600;" onclick="downloadLastOutput()">⬇ Download ${escapeHtml(outputFilename)}</button>
+            <button class="btn btn-secondary" style="width:100%; margin-top:6px;" onclick="toggleCustomToolMenu(event)">Continue to Next Tool (Keeps Changes) →</button>
+            <button class="btn btn-ghost btn-tiny" style="width:100%; margin-top:4px;" onclick="executeCurrentTool()">↻ Re-apply ${escapeHtml(tool.name)}</button>
           `;
         }
 
@@ -3572,16 +3573,6 @@
         renderCustomToolMenuItems("");
         renderMoreTools(tool.id);
         await renderLiveVisualPreview();
-
-        // 1-Click Instant Download
-        const dlUrl = URL.createObjectURL(outputBlob);
-        const a = document.createElement("a");
-        a.href = dlUrl;
-        a.download = outputFilename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() =>URL.revokeObjectURL(dlUrl), 4000);
 
       } catch (err) {
         console.error("[Studio] Tool execution error:", err);
