@@ -1,7 +1,29 @@
 {
-  "name": "nouploadpdf-rails",
-  "version": "1.0.0",
-  "description": "Private, local-first 28-tool PDF studio built with Ruby on Rails & Hotwire Stimulus + Mac/iPhone Continuity Scanner Bridge.",
+  "name": "nouploadpdf-nextjs",
+  "version": "2.0.0",
+  "private": false,
+  "type": "module",
+  "description": "Private, local-first PDF studio built with Next.js, React, Node.js/Express, Three.js, GSAP & WebGL2 (0 bytes uploaded). 28 tools + WebRTC QR Phone Scanner.",
+  "keywords": [
+    "nextjs",
+    "react",
+    "nodejs",
+    "express",
+    "threejs",
+    "gsap",
+    "webgl2",
+    "pdf-tools",
+    "pdf",
+    "privacy",
+    "local-first",
+    "webrtc",
+    "webassembly",
+    "redaction",
+    "ocr",
+    "zero-knowledge",
+    "offline-first",
+    "pwa"
+  ],
   "author": "avartan007",
   "license": "MIT",
   "repository": {
@@ -9,8 +31,24 @@
     "url": "https://github.com/avartan007/NoUploadPDF.git"
   },
   "scripts": {
-    "dev": "./bin/dev",
-    "build": "echo 'Static public/ bundle ready for Vercel'",
-    "start": "./bin/dev"
+    "dev": "node scripts/sync-static.mjs && node server/index.js",
+    "build": "node scripts/sync-static.mjs",
+    "start": "node server/index.js",
+    "sync": "node scripts/sync-static.mjs",
+    "test": "node --test tests/zeroUploadGuard.test.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "gsap": "^3.12.5",
+    "jszip": "^3.10.1",
+    "next": "^14.2.15",
+    "pdf-lib": "^1.17.1",
+    "peerjs": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.128.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

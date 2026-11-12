@@ -1,18 +1,16 @@
-# GitHub Linguist overrides — classify static/compiled export artifacts as generated/vendored
-# so the repository language breakdown reflects the Ruby on Rails application source code.
-index.html linguist-generated=true linguist-vendored=true
-public/** linguist-generated=true linguist-vendored=true
-public/**/* linguist-generated=true linguist-vendored=true
-docs/** linguist-documentation=true linguist-detectable=false
-app/views/pages/home.html.erb linguist-generated=true
-app/assets/stylesheets/application.css linguist-generated=true
-vendor/** linguist-vendored=true
-lib/*.js linguist-vendored=true
-test/*.mjs linguist-vendored=true
+# Force GitHub Linguist to report this repository as JavaScript / Next.js / React + CSS
+# and ignore generated static HTML mirrors and the archived RoR zip backup.
 
-# Explicitly mark Ruby on Rails application files as detectable Ruby source
-*.rb linguist-language=Ruby linguist-detectable=true
-Rakefile linguist-language=Ruby linguist-detectable=true
-Gemfile linguist-language=Ruby linguist-detectable=true
-config.ru linguist-language=Ruby linguist-detectable=true
-bin/* linguist-language=Ruby linguist-detectable=true
+index.html linguist-generated=true
+public/** linguist-generated=true
+vendor/** linguist-vendored=true
+docs/** linguist-documentation=true
+*.md linguist-documentation=true
+*.zip binary linguist-generated=true
+
+src/**/*.js linguist-language=JavaScript
+src/**/*.jsx linguist-language=JavaScript
+server/**/*.js linguist-language=JavaScript
+scripts/**/*.mjs linguist-language=JavaScript
+tests/**/*.mjs linguist-language=JavaScript
+src/styles/**/*.css linguist-language=CSS
