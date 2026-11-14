@@ -3922,62 +3922,112 @@ html[data-theme="dark"] .focal-drop-target.transparent-drop-zone {
   background: var(--bg);
 }
 
-/* Liquid Ink/Water Ripple Effect on the word "leave" (#heroLeaveRippleWord) */
-#heroLeaveRippleWord {
-  position: relative;
-  display: inline-block;
+/* 3D PDF Page Slap Overlay (flies from tornado, slaps onto screen over "leave", then falls away) */
+#heroLeaveWord {
   color: var(--brand);
-  cursor: pointer;
-  padding: 0 0.05em;
-}
-
-#heroLeaveRippleWord .leave-word-text {
-  position: relative;
-  z-index: 2;
   display: inline-block;
-  filter: url(#leaveWordRippleFilter);
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
 }
 
-#heroLeaveRippleWord:hover .leave-word-text {
-  transform: scale(1.03);
-}
-
-#heroLeaveRippleWord .leave-ripple-ring {
-  position: absolute;
-  left: 50%;
-  top: 54%;
-  width: 108%;
-  height: 78%;
-  transform: translate(-50%, -50%) scale(0.75);
-  border-radius: 999px;
-  border: 1.5px solid color-mix(in srgb, var(--brand) 55%, transparent);
-  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--brand) 16%, transparent) 0%, transparent 72%);
-  opacity: 0;
+.slap-page-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 210px;
+  height: 272px;
+  padding: 16px 15px 14px;
+  border-radius: 8px;
+  background: #FCFBF8;
+  border: 1.5px solid #CFC9BC;
+  box-shadow: 0 24px 52px -12px rgba(10, 15, 12, 0.34), 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 65;
   pointer-events: none;
-  z-index: 1;
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  transform-style: preserve-3d;
+  transform-origin: center top;
+  will-change: transform, opacity;
+  overflow: hidden;
 }
 
-#heroLeaveRippleWord.ripple-active .leave-ripple-ring.r1 {
-  animation: leaveRippleExpand 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.slap-page-corner {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(225deg, #E5E0D5 48%, #FFFFFF 50%);
+  border-bottom-left-radius: 4px;
 }
 
-#heroLeaveRippleWord.ripple-active .leave-ripple-ring.r2 {
-  animation: leaveRippleExpand 1.55s cubic-bezier(0.16, 1, 0.3, 1) 0.16s forwards;
+.slap-page-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #E4E4E7;
 }
 
-@keyframes leaveRippleExpand {
-  0% {
-    opacity: 0.78;
-    transform: translate(-50%, -50%) scale(0.72);
-  }
-  70% {
-    opacity: 0.28;
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.52);
-  }
+.slap-badge {
+  background: #141615;
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.slap-title {
+  font-family: var(--font-sans);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #18181B;
+}
+
+.slap-line {
+  height: 5px;
+  border-radius: 2px;
+  background: #D4D4D8;
+}
+
+.slap-line.w90 { width: 92%; }
+.slap-line.w85 { width: 84%; }
+.slap-line.w75 { width: 72%; }
+
+.slap-redact {
+  height: 16px;
+  width: 88%;
+  border-radius: 2px;
+  background: #0A0A0A;
+}
+
+.slap-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px dashed #E4E4E7;
+}
+
+.slap-sig {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: #166534;
+}
+
+.slap-seal {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #166534;
+  background: rgba(22, 101, 52, 0.12);
+  border: 1px solid #166534;
+  padding: 2px 6px;
+  border-radius: 3px;
 }
 
 /* Clean 2-Column Scanner Layout & Page Container Polish */
