@@ -7801,69 +7801,125 @@ window.qrcode = qrcode;
       renderer.toneMappingExposure = 1.06;
 
       // ===================================================================
-      // HIGH-DPI CRISP PDF PAGE TEXTURES FROM EARLIER (512x660 CanvasTexture)
-      // Sharp #FCFBF8 paper, #166534/#18181B PDF badge, financial tables,
-      // black-out redaction bars, emerald vector signature & local seal!
+      // REALISTIC DOCUMENT PAGE TEXTURES (384x495 CanvasTexture)
+      // 3 distinct real-world documents: NDA Redaction, Invoice #4021, ID Scan
       // ===================================================================
       function createRealisticPdfPageTexture(variant) {
         const c = document.createElement("canvas");
-        c.width = 256;
-        c.height = 330;
+        c.width = 384;
+        c.height = 495;
         const ctx = c.getContext("2d");
+        ctx.scale(1.5, 1.5);
 
+        // Warm cotton paper + subtle edge vignette
         ctx.fillStyle = "#FCFBF8";
         ctx.fillRect(0, 0, 256, 330);
-        ctx.strokeStyle = "#D4CFC4";
-        ctx.lineWidth = 3.5;
-        ctx.strokeRect(2, 2, 252, 326);
+        ctx.strokeStyle = "#CFC9BC";
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(1.5, 1.5, 253, 327);
 
-        // Top header bar + PDF badge
-        ctx.fillStyle = variant % 2 === 0 ? "#166534" : "#18181B";
-        ctx.fillRect(20, 20, 48, 18);
+        // Subtle folded top-right corner accent
+        ctx.fillStyle = "#EFECE4";
+        ctx.beginPath();
+        ctx.moveTo(234, 2);
+        ctx.lineTo(254, 22);
+        ctx.lineTo(234, 22);
+        ctx.closePath();
+        ctx.fill();
+
+        // Top header bar + document type badge
+        ctx.fillStyle = variant === 1 ? "#166534" : "#141615";
+        ctx.fillRect(20, 18, 54, 17);
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 10px monospace";
-        ctx.fillText("PDF", 31, 33);
+        ctx.font = "bold 9.5px monospace";
+        ctx.fillText(variant === 0 ? "NDA" : (variant === 1 ? "INV" : "SCAN"), 28, 30);
 
-        ctx.fillStyle = "#27272A";
-        ctx.fillRect(78, 22, 132, 6);
-        ctx.fillStyle = "#A1A1AA";
-        ctx.fillRect(78, 33, 86, 4);
+        ctx.fillStyle = "#18181B";
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillText(
+          variant === 0 ? "CONFIDENTIAL AGREEMENT" : (variant === 1 ? "INVOICE #4021 · Q4" : "IDENTITY RECORD · 216 DPI"),
+          82,
+          28
+        );
+        ctx.fillStyle = "#E4E4E7";
+        ctx.fillRect(20, 42, 214, 1.5);
 
-        // Realistic document body lines + table / redaction blocks
-        for (let r = 0; r < 13; r++) {
-          const y = 58 + r * 17;
-          if (variant === 0 && (r === 4 || r === 5)) {
-            ctx.fillStyle = "#18181B";
-            ctx.fillRect(20, y - 2, 168, 10);
-          } else if (variant === 1 && r >= 5 && r <= 8) {
-            ctx.strokeStyle = "#D4D4D8";
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(20, y - 3, 214, 13);
-            ctx.fillStyle = "#71717A";
-            ctx.fillRect(26, y + 1, 76, 5);
-            ctx.fillStyle = "#166534";
-            ctx.fillRect(178, y + 1, 46, 5);
-          } else {
-            ctx.fillStyle = r % 4 === 0 ? "#52525B" : "#A1A1AA";
-            const w = r % 3 === 2 ? 142 : 212;
-            ctx.fillRect(20, y, w, 5);
+        if (variant === 0) {
+          for (let r = 0; r < 12; r++) {
+            const y = 58 + r * 17;
+            if (r === 3 || r === 4 || r === 8) {
+              ctx.fillStyle = "#0A0A0A";
+              ctx.fillRect(20, y - 3, r === 8 ? 136 : 186, 11);
+              if (r === 3) {
+                ctx.fillStyle = "#DC2626";
+                ctx.font = "bold 7.5px monospace";
+                ctx.fillText("REDACTED", 210, y + 6);
+              }
+            } else {
+              ctx.fillStyle = r % 4 === 0 ? "#3F3F46" : "#A1A1AA";
+              ctx.fillRect(20, y, r % 3 === 2 ? 148 : 212, 4.5);
+            }
           }
+        } else if (variant === 1) {
+          for (let r = 0; r < 5; r++) {
+            const y = 58 + r * 24;
+            ctx.strokeStyle = "#E4E4E7";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(20, y, 214, 18);
+            ctx.fillStyle = r === 4 ? "#166534" : "#52525B";
+            ctx.fillRect(26, y + 6, 86, 5);
+            ctx.fillStyle = r === 4 ? "#166534" : "#18181B";
+            ctx.font = "bold 9px monospace";
+            ctx.fillText(r === 4 ? "$24,500.00" : `$${(r + 1) * 4},200`, 172, y + 12);
+          }
+          for (let r = 0; r < 4; r++) {
+            ctx.fillStyle = "#A1A1AA";
+            ctx.fillRect(20, 194 + r * 15, r === 3 ? 130 : 210, 4.5);
+          }
+        } else {
+          // Photo ID box silhouette + structured lines + subtle diagonal watermark
+          ctx.fillStyle = "#E4E4E7";
+          ctx.fillRect(20, 56, 62, 76);
+          ctx.fillStyle = "#A1A1AA";
+          ctx.beginPath();
+          ctx.arc(51, 82, 13, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillRect(32, 100, 38, 22);
+          for (let r = 0; r < 5; r++) {
+            ctx.fillStyle = r === 0 ? "#18181B" : "#71717A";
+            ctx.fillRect(94, 62 + r * 15, r % 2 === 0 ? 132 : 98, 5);
+          }
+          for (let r = 0; r < 6; r++) {
+            ctx.fillStyle = "#A1A1AA";
+            ctx.fillRect(20, 152 + r * 17, r === 5 ? 140 : 212, 4.5);
+          }
+          ctx.save();
+          ctx.translate(128, 175);
+          ctx.rotate(-0.45);
+          ctx.fillStyle = "rgba(22, 101, 52, 0.14)";
+          ctx.font = "bold 24px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText("LOCAL ONLY", 0, 0);
+          ctx.restore();
         }
 
-        // Signature scribble & green local-device verification seal at bottom
+        // Handwritten ink signature & green local-device verification seal at bottom
         ctx.strokeStyle = "#166534";
-        ctx.lineWidth = 2.4;
+        ctx.lineWidth = 2.2;
         ctx.beginPath();
-        ctx.moveTo(26, 298);
-        ctx.bezierCurveTo(44, 282, 58, 305, 78, 288);
-        ctx.bezierCurveTo(92, 276, 108, 298, 134, 290);
+        ctx.moveTo(24, 298);
+        ctx.bezierCurveTo(42, 280, 58, 306, 78, 288);
+        ctx.bezierCurveTo(92, 276, 110, 298, 136, 289);
         ctx.stroke();
 
-        ctx.fillStyle = "rgba(22, 101, 52, 0.14)";
-        ctx.fillRect(166, 282, 68, 24);
+        ctx.fillStyle = "rgba(22, 101, 52, 0.12)";
+        ctx.fillRect(160, 280, 74, 24);
         ctx.strokeStyle = "#166534";
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(166, 282, 68, 24);
+        ctx.lineWidth = 1.4;
+        ctx.strokeRect(160, 280, 74, 24);
+        ctx.fillStyle = "#166534";
+        ctx.font = "bold 8px monospace";
+        ctx.fillText("0B UPLOAD", 171, 295);
 
         const tex = new THREE.CanvasTexture(c);
         tex.anisotropy = 2;
@@ -7877,14 +7933,14 @@ window.qrcode = qrcode;
         createRealisticPdfPageTexture(2)
       ];
 
-      // Aerodynamic curved PDF sheet geometry
+      // Aerodynamic curved PDF sheet geometry with natural paper flutter
       function createCurvedPageGeometry(w, h) {
-        const g = new THREE.PlaneGeometry(w, h, 6, 6);
+        const g = new THREE.PlaneGeometry(w, h, 7, 7);
         const pos = g.attributes.position;
         for (let i = 0; i < pos.count; i++) {
           const x = pos.getX(i);
           const y = pos.getY(i);
-          pos.setZ(i, Math.sin(x * 2.5) * 0.065 + Math.cos(y * 1.9) * 0.042);
+          pos.setZ(i, Math.sin(x * 2.8 + y * 1.1) * 0.075 + Math.cos(y * 2.1) * 0.048);
         }
         g.computeVertexNormals();
         return g;
