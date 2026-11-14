@@ -4227,3 +4227,119 @@ html, body {
   line-height: 1.6;
   color: var(--ink);
 }
+
+/* =====================================================================
+   APPLE LIQUID GLASS (Refractive Optical Displacement + Specular Rim)
+   ===================================================================== */
+.focal-drop-card.liquid-glass {
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.44) 0%,
+    rgba(255, 255, 255, 0.14) 48%,
+    rgba(255, 255, 255, 0.28) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(18px) saturate(195%) brightness(1.04);
+  -webkit-backdrop-filter: blur(18px) saturate(195%) brightness(1.04);
+  box-shadow:
+    0 24px 56px -16px rgba(10, 15, 12, 0.16),
+    0 4px 14px -4px rgba(10, 15, 12, 0.06),
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.92),
+    inset 0 -1.5px 2px rgba(255, 255, 255, 0.32),
+    inset 1.5px 0 1.5px rgba(255, 255, 255, 0.56),
+    inset -1px 0 2px rgba(31, 122, 77, 0.14);
+  transition: transform 260ms var(--ease), border-color 240ms var(--ease), box-shadow 260ms var(--ease);
+}
+
+@supports (backdrop-filter: url(#appleLiquidGlassFilter) blur(1px)) {
+  .focal-drop-card.liquid-glass {
+    backdrop-filter: url(#appleLiquidGlassFilter) blur(9px) saturate(195%) brightness(1.05);
+  }
+}
+
+html[data-theme="dark"] .focal-drop-card.liquid-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.03) 50%,
+    rgba(74, 222, 128, 0.06) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 28px 68px -18px rgba(0, 0, 0, 0.65),
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.36),
+    inset 0 -1.5px 2px rgba(255, 255, 255, 0.1),
+    inset 1px 0 1px rgba(255, 255, 255, 0.18),
+    inset -1px 0 1.5px rgba(74, 222, 128, 0.16);
+}
+
+.focal-drop-card.liquid-glass:hover {
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 28px 64px -16px rgba(10, 15, 12, 0.2),
+    0 0 0 1px rgba(31, 122, 77, 0.18),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.96),
+    inset 0 -1.5px 2px rgba(255, 255, 255, 0.38),
+    inset 1.5px 0 1.5px rgba(255, 255, 255, 0.65);
+}
+
+html[data-theme="dark"] .focal-drop-card.liquid-glass:hover {
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow:
+    0 32px 72px -18px rgba(0, 0, 0, 0.72),
+    0 0 0 1px rgba(74, 222, 128, 0.22),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.45),
+    inset 0 -1.5px 2px rgba(255, 255, 255, 0.14);
+}
+
+.liquid-glass-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+  background: radial-gradient(
+    340px circle at var(--lg-x, 28%) var(--lg-y, 22%),
+    rgba(255, 255, 255, 0.48),
+    transparent 62%
+  );
+  opacity: 0.72;
+  transition: opacity 220ms ease;
+}
+
+html[data-theme="dark"] .liquid-glass-sheen {
+  background: radial-gradient(
+    340px circle at var(--lg-x, 28%) var(--lg-y, 22%),
+    rgba(255, 255, 255, 0.16),
+    transparent 62%
+  );
+}
+
+.focal-drop-card.liquid-glass > *:not(.liquid-glass-sheen) {
+  position: relative;
+  z-index: 2;
+}
+
+.focal-drop-card.liquid-glass .focal-drop-target.transparent-drop-zone {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(31, 122, 77, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+html[data-theme="dark"] .focal-drop-card.liquid-glass .focal-drop-target.transparent-drop-zone {
+  background: rgba(10, 14, 12, 0.2);
+  border-color: rgba(74, 222, 128, 0.36);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.site-header.scrolled {
+  backdrop-filter: blur(24px) saturate(195%);
+  -webkit-backdrop-filter: blur(24px) saturate(195%);
+  box-shadow:
+    0 8px 24px -12px rgba(0, 0, 0, 0.08),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.45);
+}
+

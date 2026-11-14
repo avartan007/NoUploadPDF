@@ -125,6 +125,11 @@
         <feTurbulence id="leaveRippleTurbulence" type="turbulence" baseFrequency="0.022 0.048" numOctaves="2" seed="7" result="rippleNoise" />
         <feDisplacementMap id="leaveRippleDispMap" in="SourceGraphic" in2="rippleNoise" scale="0" xChannelSelector="R" yChannelSelector="G" />
       </filter>
+      <filter id="appleLiquidGlassFilter" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012 0.014" numOctaves="2" seed="5" result="glassNoise" />
+        <feGaussianBlur in="glassNoise" stdDeviation="3.2" result="smoothLens" />
+        <feDisplacementMap in="SourceGraphic" in2="smoothLens" scale="32" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
     </defs>
   </svg>
 
@@ -174,7 +179,8 @@
         </div>
 
         <!-- Ultra-Transparent Minimalist Drop Box ("Drop your files here") -->
-        <div class="focal-drop-card transparent-drop-shell hero-stagger-item" id="heroBoundaryCard">
+        <div class="focal-drop-card transparent-drop-shell liquid-glass hero-stagger-item" id="heroBoundaryCard">
+          <div class="liquid-glass-sheen" aria-hidden="true"></div>
           <div class="focal-drop-target transparent-drop-zone" id="heroDropZone"
                onclick="document.getElementById('globalFileInput').click()"
                ondragover="handleDragOver(event, 'heroDropZone')"
@@ -10058,7 +10064,26 @@ window.qrcode = qrcode;
 
       requestAnimationFrame(animateHeroLoop);
     }
-</script>
+
+
+  // Cursor-tracking specular sheen for Apple Liquid Glass hero drop card
+  (function initLiquidGlassSpecularTracking() {
+    const glassCard = document.getElementById("heroBoundaryCard");
+    if (!glassCard || glassCard.dataset.lgBound) return;
+    glassCard.dataset.lgBound = "1";
+    glassCard.addEventListener("pointermove", (e) => {
+      const rect = glassCard.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const xPct = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+      const yPct = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+      glassCard.style.setProperty("--lg-x", `${xPct}%`);
+      glassCard.style.setProperty("--lg-y", `${yPct}%`);
+    });
+    glassCard.addEventListener("pointerleave", () => {
+      glassCard.style.setProperty("--lg-x", "28%");
+      glassCard.style.setProperty("--lg-y", "22%");
+    });
+  })();</script>
 
 </body>
 </html>
