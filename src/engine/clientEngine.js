@@ -7795,9 +7795,8 @@ window.qrcode = qrcode;
         return;
       }
 
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      renderer.shadowMap.enabled = false;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.06;
 
@@ -7808,10 +7807,9 @@ window.qrcode = qrcode;
       // ===================================================================
       function createRealisticPdfPageTexture(variant) {
         const c = document.createElement("canvas");
-        c.width = 512;
-        c.height = 660;
+        c.width = 256;
+        c.height = 330;
         const ctx = c.getContext("2d");
-        ctx.scale(2, 2);
 
         ctx.fillStyle = "#FCFBF8";
         ctx.fillRect(0, 0, 256, 330);
@@ -7868,7 +7866,7 @@ window.qrcode = qrcode;
         ctx.strokeRect(166, 282, 68, 24);
 
         const tex = new THREE.CanvasTexture(c);
-        tex.anisotropy = 8;
+        tex.anisotropy = 2;
         tex.needsUpdate = true;
         return tex;
       }
@@ -7896,10 +7894,9 @@ window.qrcode = qrcode;
       // SCENE A (INNER SCREEN SCENE): Rendered to 1600x1000 WebGLRenderTarget
       // Mapped directly onto the 3D Laptop Retina Display (`screenMesh`)
       // ===================================================================
-      const RT = new THREE.WebGLRenderTarget(1600, 1000, {
+      const RT = new THREE.WebGLRenderTarget(800, 500, {
         minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        samples: 4
+        magFilter: THREE.LinearFilter
       });
       const innerScene = new THREE.Scene();
       const isDarkInit = document.documentElement.getAttribute("data-theme") === "dark";
@@ -7916,15 +7913,16 @@ window.qrcode = qrcode;
       innerScene.add(innerKey);
 
       const innerPageGeom = createCurvedPageGeometry(0.84, 1.10);
-      const INNER_COUNT = 96;
+      const INNER_COUNT = 28;
+      const innerMats = crispPageTextures.map(tex => new THREE.MeshStandardMaterial({
+        map: tex,
+        side: THREE.DoubleSide,
+        roughness: 0.48,
+        metalness: 0.04
+      }));
       const innerDocs = [];
       for (let i = 0; i < INNER_COUNT; i++) {
-        const mat = new THREE.MeshStandardMaterial({
-          map: crispPageTextures[i % 3],
-          side: THREE.DoubleSide,
-          roughness: 0.48,
-          metalness: 0.04
-        });
+        const mat = innerMats[i % 3];
         const mesh = new THREE.Mesh(innerPageGeom, mat);
         const cIdx = i % 4;
         const cOrigin = new THREE.Vector3(
@@ -8002,9 +8000,10 @@ window.qrcode = qrcode;
       laptopGroup.add(wellMesh);
 
       const kbCanvas = document.createElement("canvas");
-      kbCanvas.width = 1024;
-      kbCanvas.height = 420;
+      kbCanvas.width = 512;
+      kbCanvas.height = 210;
       const kctx = kbCanvas.getContext("2d");
+      kctx.scale(0.5, 0.5);
       kctx.fillStyle = "#121317";
       kctx.fillRect(0, 0, 1024, 420);
       for (let r = 0; r < 6; r++) {
@@ -8030,7 +8029,7 @@ window.qrcode = qrcode;
         }
       }
       const kbTex = new THREE.CanvasTexture(kbCanvas);
-      kbTex.anisotropy = 4;
+      kbTex.anisotropy = 2;
       const kbPlane = new THREE.Mesh(
         new THREE.PlaneGeometry(3.78, 1.46),
         new THREE.MeshStandardMaterial({ map: kbTex, roughness: 0.5, metalness: 0.15 })
@@ -8132,7 +8131,7 @@ window.qrcode = qrcode;
       // Swirl across the ENTIRE full-screen viewport during the intro,
       // then funnel compactly into the minimized 3D laptop!
       // ===================================================================
-      const FULLSCREEN_PAGE_COUNT = 76;
+      const FULLSCREEN_PAGE_COUNT = 32;
       const fullScreenPageGeom = createCurvedPageGeometry(0.96, 1.26);
       const fullScreenTornadoGroup = new THREE.Group();
       outerScene.add(fullScreenTornadoGroup);
@@ -8144,16 +8143,18 @@ window.qrcode = qrcode;
         new THREE.Vector3( 13.5, -7.5, -2.5)
       ];
 
+      const outerMats = crispPageTextures.map(tex => new THREE.MeshStandardMaterial({
+        map: tex,
+        side: THREE.DoubleSide,
+        roughness: 0.48,
+        metalness: 0.04,
+        transparent: true,
+        opacity: 0.97
+      }));
+
       const fullScreenPages = [];
       for (let i = 0; i < FULLSCREEN_PAGE_COUNT; i++) {
-        const mat = new THREE.MeshStandardMaterial({
-          map: crispPageTextures[i % 3],
-          side: THREE.DoubleSide,
-          roughness: 0.48,
-          metalness: 0.04,
-          transparent: true,
-          opacity: 0.97
-        });
+        const mat = outerMats[i % 3];
         const mesh = new THREE.Mesh(fullScreenPageGeom, mat);
 
         const cBase = fourCorners[i % 4];
@@ -8300,37 +8301,32 @@ window.qrcode = qrcode;
 
         introTimeline.to(G, {
           gather: 1,
-          duration: 2.25,
+          duration: 1.25,
           ease: "expo.out"
-        }, 0.15);
+        }, 0.08);
 
         introTimeline.to(G, {
-          spinSpeed: 2.25,
-          duration: 2.0,
+          spinSpeed: 2.0,
+          duration: 1.15,
           ease: "power2.inOut"
-        }, 0.35);
+        }, 0.15);
 
-        // STAGE 3 (2.40s -> 4.35s): Laptop zooms out & minimizes sleekly (`laptopScale: 0.48`) behind the text area
-        // while the full-screen tornado funnels into the minimized laptop!
-        introTimeline.call(() => {
-        }, null, 2.40);
-
+        // STAGE 3 (1.25s -> 2.35s): Laptop zooms out & minimizes sleekly (`laptopScale: 0.48`) behind the text area
         introTimeline.to(G, {
           zoomOut: 1,
           trapFactor: 1,
           laptopScale: 0.48,
           laptopShiftX: 0.35,
           spinSpeed: 0.72,
-          duration: 1.95,
+          duration: 1.15,
           ease: "expo.inOut"
-        }, 2.40);
+        }, 1.25);
 
-        // STAGE 4 (4.15s): Header + Hero Text ("Your PDFs never leave your device.") bleed in together
-        // via our Theme-Changer WebGL2 InkBleedEngine shader + Liquid Ripple on "leave"!
+        // STAGE 4 (2.25s): Header + Hero Text bleed in together
         introTimeline.call(() => {
           syncSize();
           runHeadlineInkBleedReveal({ x: 0.46, y: 0.48 });
-        }, null, 4.15);
+        }, null, 2.25);
       }
 
       function revealHeroImmediately() {
@@ -8437,8 +8433,20 @@ window.qrcode = qrcode;
 
       let lastTime = performance.now();
       let elapsed = 0;
+      let frameCount = 0;
+      let rafId = 0;
+
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && !prefersReduced) {
+          lastTime = performance.now();
+          if (!rafId) rafId = requestAnimationFrame(animateHeroLoop);
+        }
+      });
 
       function animateHeroLoop(now) {
+        rafId = 0;
+        if (document.hidden) return;
+        frameCount++;
         const dt = Math.min(0.05, (now - lastTime) / 1000);
         lastTime = now;
         elapsed += dt;
@@ -8550,18 +8558,20 @@ window.qrcode = qrcode;
         outerCam.position.copy(targetLook).addScaledVector(dir, dist);
         outerCam.lookAt(targetLook);
 
-        renderer.setRenderTarget(RT);
-        renderer.render(innerScene, innerCam);
+        if (!HeroTornadoController.isIntroDone || frameCount % 3 === 0) {
+          renderer.setRenderTarget(RT);
+          renderer.render(innerScene, innerCam);
+        }
 
         renderer.setRenderTarget(null);
         renderer.render(outerScene, outerCam);
 
-        if (!prefersReduced) {
-          requestAnimationFrame(animateHeroLoop);
+        if (!prefersReduced && !document.hidden) {
+          rafId = requestAnimationFrame(animateHeroLoop);
         }
       }
 
-      requestAnimationFrame(animateHeroLoop);
+      rafId = requestAnimationFrame(animateHeroLoop);
     }
 
 
