@@ -8539,6 +8539,25 @@ window.qrcode = qrcode;
     }
 
 
+  // Cursor-tracking specular sheen for Apple Liquid Glass hero drop card
+  (function initLiquidGlassSpecularTracking() {
+    const glassCard = document.getElementById("heroBoundaryCard");
+    if (!glassCard || glassCard.dataset.lgBound) return;
+    glassCard.dataset.lgBound = "1";
+    glassCard.addEventListener("pointermove", (e) => {
+      const rect = glassCard.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const xPct = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+      const yPct = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+      glassCard.style.setProperty("--lg-x", `${xPct}%`);
+      glassCard.style.setProperty("--lg-y", `${yPct}%`);
+    });
+    glassCard.addEventListener("pointerleave", () => {
+      glassCard.style.setProperty("--lg-x", "28%");
+      glassCard.style.setProperty("--lg-y", "22%");
+    });
+  })();
+
   // Trigger DOMContentLoaded handlers immediately if document is already interactive/complete (Next.js hydration)
   if (document.readyState === "interactive" || document.readyState === "complete") {
     window.dispatchEvent(new Event("DOMContentLoaded"));
