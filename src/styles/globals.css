@@ -3475,10 +3475,10 @@ html.theme-fade *::after {
 /* Subtracted Hero Stage with Full-Bleed Three.js Paper Tornado Canvas */
 .landing-hero-subtracted {
   position: relative;
-  min-height: clamp(520px, 76vh, 700px);
+  min-height: calc(100vh - 56px);
   display: flex;
-  align-items: center;
-  padding: 36px 0 64px;
+  align-items: flex-start;
+  padding: 52px 0 112px;
   overflow: hidden;
   border-bottom: 1px solid var(--border);
 }
