@@ -2830,7 +2830,7 @@ void main() {
       } catch {}
       try {
         if (typeof localStorage !== "undefined") {
-          const allowedKeys = new Set(["nouploadpdf_theme", "nouploadpdf_peer_cfg"]);
+          const allowedKeys = new Set(["nouploadpdf_theme", "nouploadpdf_peer_cfg", "nouploadpdf_intro_seen"]);
           for (let i = localStorage.length - 1; i >= 0; i--) {
             const k = localStorage.key(i);
             if (k && !allowedKeys.has(k)) localStorage.removeItem(k);
@@ -7748,11 +7748,6 @@ window.qrcode = qrcode;
     }
 
     let _heroThreeBootRetries = 0;
-    window.addEventListener("pageshow", (ev) => {
-      if (ev && ev.persisted && typeof window.replayHeroTornadoSequence === "function") {
-        window.replayHeroTornadoSequence();
-      }
-    });
 
     function initHeroPaperTornadoThreeJs() {
       const canvas = document.getElementById("heroThreeCanvas");
@@ -8338,7 +8333,7 @@ window.qrcode = qrcode;
         }, null, 4.15);
       }
 
-      function skipIntroToCompletedState() {
+      function revealHeroImmediately() {
         if (introTimeline) introTimeline.kill();
         G.gather = 1;
         G.spinSpeed = 0.72;
@@ -8351,7 +8346,31 @@ window.qrcode = qrcode;
         HeroTornadoController.isIntroDone = true;
         wrap.classList.remove("intro-fullscreen-stage");
         syncSize();
-                        runHeadlineInkBleedReveal({ x: 0.46, y: 0.48 });
+        if (hdrEl) {
+          hdrEl.classList.remove("header-intro-hidden");
+          hdrEl.classList.add("header-intro-revealed");
+        }
+        if (fgEl) {
+          fgEl.classList.remove("hero-intro-hidden");
+          fgEl.classList.add("hero-intro-revealed");
+        }
+      }
+
+      function skipIntroToCompletedState() {
+        try { localStorage.setItem("nouploadpdf_intro_seen", "1"); } catch {}
+        if (introTimeline) introTimeline.kill();
+        G.gather = 1;
+        G.spinSpeed = 0.72;
+        G.zoomOut = 1;
+        G.trapFactor = 1;
+        G.laptopScale = 0.48;
+        G.laptopShiftX = 0.35;
+        G.clashProgress = 0;
+        G.vanishOpacity = 1;
+        HeroTornadoController.isIntroDone = true;
+        wrap.classList.remove("intro-fullscreen-stage");
+        syncSize();
+        runHeadlineInkBleedReveal({ x: 0.46, y: 0.48 });
       }
 
       function playTornadoClashIntoStudio(onOpenStudioCallback) {
@@ -8407,7 +8426,14 @@ window.qrcode = qrcode;
       HeroTornadoController.skipToEnd = skipIntroToCompletedState;
       HeroTornadoController.clashIntoStudio = playTornadoClashIntoStudio;
 
-      playDramaticFourStageIntro();
+      let hasSeenIntro = false;
+      try { hasSeenIntro = localStorage.getItem("nouploadpdf_intro_seen") === "1"; } catch {}
+      if (hasSeenIntro) {
+        revealHeroImmediately();
+      } else {
+        try { localStorage.setItem("nouploadpdf_intro_seen", "1"); } catch {}
+        playDramaticFourStageIntro();
+      }
 
       let lastTime = performance.now();
       let elapsed = 0;
