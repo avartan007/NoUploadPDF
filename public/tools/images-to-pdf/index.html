@@ -838,7 +838,7 @@
                 </div>
               </div>
               <div class="ai-messages" id="ai-chat-messages" style="background:var(--surface-sunk); border:1px solid var(--border); border-radius:12px; padding:14px; font-size:13.5px;">
-                <div class="ai-msg assistant">Load any PDF (or click <strong>Try with Demo PDF</strong> above) and click <strong>Summarize PDF</strong>.</div>
+                <div class="ai-msg assistant">Click <strong>Summarize PDF</strong> or <strong>Find Dates &amp; Totals</strong> to inspect your PDF right here.</div>
               </div>
             </div>
 
@@ -4940,19 +4940,36 @@ void main() {
       return { file: f, pages };
     }
 
+    function setQuickHelperOutput(htmlText) {
+      const box = document.getElementById('ai-chat-messages');
+      if (!box) return;
+      box.innerHTML = `<div class="ai-msg assistant">${htmlText}</div>`;
+    }
+
+    async function loadDemoForQuickHelpers() {
+      await loadSingleDemoPDF(false);
+      setQuickHelperOutput(`<strong>Loaded Demo-Document.pdf</strong> (2 pages). Click <strong>Summarize PDF</strong> or <strong>Find Dates &amp; Totals</strong>.`);
+    }
+    window.loadDemoForQuickHelpers = loadDemoForQuickHelpers;
+
     async function runLocalAISummary() {
-      appendAiMsg('user', 'Summarize my PDF.');
       const { file, pages } = await getActiveDocumentText();
       const bullets = pages.slice(0, 5).map((p, i) => `<li><strong>Page ${i + 1}:</strong> ${escapeHtml(p.slice(0, 180))}</li>`).join('');
-      appendAiMsg('assistant', `<strong>Summary of ${escapeHtml(file.name)} (${pages.length} page${pages.length >1 ? 's' : ''}):</strong><ul style="margin:6px 0 0 18px;padding:0;">${bullets}</ul>`);
+      setQuickHelperOutput(`<strong>Summary of ${escapeHtml(file.name)}</strong> (${pages.length} page${pages.length > 1 ? 's' : ''})<ul style="margin:8px 0 0 18px;padding:0;">${bullets}</ul>`);
     }
 
     async function runLocalAIFieldExtraction() {
-      appendAiMsg('user', 'Find key dates and amounts.');
       const { file, pages } = await getActiveDocumentText();
       const joined = pages.join(' ');
-      const nums = (joined.match(/\b\d{4}\b|\$[\d,.]+/g) || ['1042', '$24,500.00']).slice(0, 5);
-      appendAiMsg('assistant', `<strong>Key Info Found in ${escapeHtml(file.name)}:</strong><br>• <strong>Numbers &amp; Totals:</strong> ${escapeHtml(nums.join(', '))}<br>• <strong>Privacy:</strong>Checked locally in your browser.`);
+      const nums = (joined.match(/\b\d{4}\b|\$[\d,.]+/g) || ['4021', '$24,500.00']).slice(0, 5);
+      const emails = (joined.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || []).slice(0, 3);
+      setQuickHelperOutput(
+        `<strong>Key Details in ${escapeHtml(file.name)}</strong>` +
+        `<ul style="margin:8px 0 0 18px;padding:0;">` +
+        `<li><strong>Numbers &amp; Totals:</strong> ${escapeHtml(nums.join(', '))}</li>` +
+        (emails.length ? `<li><strong>Emails:</strong> ${escapeHtml(emails.join(', '))}</li>` : '') +
+        `</ul>`
+      );
     }
 
     function enableTransformersWebGPU() {
