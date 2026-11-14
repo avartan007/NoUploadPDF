@@ -2104,7 +2104,7 @@ p {
   font-weight: 800;
   line-height: 0.84;
   letter-spacing: -0.045em;
-  color: color-mix(in srgb, var(--ink) 10%, transparent);
+  color: color-mix(in srgb, var(--ink) 7%, transparent);
   -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 18%, rgba(0, 0, 0, 0.48) 62%, rgba(0, 0, 0, 0) 100%);
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 18%, rgba(0, 0, 0, 0.48) 62%, rgba(0, 0, 0, 0) 100%);
   user-select: none;
@@ -2114,7 +2114,7 @@ p {
 }
 
 .footer-giant-wordmark .wordmark-accent {
-  color: color-mix(in srgb, var(--brand) 18%, transparent);
+  color: color-mix(in srgb, var(--brand) 12%, transparent);
 }
 
 .footer-col h4 {
@@ -2125,9 +2125,12 @@ p {
 }
 
 .footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 10px;
 }
 
 .footer-links a,
