@@ -8005,19 +8005,41 @@ window.qrcode = qrcode;
       // 2) FULL-SCREEN 76 High-DPI PDF Pages swirling across the entire viewport
       // ===================================================================
       const outerScene = new THREE.Scene();
-      const outerCam = new THREE.PerspectiveCamera(38, 1, 0.1, 140);
+      const outerCam = new THREE.PerspectiveCamera(36, 1, 0.1, 140);
 
-      outerScene.add(new THREE.AmbientLight(0xffffff, 0.95));
-      const outerKey = new THREE.DirectionalLight(0xfff8eb, 1.35);
+      // Procedural Studio Softbox Environment Map so machined aluminum & glass gleam naturally
+      try {
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        const envScene = new THREE.Scene();
+        envScene.background = new THREE.Color(0x1e2421);
+        const topSoftbox = new THREE.Mesh(new THREE.PlaneGeometry(18, 10), new THREE.MeshBasicMaterial({ color: 0xfff8ed, side: THREE.DoubleSide }));
+        topSoftbox.position.set(2, 9, 4);
+        topSoftbox.rotation.x = Math.PI / 2;
+        envScene.add(topSoftbox);
+        const coolRimPanel = new THREE.Mesh(new THREE.PlaneGeometry(12, 8), new THREE.MeshBasicMaterial({ color: 0xc7d2fe, side: THREE.DoubleSide }));
+        coolRimPanel.position.set(-9, 3, -4);
+        coolRimPanel.lookAt(0, 0, 0);
+        envScene.add(coolRimPanel);
+        const emeraldPanel = new THREE.Mesh(new THREE.PlaneGeometry(8, 5), new THREE.MeshBasicMaterial({ color: 0x4ade80, side: THREE.DoubleSide }));
+        emeraldPanel.position.set(6, -3, 5);
+        emeraldPanel.lookAt(0, 0, 0);
+        envScene.add(emeraldPanel);
+        const envRT = pmrem.fromScene(envScene, 0.04);
+        outerScene.environment = envRT.texture;
+        pmrem.dispose();
+      } catch {}
+
+      outerScene.add(new THREE.AmbientLight(0xffffff, 0.72));
+      const outerKey = new THREE.DirectionalLight(0xfff6e5, 1.55);
       outerKey.position.set(6, 10, 9);
       outerScene.add(outerKey);
 
-      const outerRim = new THREE.DirectionalLight(0xdbeafe, 0.65);
-      outerRim.position.set(-7, 4, -5);
+      const outerRim = new THREE.DirectionalLight(0xc7d2fe, 0.95);
+      outerRim.position.set(-7, 5, -6);
       outerScene.add(outerRim);
 
-      const localVaultLight = new THREE.PointLight(0x1f8f63, 1.15, 18);
-      localVaultLight.position.set(0.4, 0.2, 3.2);
+      const localVaultLight = new THREE.PointLight(0x22c55e, 1.35, 18);
+      localVaultLight.position.set(0.4, 0.25, 3.4);
       outerScene.add(localVaultLight);
 
       // Photorealistic Machined-Aluminum 3D Laptop (`laptopGroup`)
@@ -8025,19 +8047,21 @@ window.qrcode = qrcode;
       outerScene.add(laptopGroup);
 
       const aluminumBodyMat = new THREE.MeshStandardMaterial({
-        color: 0xd4d6dc,
-        metalness: 0.82,
-        roughness: 0.24
+        color: 0xcfd2d8,
+        metalness: 0.88,
+        roughness: 0.22,
+        envMapIntensity: 1.15
       });
       const darkAnodizedMat = new THREE.MeshStandardMaterial({
         color: 0x16181d,
-        metalness: 0.45,
-        roughness: 0.42
+        metalness: 0.55,
+        roughness: 0.36
       });
       const glassBezelMat = new THREE.MeshStandardMaterial({
-        color: 0x0b0d11,
-        metalness: 0.2,
-        roughness: 0.15
+        color: 0x090b0f,
+        metalness: 0.25,
+        roughness: 0.08,
+        envMapIntensity: 1.25
       });
 
       const BASE_W = 4.5;
@@ -8158,7 +8182,25 @@ window.qrcode = qrcode;
       screenMesh.position.set(0, LID_H / 2 + 0.01, 0.004);
       lidPivot.add(screenMesh);
 
-      lidPivot.rotation.x = -0.18;
+      // Subtle glossy laminated glass sheen over Retina display
+      const screenGlassSheen = new THREE.Mesh(
+        new THREE.PlaneGeometry(SCREEN_W, SCREEN_H),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.045, roughness: 0.05, metalness: 0.15, envMapIntensity: 1.3, depthWrite: false })
+      );
+      screenGlassSheen.position.set(0, LID_H / 2 + 0.01, 0.006);
+      lidPivot.add(screenGlassSheen);
+
+      // Front thumb-notch & side USB-C ports for hardware realism
+      const thumbNotch = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.045, 0.12), darkAnodizedMat);
+      thumbNotch.position.set(0, BASE_H - 0.012, BASE_D / 2 - 0.04);
+      laptopGroup.add(thumbNotch);
+      [-0.75, -0.50].forEach(pz => {
+        const port = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.036, 0.14), darkAnodizedMat);
+        port.position.set(-BASE_W / 2 - 0.002, BASE_H / 2, pz);
+        laptopGroup.add(port);
+      });
+
+      lidPivot.rotation.x = -0.16;
 
       const shCanvas = document.createElement("canvas");
       shCanvas.width = 256;
@@ -8202,8 +8244,9 @@ window.qrcode = qrcode;
       const outerMats = crispPageTextures.map(tex => new THREE.MeshStandardMaterial({
         map: tex,
         side: THREE.DoubleSide,
-        roughness: 0.48,
-        metalness: 0.04,
+        roughness: 0.62,
+        metalness: 0.02,
+        envMapIntensity: 0.45,
         transparent: true,
         opacity: 0.97
       }));
@@ -8584,21 +8627,22 @@ window.qrcode = qrcode;
 
         // 3. Update Minimized Photorealistic 3D Laptop & Camera (`outerCam`)
         const k = G.zoomOut;
+        const floatBreath = Math.sin(elapsed * 0.85) * 0.045 * k;
         laptopGroup.scale.setScalar(G.laptopScale);
         laptopGroup.position.x = G.laptopShiftX;
-        laptopGroup.position.y = THREE.MathUtils.lerp(0, -0.35, k);
-        laptopGroup.rotation.y = THREE.MathUtils.lerp(0, -0.18 + pointerX * 0.10, k);
-        laptopGroup.rotation.x = THREE.MathUtils.lerp(0, 0.06 + pointerY * 0.04, k);
+        laptopGroup.position.y = THREE.MathUtils.lerp(0, -0.34, k) + floatBreath;
+        laptopGroup.rotation.y = THREE.MathUtils.lerp(0.04, -0.24 + pointerX * 0.10, k);
+        laptopGroup.rotation.x = THREE.MathUtils.lerp(-0.02, 0.08 + pointerY * 0.04, k);
 
         const fovRad = THREE.MathUtils.degToRad(outerCam.fov);
         const fitH = (SCREEN_H * 0.88) / (2 * Math.tan(fovRad / 2));
         const fitW = (SCREEN_W * 0.88) / (2 * Math.tan(fovRad / 2) * outerCam.aspect);
-        const d0 = Math.min(fitH, fitW) * 0.88; // Starts inside/filling the entire screen
-        const dF = 9.6;                         // Zooms out so the laptop is compact & minimized!
+        const d0 = Math.min(fitH, fitW) * 0.88;
+        const dF = 9.2;
 
         const dist = THREE.MathUtils.lerp(d0, dF, k);
-        const yaw = THREE.MathUtils.lerp(0, -0.14 + pointerX * 0.06, k);
-        const pitch = THREE.MathUtils.lerp(0.01, 0.14 - pointerY * 0.04, k);
+        const yaw = THREE.MathUtils.lerp(0.06, -0.22 + pointerX * 0.06, k);
+        const pitch = THREE.MathUtils.lerp(-0.02, 0.16 - pointerY * 0.04, k);
 
         const dir = screenNormal.clone();
         dir.applyAxisAngle(new THREE.Vector3(1, 0, 0), -pitch);
