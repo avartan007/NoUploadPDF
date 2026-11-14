@@ -9760,24 +9760,11 @@ window.qrcode = qrcode;
 
       let introTimeline = null;
 
-      function setCaption(text, visible = true) {
-        const cap = document.getElementById("heroIntroCaption");
-        if (!cap) return;
-        if (text) cap.textContent = text;
-        cap.style.display = visible ? "block" : "none";
-        cap.style.opacity = visible ? "1" : "0";
-      }
-
-      function setPhaseText(text) {
-        const badge = document.getElementById("tornadoPhaseText");
-        const tel = document.getElementById("threeTelemetryStatus");
-        if (badge) badge.textContent = text;
-        if (tel) tel.textContent = text;
-      }
+      function setCaption() {}
+      function setPhaseText() {}
 
       function playDramaticFourStageIntro() {
-        const skipBtn = document.getElementById("heroSkipIntroBtn");
-        if (prefersReduced || typeof window.gsap === "undefined") {
+                if (prefersReduced || typeof window.gsap === "undefined") {
           G.gather = 1;
           G.spinSpeed = 0.65;
           G.zoomOut = 1;
@@ -9794,9 +9781,7 @@ window.qrcode = qrcode;
             fgEl.classList.remove("hero-intro-hidden");
             fgEl.classList.add("hero-intro-revealed");
           }
-          setCaption("", false);
-          if (skipBtn) skipBtn.classList.add("is-hidden");
-          return;
+                    return;
         }
 
         if (introTimeline) introTimeline.kill();
@@ -9814,8 +9799,7 @@ window.qrcode = qrcode;
           fgEl.classList.remove("hero-intro-revealed");
           fgEl.classList.add("hero-intro-hidden");
         }
-        if (skipBtn) { skipBtn.classList.remove("is-hidden"); skipBtn.textContent = "Skip intro →"; }
-
+        
         G.gather = 0;
         G.spinSpeed = 0.45;
         G.zoomOut = 0;
@@ -9826,20 +9810,14 @@ window.qrcode = qrcode;
         G.vanishOpacity = 1;
         wrap.style.opacity = "1";
 
-        setCaption("01 / ON-DEVICE DISPLAY · FULL-SCREEN LOCAL SANDBOX", true);
-        setPhaseText("01 / ON-DEVICE DISPLAY · LOCAL SANDBOX ACTIVE");
-
         introTimeline = window.gsap.timeline({
           onComplete: () => {
             HeroTornadoController.isIntroDone = true;
-            if (skipBtn) skipBtn.classList.add("is-hidden");
-          }
+                      }
         });
 
         // STAGE 1 -> 2 (0.15s -> 2.55s): High-DPI PDF pages stream in from all 4 corners to form a FULL-SCREEN 3D Tornado
         introTimeline.call(() => {
-          setCaption("02 / FULL-SCREEN VORTEX · DOCUMENTS SWIRL IN BROWSER RAM", true);
-          setPhaseText("02 / FULL-SCREEN VORTEX · DOCUMENTS SWIRL IN BROWSER RAM");
         }, null, 0.25);
 
         introTimeline.to(G, {
@@ -9857,8 +9835,6 @@ window.qrcode = qrcode;
         // STAGE 3 (2.40s -> 4.35s): Laptop zooms out & minimizes sleekly (`laptopScale: 0.48`) behind the text area
         // while the full-screen tornado funnels into the minimized laptop!
         introTimeline.call(() => {
-          setCaption("03 / ZERO CLOUD UPLOADS · TRAPPED INSIDE YOUR LAPTOP", true);
-          setPhaseText("03 / ZERO CLOUD UPLOADS · TRAPPED INSIDE YOUR LAPTOP");
         }, null, 2.40);
 
         introTimeline.to(G, {
@@ -9874,8 +9850,6 @@ window.qrcode = qrcode;
         // STAGE 4 (4.15s): Header + Hero Text ("Your PDFs never leave your device.") bleed in together
         // via our Theme-Changer WebGL2 InkBleedEngine shader + Liquid Ripple on "leave"!
         introTimeline.call(() => {
-          setCaption("", false);
-          setPhaseText("LOCAL DEVICE VAULT ACTIVE · 0 BYTES LEAVE YOUR LAPTOP");
           syncSize();
           runHeadlineInkBleedReveal({ x: 0.46, y: 0.48 });
         }, null, 4.15);
@@ -9894,11 +9868,7 @@ window.qrcode = qrcode;
         HeroTornadoController.isIntroDone = true;
         wrap.classList.remove("intro-fullscreen-stage");
         syncSize();
-        setCaption("", false);
-        setPhaseText("LOCAL DEVICE VAULT ACTIVE · 0 BYTES LEAVE YOUR LAPTOP");
-        const skipBtn = document.getElementById("heroSkipIntroBtn");
-        if (skipBtn) skipBtn.classList.add("is-hidden");
-        runHeadlineInkBleedReveal({ x: 0.46, y: 0.48 });
+                        runHeadlineInkBleedReveal({ x: 0.46, y: 0.48 });
       }
 
       function playTornadoClashIntoStudio(onOpenStudioCallback) {
@@ -9910,8 +9880,6 @@ window.qrcode = qrcode;
           return;
         }
         if (introTimeline) introTimeline.kill();
-
-        setPhaseText("MIXING DROPPED FILE INTO TORNADO → CLASHING INTO STUDIO");
         const tl = window.gsap.timeline();
 
         // Dropped file mixes into tornado: vortex expands & surges
@@ -9948,7 +9916,6 @@ window.qrcode = qrcode;
             G.laptopScale = 0.48;
             G.spinSpeed = 0.72;
             wrap.style.opacity = "1";
-            setPhaseText("LOCAL DEVICE VAULT ACTIVE · 0 BYTES LEAVE YOUR LAPTOP");
           }
         }, 0.96);
       }
