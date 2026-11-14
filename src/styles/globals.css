@@ -4210,6 +4210,7 @@ html, body {
   background: transparent !important;
   box-shadow: none !important;
   padding: 0 !important;
+  min-height: 210px;
 }
 
 #power-suite #ai-chat-messages {
