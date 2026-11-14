@@ -4200,3 +4200,26 @@ html, body {
     transform: translateY(0);
   }
 }
+
+/* Flatten nested card borders inside Quick Helpers so there is only 1 clean outer frame */
+#power-suite .power-panel {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+#power-suite #ai-chat-messages {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+#power-suite #ai-chat-messages .ai-msg.assistant {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink);
+}
