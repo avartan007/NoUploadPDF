@@ -9328,69 +9328,125 @@ window.qrcode = qrcode;
       renderer.toneMappingExposure = 1.06;
 
       // ===================================================================
-      // HIGH-DPI CRISP PDF PAGE TEXTURES FROM EARLIER (512x660 CanvasTexture)
-      // Sharp #FCFBF8 paper, #166534/#18181B PDF badge, financial tables,
-      // black-out redaction bars, emerald vector signature & local seal!
+      // REALISTIC DOCUMENT PAGE TEXTURES (384x495 CanvasTexture)
+      // 3 distinct real-world documents: NDA Redaction, Invoice #4021, ID Scan
       // ===================================================================
       function createRealisticPdfPageTexture(variant) {
         const c = document.createElement("canvas");
-        c.width = 256;
-        c.height = 330;
+        c.width = 384;
+        c.height = 495;
         const ctx = c.getContext("2d");
+        ctx.scale(1.5, 1.5);
 
+        // Warm cotton paper + subtle edge vignette
         ctx.fillStyle = "#FCFBF8";
         ctx.fillRect(0, 0, 256, 330);
-        ctx.strokeStyle = "#D4CFC4";
-        ctx.lineWidth = 3.5;
-        ctx.strokeRect(2, 2, 252, 326);
+        ctx.strokeStyle = "#CFC9BC";
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(1.5, 1.5, 253, 327);
 
-        // Top header bar + PDF badge
-        ctx.fillStyle = variant % 2 === 0 ? "#166534" : "#18181B";
-        ctx.fillRect(20, 20, 48, 18);
+        // Subtle folded top-right corner accent
+        ctx.fillStyle = "#EFECE4";
+        ctx.beginPath();
+        ctx.moveTo(234, 2);
+        ctx.lineTo(254, 22);
+        ctx.lineTo(234, 22);
+        ctx.closePath();
+        ctx.fill();
+
+        // Top header bar + document type badge
+        ctx.fillStyle = variant === 1 ? "#166534" : "#141615";
+        ctx.fillRect(20, 18, 54, 17);
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 10px monospace";
-        ctx.fillText("PDF", 31, 33);
+        ctx.font = "bold 9.5px monospace";
+        ctx.fillText(variant === 0 ? "NDA" : (variant === 1 ? "INV" : "SCAN"), 28, 30);
 
-        ctx.fillStyle = "#27272A";
-        ctx.fillRect(78, 22, 132, 6);
-        ctx.fillStyle = "#A1A1AA";
-        ctx.fillRect(78, 33, 86, 4);
+        ctx.fillStyle = "#18181B";
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillText(
+          variant === 0 ? "CONFIDENTIAL AGREEMENT" : (variant === 1 ? "INVOICE #4021 · Q4" : "IDENTITY RECORD · 216 DPI"),
+          82,
+          28
+        );
+        ctx.fillStyle = "#E4E4E7";
+        ctx.fillRect(20, 42, 214, 1.5);
 
-        // Realistic document body lines + table / redaction blocks
-        for (let r = 0; r < 13; r++) {
-          const y = 58 + r * 17;
-          if (variant === 0 && (r === 4 || r === 5)) {
-            ctx.fillStyle = "#18181B";
-            ctx.fillRect(20, y - 2, 168, 10);
-          } else if (variant === 1 && r >= 5 && r <= 8) {
-            ctx.strokeStyle = "#D4D4D8";
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(20, y - 3, 214, 13);
-            ctx.fillStyle = "#71717A";
-            ctx.fillRect(26, y + 1, 76, 5);
-            ctx.fillStyle = "#166534";
-            ctx.fillRect(178, y + 1, 46, 5);
-          } else {
-            ctx.fillStyle = r % 4 === 0 ? "#52525B" : "#A1A1AA";
-            const w = r % 3 === 2 ? 142 : 212;
-            ctx.fillRect(20, y, w, 5);
+        if (variant === 0) {
+          for (let r = 0; r < 12; r++) {
+            const y = 58 + r * 17;
+            if (r === 3 || r === 4 || r === 8) {
+              ctx.fillStyle = "#0A0A0A";
+              ctx.fillRect(20, y - 3, r === 8 ? 136 : 186, 11);
+              if (r === 3) {
+                ctx.fillStyle = "#DC2626";
+                ctx.font = "bold 7.5px monospace";
+                ctx.fillText("REDACTED", 210, y + 6);
+              }
+            } else {
+              ctx.fillStyle = r % 4 === 0 ? "#3F3F46" : "#A1A1AA";
+              ctx.fillRect(20, y, r % 3 === 2 ? 148 : 212, 4.5);
+            }
           }
+        } else if (variant === 1) {
+          for (let r = 0; r < 5; r++) {
+            const y = 58 + r * 24;
+            ctx.strokeStyle = "#E4E4E7";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(20, y, 214, 18);
+            ctx.fillStyle = r === 4 ? "#166534" : "#52525B";
+            ctx.fillRect(26, y + 6, 86, 5);
+            ctx.fillStyle = r === 4 ? "#166534" : "#18181B";
+            ctx.font = "bold 9px monospace";
+            ctx.fillText(r === 4 ? "$24,500.00" : `$${(r + 1) * 4},200`, 172, y + 12);
+          }
+          for (let r = 0; r < 4; r++) {
+            ctx.fillStyle = "#A1A1AA";
+            ctx.fillRect(20, 194 + r * 15, r === 3 ? 130 : 210, 4.5);
+          }
+        } else {
+          // Photo ID box silhouette + structured lines + subtle diagonal watermark
+          ctx.fillStyle = "#E4E4E7";
+          ctx.fillRect(20, 56, 62, 76);
+          ctx.fillStyle = "#A1A1AA";
+          ctx.beginPath();
+          ctx.arc(51, 82, 13, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillRect(32, 100, 38, 22);
+          for (let r = 0; r < 5; r++) {
+            ctx.fillStyle = r === 0 ? "#18181B" : "#71717A";
+            ctx.fillRect(94, 62 + r * 15, r % 2 === 0 ? 132 : 98, 5);
+          }
+          for (let r = 0; r < 6; r++) {
+            ctx.fillStyle = "#A1A1AA";
+            ctx.fillRect(20, 152 + r * 17, r === 5 ? 140 : 212, 4.5);
+          }
+          ctx.save();
+          ctx.translate(128, 175);
+          ctx.rotate(-0.45);
+          ctx.fillStyle = "rgba(22, 101, 52, 0.14)";
+          ctx.font = "bold 24px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText("LOCAL ONLY", 0, 0);
+          ctx.restore();
         }
 
-        // Signature scribble & green local-device verification seal at bottom
+        // Handwritten ink signature & green local-device verification seal at bottom
         ctx.strokeStyle = "#166534";
-        ctx.lineWidth = 2.4;
+        ctx.lineWidth = 2.2;
         ctx.beginPath();
-        ctx.moveTo(26, 298);
-        ctx.bezierCurveTo(44, 282, 58, 305, 78, 288);
-        ctx.bezierCurveTo(92, 276, 108, 298, 134, 290);
+        ctx.moveTo(24, 298);
+        ctx.bezierCurveTo(42, 280, 58, 306, 78, 288);
+        ctx.bezierCurveTo(92, 276, 110, 298, 136, 289);
         ctx.stroke();
 
-        ctx.fillStyle = "rgba(22, 101, 52, 0.14)";
-        ctx.fillRect(166, 282, 68, 24);
+        ctx.fillStyle = "rgba(22, 101, 52, 0.12)";
+        ctx.fillRect(160, 280, 74, 24);
         ctx.strokeStyle = "#166534";
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(166, 282, 68, 24);
+        ctx.lineWidth = 1.4;
+        ctx.strokeRect(160, 280, 74, 24);
+        ctx.fillStyle = "#166534";
+        ctx.font = "bold 8px monospace";
+        ctx.fillText("0B UPLOAD", 171, 295);
 
         const tex = new THREE.CanvasTexture(c);
         tex.anisotropy = 2;
@@ -9404,14 +9460,14 @@ window.qrcode = qrcode;
         createRealisticPdfPageTexture(2)
       ];
 
-      // Aerodynamic curved PDF sheet geometry
+      // Aerodynamic curved PDF sheet geometry with natural paper flutter
       function createCurvedPageGeometry(w, h) {
-        const g = new THREE.PlaneGeometry(w, h, 6, 6);
+        const g = new THREE.PlaneGeometry(w, h, 7, 7);
         const pos = g.attributes.position;
         for (let i = 0; i < pos.count; i++) {
           const x = pos.getX(i);
           const y = pos.getY(i);
-          pos.setZ(i, Math.sin(x * 2.5) * 0.065 + Math.cos(y * 1.9) * 0.042);
+          pos.setZ(i, Math.sin(x * 2.8 + y * 1.1) * 0.075 + Math.cos(y * 2.1) * 0.048);
         }
         g.computeVertexNormals();
         return g;
@@ -9476,19 +9532,41 @@ window.qrcode = qrcode;
       // 2) FULL-SCREEN 76 High-DPI PDF Pages swirling across the entire viewport
       // ===================================================================
       const outerScene = new THREE.Scene();
-      const outerCam = new THREE.PerspectiveCamera(38, 1, 0.1, 140);
+      const outerCam = new THREE.PerspectiveCamera(36, 1, 0.1, 140);
 
-      outerScene.add(new THREE.AmbientLight(0xffffff, 0.95));
-      const outerKey = new THREE.DirectionalLight(0xfff8eb, 1.35);
+      // Procedural Studio Softbox Environment Map so machined aluminum & glass gleam naturally
+      try {
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        const envScene = new THREE.Scene();
+        envScene.background = new THREE.Color(0x1e2421);
+        const topSoftbox = new THREE.Mesh(new THREE.PlaneGeometry(18, 10), new THREE.MeshBasicMaterial({ color: 0xfff8ed, side: THREE.DoubleSide }));
+        topSoftbox.position.set(2, 9, 4);
+        topSoftbox.rotation.x = Math.PI / 2;
+        envScene.add(topSoftbox);
+        const coolRimPanel = new THREE.Mesh(new THREE.PlaneGeometry(12, 8), new THREE.MeshBasicMaterial({ color: 0xc7d2fe, side: THREE.DoubleSide }));
+        coolRimPanel.position.set(-9, 3, -4);
+        coolRimPanel.lookAt(0, 0, 0);
+        envScene.add(coolRimPanel);
+        const emeraldPanel = new THREE.Mesh(new THREE.PlaneGeometry(8, 5), new THREE.MeshBasicMaterial({ color: 0x4ade80, side: THREE.DoubleSide }));
+        emeraldPanel.position.set(6, -3, 5);
+        emeraldPanel.lookAt(0, 0, 0);
+        envScene.add(emeraldPanel);
+        const envRT = pmrem.fromScene(envScene, 0.04);
+        outerScene.environment = envRT.texture;
+        pmrem.dispose();
+      } catch {}
+
+      outerScene.add(new THREE.AmbientLight(0xffffff, 0.72));
+      const outerKey = new THREE.DirectionalLight(0xfff6e5, 1.55);
       outerKey.position.set(6, 10, 9);
       outerScene.add(outerKey);
 
-      const outerRim = new THREE.DirectionalLight(0xdbeafe, 0.65);
-      outerRim.position.set(-7, 4, -5);
+      const outerRim = new THREE.DirectionalLight(0xc7d2fe, 0.95);
+      outerRim.position.set(-7, 5, -6);
       outerScene.add(outerRim);
 
-      const localVaultLight = new THREE.PointLight(0x1f8f63, 1.15, 18);
-      localVaultLight.position.set(0.4, 0.2, 3.2);
+      const localVaultLight = new THREE.PointLight(0x22c55e, 1.35, 18);
+      localVaultLight.position.set(0.4, 0.25, 3.4);
       outerScene.add(localVaultLight);
 
       // Photorealistic Machined-Aluminum 3D Laptop (`laptopGroup`)
@@ -9496,19 +9574,21 @@ window.qrcode = qrcode;
       outerScene.add(laptopGroup);
 
       const aluminumBodyMat = new THREE.MeshStandardMaterial({
-        color: 0xd4d6dc,
-        metalness: 0.82,
-        roughness: 0.24
+        color: 0xcfd2d8,
+        metalness: 0.88,
+        roughness: 0.22,
+        envMapIntensity: 1.15
       });
       const darkAnodizedMat = new THREE.MeshStandardMaterial({
         color: 0x16181d,
-        metalness: 0.45,
-        roughness: 0.42
+        metalness: 0.55,
+        roughness: 0.36
       });
       const glassBezelMat = new THREE.MeshStandardMaterial({
-        color: 0x0b0d11,
-        metalness: 0.2,
-        roughness: 0.15
+        color: 0x090b0f,
+        metalness: 0.25,
+        roughness: 0.08,
+        envMapIntensity: 1.25
       });
 
       const BASE_W = 4.5;
@@ -9629,7 +9709,25 @@ window.qrcode = qrcode;
       screenMesh.position.set(0, LID_H / 2 + 0.01, 0.004);
       lidPivot.add(screenMesh);
 
-      lidPivot.rotation.x = -0.18;
+      // Subtle glossy laminated glass sheen over Retina display
+      const screenGlassSheen = new THREE.Mesh(
+        new THREE.PlaneGeometry(SCREEN_W, SCREEN_H),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.045, roughness: 0.05, metalness: 0.15, envMapIntensity: 1.3, depthWrite: false })
+      );
+      screenGlassSheen.position.set(0, LID_H / 2 + 0.01, 0.006);
+      lidPivot.add(screenGlassSheen);
+
+      // Front thumb-notch & side USB-C ports for hardware realism
+      const thumbNotch = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.045, 0.12), darkAnodizedMat);
+      thumbNotch.position.set(0, BASE_H - 0.012, BASE_D / 2 - 0.04);
+      laptopGroup.add(thumbNotch);
+      [-0.75, -0.50].forEach(pz => {
+        const port = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.036, 0.14), darkAnodizedMat);
+        port.position.set(-BASE_W / 2 - 0.002, BASE_H / 2, pz);
+        laptopGroup.add(port);
+      });
+
+      lidPivot.rotation.x = -0.16;
 
       const shCanvas = document.createElement("canvas");
       shCanvas.width = 256;
@@ -9673,8 +9771,9 @@ window.qrcode = qrcode;
       const outerMats = crispPageTextures.map(tex => new THREE.MeshStandardMaterial({
         map: tex,
         side: THREE.DoubleSide,
-        roughness: 0.48,
-        metalness: 0.04,
+        roughness: 0.62,
+        metalness: 0.02,
+        envMapIntensity: 0.45,
         transparent: true,
         opacity: 0.97
       }));
@@ -10055,21 +10154,22 @@ window.qrcode = qrcode;
 
         // 3. Update Minimized Photorealistic 3D Laptop & Camera (`outerCam`)
         const k = G.zoomOut;
+        const floatBreath = Math.sin(elapsed * 0.85) * 0.045 * k;
         laptopGroup.scale.setScalar(G.laptopScale);
         laptopGroup.position.x = G.laptopShiftX;
-        laptopGroup.position.y = THREE.MathUtils.lerp(0, -0.35, k);
-        laptopGroup.rotation.y = THREE.MathUtils.lerp(0, -0.18 + pointerX * 0.10, k);
-        laptopGroup.rotation.x = THREE.MathUtils.lerp(0, 0.06 + pointerY * 0.04, k);
+        laptopGroup.position.y = THREE.MathUtils.lerp(0, -0.34, k) + floatBreath;
+        laptopGroup.rotation.y = THREE.MathUtils.lerp(0.04, -0.24 + pointerX * 0.10, k);
+        laptopGroup.rotation.x = THREE.MathUtils.lerp(-0.02, 0.08 + pointerY * 0.04, k);
 
         const fovRad = THREE.MathUtils.degToRad(outerCam.fov);
         const fitH = (SCREEN_H * 0.88) / (2 * Math.tan(fovRad / 2));
         const fitW = (SCREEN_W * 0.88) / (2 * Math.tan(fovRad / 2) * outerCam.aspect);
-        const d0 = Math.min(fitH, fitW) * 0.88; // Starts inside/filling the entire screen
-        const dF = 9.6;                         // Zooms out so the laptop is compact & minimized!
+        const d0 = Math.min(fitH, fitW) * 0.88;
+        const dF = 9.2;
 
         const dist = THREE.MathUtils.lerp(d0, dF, k);
-        const yaw = THREE.MathUtils.lerp(0, -0.14 + pointerX * 0.06, k);
-        const pitch = THREE.MathUtils.lerp(0.01, 0.14 - pointerY * 0.04, k);
+        const yaw = THREE.MathUtils.lerp(0.06, -0.22 + pointerX * 0.06, k);
+        const pitch = THREE.MathUtils.lerp(-0.02, 0.16 - pointerY * 0.04, k);
 
         const dir = screenNormal.clone();
         dir.applyAxisAngle(new THREE.Vector3(1, 0, 0), -pitch);
